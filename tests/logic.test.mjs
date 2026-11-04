@@ -40,6 +40,28 @@ test('broker is capped to +/- 15 percent with 450k floor',()=>{
  assert.ok(high<=current*1.15);assert.ok(low>=current*.85);
  assert.ok(brokerEstimate(450000,-100,true).after>=450000);
 });
+test('cumulative-average broker can RISE despite a negative second match',()=>{
+  const first=brokerEstimate(800_000,30,true);
+  assert.equal(first.after,920_000); // +15% maximum
+  const second=brokerEstimate(first.after,-5,true,[30]);
+  assert.equal(second.average,12.5);
+  assert.equal(second.after,1_055_000); // rises ~14.7% even after -5
+  assert.ok(second.thresholdPlus15<0); // sufficiently strong opening performance
+});
+test('cumulative average excludes missed matches and zero-score appearances do count',()=>{
+  const current=920_000, prior=[30];
+  assert.equal(brokerEstimate(current,-50,false,prior).after,current);
+  assert.equal(brokerEstimate(current,0,true,prior).average,15);
+  assert.equal(brokerEstimate(current,0,true,prior).playedGames,2);
+});
+test('opening game negative score can decrease price; average drives future changes',()=>{
+  const current=1_000_000;
+  const first=brokerEstimate(current,-5,true);
+  assert.equal(first.after,850_000);
+  const second=brokerEstimate(first.after,30,true,[-5]);
+  assert.ok(second.after>first.after);
+});
+
 test('CSV parser supports quoted semicolons and escaped quotes',()=>{
  assert.deepEqual(parseDelimited('Jugador;PIR\n"Base; A";13\n"El ""Mago""";8'),
  [['Jugador','PIR'],['Base; A','13'],['El "Mago"','8']]);
