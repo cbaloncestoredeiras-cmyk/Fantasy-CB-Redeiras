@@ -87,7 +87,7 @@ function team(){
  ].map(k=>panel('<div class="kpi-label">'+k[0]+'</div><div class="kpi">'+k[1]+'</div><div class="kpi-caption">'+k[2]+'</div>')).join('')+'</div>'+
  panel('<h2>O meu quinteto</h2><div class="roster-list">'+roster.map(p=>'<div class="roster-card"><div class="playerlogo">'+h(p.name.slice(0,2).toUpperCase())+'</div><b>'+h(p.name)+'</b><div class="small">'+h(p.positions.join(' / '))+'</div><div class="small" style="color:#146f94;font-weight:800">'+euroShort(prices()[p.id])+'</div><button class="btn small secondary" data-player="'+p.id+'" style="margin-top:12px">Perfil</button></div>').join('')+'</div>')+
  '<div class="grid two" style="margin-top:17px">'+panel('<h2>Normas</h2><p>Cinco xogadores · Mínimo un base e un interior · Tres transferencias por xornada. Os cambios confírmanse só co mercado aberto.</p>')+
- panel('<h2>Historial de fichaxes</h2>'+(d.transfers.length?d.transfers.slice().reverse().slice(0,8).map(t=>'<div class="mini" style="margin:8px 0">X'+t.round_number+': '+h(player(t.sold_player_id)?.name||'?')+' → '+h(player(t.bought_player_id)?.name||'?')+'</div>').join(''):empty('Aínda non fixeches transferencias','⇄'))+'</div>';
+ panel('<h2>Historial de fichaxes</h2>'+(d.transfers.length?d.transfers.slice().reverse().slice(0,8).map(t=>'<div class="mini" style="margin:8px 0">X'+t.round_number+': '+h(player(t.sold_player_id)?.name||'?')+' → '+h(player(t.bought_player_id)?.name||'?')+'</div>').join(''):empty('Aínda non fixeches transferencias','⇄')))+'</div>';
 }
 function ranking(){
  const d=state.data;return pageHeader('Clasificación xeral','A puntuación acumúlase coas valoracións publicadas de cada xornada.')+
