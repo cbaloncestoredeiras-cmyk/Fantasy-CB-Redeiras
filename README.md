@@ -1,30 +1,34 @@
-# Fantasy CB Redeiras
+# Fantasy CB Redeiras · 2026/27
 
-Aplicación Fantasy del CB Redeiras. **En desarrollo: no apta todavía para participantes reales.**
+Aplicación Fantasy de baloncesto para el Club Baloncesto Redeiras, diseñada en gallego y adaptada a móviles. **Estado: código de MVP conectado a Supabase preparado, pero todavía NO desplegado, sin migraciones ejecutadas ni pruebas de integración superadas. No apta para acceso de participantes reales.**
 
-## Lo que hay ahora
+## Código del proyecto
 
-- [Prototipo interactivo V5](prototype/index.html): funciona en el navegador con datos locales. **No dispone de autenticación real ni de base de datos compartida**.
-- [Textos legales provisionales](prototype/legal.html): requieren verificación antes de abrir registros, particularmente para menores.
-- [Datos y precios iniciales de los 18 jugadores](data/jugadores.json).
-- [Calendario](data/calendario.csv).
-- [Pasos para preparar el despliegue](docs/despliegue.md).
+- **\`site/\`**: aplicación web real, con login por invitación, inicio, mercado de 18 jugadores, quinteto flex, calendario, clasificación, votación del vestuario, perfiles de jugador y panel admin. Requiere una base de datos configurada para funcionar.
+- **\`site/logic.js\`**: reglas y cálculos preliminares (el servidor realiza la validación real).
+- **\`supabase/migrations/\`**: 7 migraciones SQL (estructura, 18 jugadores, 6 M€, fichajes, calendario, estadísticas, votación, Bróker, RLS). **Pendientes de ejecución, revisión y pruebas en PostgreSQL real**.
+- **\`supabase/functions/invite-user/\`**: Edge Function para enviar invitaciones desde un servidor protegido. Aún no desplegada.
+- **\`tests/\`**: pruebas unitarias de reglas y lógica.
+- **\`prototype/\`**: demostración HTML local V5 anterior, con datos ficticios. **No desplegar como app de producción**.
+- **\`docs/GO_LIVE.md\`**: instrucciones completas de despliegue y configuración segura.
 
-## Reglas confirmadas
+## Normas cerradas
 
-- 18 jugadores (15 sénior y 3 juniors: Mateo, Gil y Yosue).
 - Presupuesto inicial **6.000.000 € virtuales**.
-- Quinteto de **5**: al menos **1 BA** y **1 AP/P**, ocupados por dos jugadores distintos; 3 plazas libres.
-- Máximo **3 transferencias por jornada**.
-- Inicio previsto: jornada 5, sábado **7/11/2026, 20:00** (Europe/Madrid). Horarios modificables cuando se confirman los martes.
-- Puntuación: valoración ACB/PIR, bonus de victoria del 20 % sobre valoración positiva y premio por votaciones del vestuario.
-- Votan convocados con 3/2/1 a tres compañeros distintos; ventana de 72 horas desde el fin del encuentro.
-- Bróker: cambio de precio máximo ±15 % por jornada. **Calibración pendiente**.
-- Si faltan resultados, se permiten simulaciones de fichajes, pero no su confirmación.
-- Acceso a la futura aplicación real por invitación; un único administrador inicial.
+- 18 jugadores (15 sénior y 3 juniors), con posiciones dobles.
+- Quinteto de 5: al menos un BA y un interior AP/P **distintos**, otras 3 posiciones libres.
+- Tres transferencias por jornada, con validación en base de datos.
+- Desde J5, **sábado 7 de noviembre de 2026, 20:00** (Europe/Madrid); horario de próximas jornadas editable por administración según confirmación semanal.
+- Valoración ACB/PIR + bonus victoria del 20% solo si PIR positiva + bonus voto 3/2/1 del vestuario.
+- Votan todos los convocados, hayan jugado o no, durante las 72 horas después del final real.
+- Bróker provisional: variación máxima ±15% de precio por jornada jugada; ausentes mantienen precio. Fórmula definida en SQL (requiere calibración con datos reales).
+- Mercado bloqueado al inicio y hasta publicación de estadísticas y precios de la jornada anterior.
+- Un equipo por persona y temporada; acceso gratuito por invitación.
 
-## Estado y seguridad
+## Pendiente para lanzamiento
 
-El prototipo es una prueba local: contiene controles de administrador **simulados**. No constituye un sistema seguro, aunque esté guardado en un repositorio privado. No desplegar ni habilitar registros de usuarios reales hasta desarrollar autenticación, reglas RLS, operaciones transaccionales, importación validada, votaciones seguras y pruebas de privacidad. No subir contraseñas ni claves secretas.
+**Bloqueantes:** desplegar y probar base de datos RLS/RPC, crear administrador desde Auth, configurar public key, publicar Cloudflare Pages, configurar Auth URLs, revisar protección de menores y pruebas con dos cuentas. Consulta [la guía](docs/GO_LIVE.md).
 
-Infraestructura prevista: **GitHub → Cloudflare Pages** (frontend) + **Supabase** (PostgreSQL/Auth).
+**Mejoras siguientes, no prometer como presentes:** ligas privadas, duelos, pronósticos, notificaciones, juego multiclub operativo, comparación avanzada, equipo ideal automatizado, estadísticas de popularidad. La arquitectura está preparada para ampliarlas, pero estas funciones **no están implementadas aún**.
+
+**No subir claves secretas ni contraseñas a GitHub.** Las claves publicables de Supabase pueden entrar en la compilación estática; las secret keys jamás.
