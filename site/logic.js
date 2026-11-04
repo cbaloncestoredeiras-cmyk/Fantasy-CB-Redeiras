@@ -31,14 +31,27 @@ export function transferPlan(oldIds,newIds,cash,prices){
   return {removed,added,sales,buys,cashAfter:cash+sales-buys,changes:removed.length};
 }
 
-export function brokerEstimate(price,points,played=true){
-  if(!played)return {before:price,after:price,delta:0,expected:Math.max(0,(price-650000)/120000)};
-  const expected=Math.max(0,(price-650000)/120000);
-  const rate=Math.max(-.15,Math.min(.15,.03*(points-expected)));
-  let next=Math.round(Math.max(450000,price*(1+rate))/5000)*5000;
-  next=Math.max(450000,Math.min(Math.floor(price*1.15),Math.max(Math.ceil(price*.85),next)));
-  return {before:price,after:next,delta:next-price,expected,
-    thresholdPlus15:expected+5,thresholdMinus15:expected-5};
+// Browser-only preview; Supabase's private.next_price is authoritative.
+// ACB-like accumulated-average model tailored to Redeiras (not an exact ACB formula).
+// Every played match contributes equally; missed matches do not contribute.
+export function brokerEstimate(price,points,played=true,previousPoints=[]){
+  const history=(Array.isArray(previousPoints)?previousPoints:[]).map(Number).filter(Number.isFinite);
+  const pastTotal=history.reduce((sum,score)=>sum+score,0);
+  const games=history.length+1;
+  const average=(pastTotal+(Number(points)||0))/games;
+  const high=Math.floor(price*1.15/5000)*5000;
+  const low=Math.ceil(price*.85/5000)*5000;
+  const target=Math.round(Math.max(450000,450000+100000*average)/5000)*5000;
+  const after=played?Math.max(450000,Math.min(high,Math.max(low,target))):price;
+  const requiredScore=targetPrice=>((targetPrice-450000)/100000)*games-pastTotal;
+  return {
+    before:price,after,delta:after-price,
+    average:played?average:(history.length?pastTotal/history.length:null),
+    playedGames:history.length+(played?1:0),
+    target,expected:requiredScore(price),
+    thresholdPlus15:requiredScore(high),
+    thresholdMinus15:requiredScore(low)
+  };
 }
 
 export function pickUpcoming(fixtures,season){
