@@ -41,6 +41,8 @@ async function load(){
  const transfers=teams.length?await toPromise(c.from('transfers').select('*').eq('team_id',teams[0].id).order('executed_at',{ascending:true})):[];
  const rankR=await c.rpc('fantasy_leaderboard',{p_season:season.id});
  if(rankR.error)throw rankR.error;
+ const metricsR=role==='admin'?await c.rpc('fantasy_admin_metrics',{p_club:clubId}):{data:null,error:null};
+ if(metricsR.error)throw metricsR.error;
  const priceMap=Object.fromEntries(priceRows.map(p=>[p.player_id,p.price]));
  const positionMap={};for(const p of positions){if(!positionMap[p.player_id])positionMap[p.player_id]=[];positionMap[p.player_id].push(p.position);}
  const fullPlayers=players.map(p=>({...p,positions:positionMap[p.id]||[]}));
@@ -48,7 +50,7 @@ async function load(){
  state.data={role,club:clubR.data,season,players:fullPlayers,playerMap,prices:priceMap,fixtures,
  team:teams[0]||null,roster:roster.map(r=>r.player_id),transfers,leaderboard:rankR.data||[],
  alias:alias[0]?.display_name||'Redeirista',callups,eligibleFixtures:eligible.map(x=>x.fixture_id),
- linkedPlayer:voterAccount[0]?.player_id||null,stats,history};
+ linkedPlayer:voterAccount[0]?.player_id||null,stats,history,metrics:metricsR.data};
  state.draft=[...state.data.roster];
  present();
 }
@@ -77,6 +79,13 @@ function showPlayer(id){
 async function interact(action,element){
  if(action==='logout'){await state.client?.auth.signOut();state.session=null;state.data=null;renderAuth();return;}
  if(action==='retry'){await refresh();return;}
+ if(action==='set-alias'){
+   const alias=prompt('Alias público (2-40 caracteres):',state.data?.alias||'');
+   if(alias===null)return;
+   if(alias.trim().length<2||alias.trim().length>40)throw Error('O alias debe ter entre 2 e 40 caracteres');
+   await rpc('fantasy_set_alias',{p_alias:alias.trim()});
+   toast('Alias gardado');await refresh();return;
+ }
  if(action==='close-modal'){state.modal?.remove();state.modal=null;return;}
  if(action==='toggle'){
   const id=element.dataset.id;
