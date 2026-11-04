@@ -188,7 +188,7 @@ end; $$;
 
 -- Rankings show ONLY chosen team/alias, never email addresses.
 create or replace function public.fantasy_leaderboard(p_season uuid)
-returns table(position bigint,team_id uuid,team_name text,manager_alias text,total_points numeric)
+returns table("position" bigint,team_id uuid,team_name text,manager_alias text,total_points numeric)
 language plpgsql stable security definer set search_path=''
 as $$
 declare v_club uuid;
