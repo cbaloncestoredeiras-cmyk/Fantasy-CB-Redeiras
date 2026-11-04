@@ -127,7 +127,7 @@ root.addEventListener('click',async e=>{
 root.addEventListener('submit',async e=>{
  if(e.target.id!=='auth')return;
  e.preventDefault();
- const btn=e.target.querySelector('button'),email=e.target.email.value.trim().toLowerCase();btn.disabled=true;
+ const btn=e.target.querySelector('button'),email=e.target.elements.namedItem('email').value.trim().toLowerCase();btn.disabled=true;
  try{
   const {error}=await state.client.auth.signInWithOtp({email,options:{shouldCreateUser:false,emailRedirectTo:location.origin}});
   if(error)throw error;
