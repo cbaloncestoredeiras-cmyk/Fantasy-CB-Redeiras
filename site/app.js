@@ -155,6 +155,6 @@ root.addEventListener('change',async e=>{
   try{const msg=await handleStatsFile(e.target.files[0]);toast(msg);present();}catch(error){toast(error.message||String(error),true);}
  }
 });
-document.addEventListener('click',e=>{if(e.target===state.modal){state.modal.remove();state.modal=null;}});
+document.addEventListener('click',e=>{if(state.modal&&(e.target===state.modal||e.target.closest('[data-action="close-modal"]'))){state.modal.remove();state.modal=null;}});
 window.addEventListener('keydown',e=>{if(e.key==='Escape'&&state.modal){state.modal.remove();state.modal=null;}});
 init().catch(err=>missingDb(err));
