@@ -7,6 +7,10 @@ const getStat=(id)=>state.importRows?.find(r=>r.player_id===id)||state.data.stat
 export function adminView(){
  const d=state.data,fixture=selectedFixture();if(!admin())return pageHeader('Administración','Acceso restrinxido.');
  const lines=[
+ '<div class="grid four" style="margin-bottom:16px">'+[
+ ['Participantes',d.metrics?.members||0],['Equipos Fantasy',d.metrics?.teams||0],
+ ['Juniors',d.metrics?.juniors||0],['Xornadas publicadas',d.metrics?.finalized_rounds||0]
+ ].map(x=>panel('<div class="kpi-label">'+x[0]+'</div><div class="kpi">'+x[1]+'</div>')).join('')+'</div>',
  '<div class="notice '+(d.season.active?'info':'')+'">'+(d.season.active?'Tempada activa. Revisa horarios e resultados antes de publicar.':'TEMPADA DESACTIVADA: o mercado non admite equipos. Actívaa só cando se completen as probas e haxa participantes preparados.')+'</div>',
  (!d.season.active?'<button class="btn primary" data-action="activate-season" style="margin:13px 0">Activar tempada</button>':''),
  '<div class="field" style="margin:17px 0"><label>Xornada de traballo</label><select id="admin-fixture">'+d.fixtures.map(f=>option(f.id,'X'+f.round_number+' · '+f.opponent,fixture?.id)).join('')+'</select></div>',
