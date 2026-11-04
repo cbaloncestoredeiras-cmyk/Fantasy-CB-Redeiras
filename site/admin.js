@@ -25,7 +25,7 @@ export function adminView(){
  panel('<h2>Invitar participantes</h2><p>Podes invitar usuarios desde o panel de autenticación de Supabase. A función automática de invitación require ter despregada a Edge Function correspondente.</p><div class="stack"><div class="field"><label>Correo</label><input id="invite-email" type="email" placeholder="correo@exemplo.com"></div><div class="field"><label>Rol</label><select id="invite-role"><option value="participant">Participante</option><option value="admin">Administrador</option></select></div><div class="field"><label>Vincular xogador para votar (opcional)</label><select id="invite-player">'+option('','Non vincular')+d.players.map(p=>option(p.id,p.name)).join('')+'</select></div><label class="mini"><input type="checkbox" id="invite-privacy"> Confirmo que o club verificou a autorización e información de privacidade necesarias para esta persoa (especialmente se é menor).</label><button class="btn primary" data-action="send-invite">Enviar invitación</button></div>')
  ,'</div>'
  ];
- return pageHeader('Panel de administración','Só persoas autorizadas. Todos os cambios sensibles rexístranse.')+lines.join('<div style="height:17px"></div>');
+ return pageHeader('Panel de administración','Só persoas autorizadas. Todos os cambios sensibles rexístranse.')+lines.join('');
 }
 function val(id,selector){return document.getElementById(id)?.value??selector??''}
 async function localToIso(v){if(!v)throw Error('Indica a data e a hora');return await rpc('fantasy_local_time',{p_clock:v});}
@@ -42,7 +42,7 @@ export async function adminAction(action){
       const mins=Number(document.querySelector('[data-stat-min="'+p.id+'"]')?.value||0);
       const pir=Number(document.querySelector('[data-stat-pir="'+p.id+'"]')?.value||0);
       const points=Number(document.querySelector('[data-stat-pts="'+p.id+'"]')?.value||0);
-      return {player_id:p.id,played,minutes:mins,pir,points,source_format:state.importRows?'csv':'manual'};
+      return {player_id:p.id,played,minutes:mins,pir,points,source_format:state.importRows?.find(r=>r.player_id===p.id)?.source_format||'manual'};
     });
     await rpc('fantasy_save_stats',{p_fixture:f.id,p_rows:rows});state.importRows=null;state.rawPdf='';break;
   }
