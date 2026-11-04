@@ -49,10 +49,15 @@ function home(){
  panel('<h2>Clasificación · Top 5</h2>'+(d.leaderboard.length?d.leaderboard.slice(0,5).map(x=>'<div class="row" style="padding:9px 0;border-bottom:1px solid #edf2f5"><b>'+x.position+'. '+h(x.team_name)+'</b><span>'+pts(x.total_points)+' pts</span></div>').join(''):empty('Aínda non hai equipos inscritos','♙'))+'<button class="btn secondary" data-page="ranking" style="margin-top:14px">Ver toda a clasificación</button>')+'</div>';
 }
 function marketTable(){
- const d=state.data;
+ const d=state.data,round=current().pending?.round_number||5;
  const list=d.players.filter(p=>(state.filter==='all'||p.positions.includes(state.filter)||(state.filter==='junior'&&p.category==='junior'))&&p.name.toLowerCase().includes(state.search.toLowerCase())).sort((a,b)=>(prices()[b.id]||0)-(prices()[a.id]||0));
  const draft=state.draft;
- return '<div class="tablewrap"><table class="table"><thead><tr><th>Xogador</th><th>Posicións</th><th class="num">Prezo</th><th class="num">Acción</th></tr></thead><tbody>'+list.map(p=>'<tr><td>'+person(p)+'</td><td><span class="tag '+(p.category==='junior'?'junior':'')+'">'+(p.category==='junior'?'JÚNIOR · ':'')+h(p.positions.join(' / '))+'</span></td><td class="num"><b>'+euroShort(prices()[p.id])+'</b></td><td class="num"><div class="actions" style="justify-content:flex-end"><button class="btn small secondary" data-player="'+p.id+'">Detalles</button><button class="btn small '+(draft.includes(p.id)?'danger':'primary')+'" data-action="toggle" data-id="'+p.id+'">'+(draft.includes(p.id)?'Quitar':'Fichar')+'</button></div></td></tr>').join('')+'</tbody></table></div>';
+ return '<div class="tablewrap"><table class="table"><thead><tr><th>Xogador</th><th>Posicións</th><th class="num">Prezo</th><th class="num">Acción</th></tr></thead><tbody>'+
+ list.map(p=>{
+   const future=p.available_from_round>round;
+   const btn=future?'<span class="tag warn">Desde X'+p.available_from_round+'</span>':'<button class="btn small '+(draft.includes(p.id)?'danger':'primary')+'" data-action="toggle" data-id="'+p.id+'">'+(draft.includes(p.id)?'Quitar':'Fichar')+'</button>';
+   return '<tr><td>'+person(p)+'</td><td><span class="tag '+(p.category==='junior'?'junior':'')+'">'+(p.category==='junior'?'JÚNIOR · ':'')+h(p.positions.join(' / '))+'</span></td><td class="num"><b>'+euroShort(prices()[p.id])+'</b></td><td class="num"><div class="actions" style="justify-content:flex-end"><button class="btn small secondary" data-player="'+p.id+'">Detalles</button>'+btn+'</div></td></tr>';
+ }).join('')+'</tbody></table></div>';
 }
 function market(){
  const d=state.data,{pending,open}=current();
