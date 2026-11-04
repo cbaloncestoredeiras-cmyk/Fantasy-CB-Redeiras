@@ -12,9 +12,10 @@ export function validateLineup(ids,players,prices){
   const unique=[...new Set(ids)];
   const chosen=unique.map(id=>players[id]).filter(Boolean);
   const cost=chosen.reduce((s,p)=>s+(prices[p.id]||0),0);
-  const base=chosen.find(p=>hasPosition(p,'BA'));
-  const inside=chosen.find(p=>isInterior(p)&&p.id!==base?.id);
-  const valid=ids.length===5&&unique.length===5&&chosen.length===5&&!!base&&!!inside;
+  const pair=chosen.flatMap(b=>hasPosition(b,'BA')?chosen.filter(i=>i.id!==b.id&&isInterior(i)).map(i=>[b,i]):[])[0];
+  const base=pair?.[0]||chosen.find(p=>hasPosition(p,'BA'));
+  const inside=pair?.[1]||null;
+  const valid=ids.length===5&&unique.length===5&&chosen.length===5&&!!pair;
   return {valid,cost,base:base?.id||null,inside:inside?.id||null,
     errors:[...(ids.length!==5?['Precisas exactamente 5 xogadores']:[]),
     ...(unique.length!==ids.length?['Hai xogadores repetidos']:[]),
