@@ -1,0 +1,169 @@
+[
+  {
+    "id": "juan",
+    "nombre": "Juan",
+    "posiciones": [
+      "BA",
+      "ES"
+    ],
+    "precio": 2300000
+  },
+  {
+    "id": "yoel",
+    "nombre": "Yoel",
+    "posiciones": [
+      "BA",
+      "ES"
+    ],
+    "precio": 2150000,
+    "premios_ledicia": 2
+  },
+  {
+    "id": "adri",
+    "nombre": "Adri",
+    "posiciones": [
+      "P",
+      "AP"
+    ],
+    "precio": 1800000
+  },
+  {
+    "id": "mario",
+    "nombre": "Mario",
+    "posiciones": [
+      "AP",
+      "P"
+    ],
+    "precio": 1650000
+  },
+  {
+    "id": "edu",
+    "nombre": "Edu",
+    "posiciones": [
+      "AP",
+      "P"
+    ],
+    "precio": 1350000
+  },
+  {
+    "id": "diego",
+    "nombre": "Diego",
+    "posiciones": [
+      "ES",
+      "BA"
+    ],
+    "precio": 1300000
+  },
+  {
+    "id": "brais",
+    "nombre": "Brais",
+    "posiciones": [
+      "AL",
+      "ES"
+    ],
+    "precio": 1200000
+  },
+  {
+    "id": "luca",
+    "nombre": "Luca",
+    "posiciones": [
+      "AL",
+      "ES"
+    ],
+    "precio": 1200000
+  },
+  {
+    "id": "alvaro",
+    "nombre": "Álvaro",
+    "posiciones": [
+      "BA",
+      "ES"
+    ],
+    "precio": 1200000
+  },
+  {
+    "id": "adan",
+    "nombre": "Adán",
+    "posiciones": [
+      "AL",
+      "AP"
+    ],
+    "precio": 1100000
+  },
+  {
+    "id": "manuel",
+    "nombre": "Manuel",
+    "posiciones": [
+      "AP",
+      "AL"
+    ],
+    "precio": 1100000
+  },
+  {
+    "id": "sergio",
+    "nombre": "Sergio",
+    "posiciones": [
+      "ES",
+      "AL"
+    ],
+    "precio": 900000
+  },
+  {
+    "id": "ivan",
+    "nombre": "Iván",
+    "posiciones": [
+      "BA",
+      "ES"
+    ],
+    "precio": 850000
+  },
+  {
+    "id": "alex",
+    "nombre": "Álex",
+    "posiciones": [
+      "AL",
+      "AP"
+    ],
+    "precio": 800000
+  },
+  {
+    "id": "iago",
+    "nombre": "Iago",
+    "posiciones": [
+      "AL",
+      "AP"
+    ],
+    "precio": 800000
+  },
+  {
+    "id": "mateo",
+    "nombre": "Mateo",
+    "posiciones": [
+      "BA",
+      "ES"
+    ],
+    "precio": 1000000,
+    "premios_ledicia": 1,
+    "junior": true
+  },
+  {
+    "id": "gil",
+    "nombre": "Gil",
+    "posiciones": [
+      "ES",
+      "BA"
+    ],
+    "precio": 1050000,
+    "junior": true
+  },
+  {
+    "id": "yosue",
+    "nombre": "Yosue",
+    "posiciones": [
+      "AL",
+      "AP"
+    ],
+    "precio": 850000,
+    "junior": true
+  }
+]
