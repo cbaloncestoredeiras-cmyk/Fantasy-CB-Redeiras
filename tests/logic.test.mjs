@@ -37,7 +37,7 @@ test('broker is capped to +/- 15 percent with 450k floor',()=>{
  const current=1_800_000;
  const high=brokerEstimate(current,100,true).after;
  const low=brokerEstimate(current,-100,true).after;
- assert.ok(high<=current*1.15);assert.ok(low>=current*.85);
+ assert.ok(high*100<=current*115);assert.ok(low*100>=current*85);
  assert.ok(brokerEstimate(450000,-100,true).after>=450000);
 });
 test('cumulative-average broker can RISE despite a negative second match',()=>{
