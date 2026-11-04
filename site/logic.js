@@ -39,8 +39,8 @@ export function brokerEstimate(price,points,played=true,previousPoints=[]){
   const pastTotal=history.reduce((sum,score)=>sum+score,0);
   const games=history.length+1;
   const average=(pastTotal+(Number(points)||0))/games;
-  const high=Math.floor(price*1.15/5000)*5000;
-  const low=Math.ceil(price*.85/5000)*5000;
+  const high=Math.floor(price*115/(100*5000))*5000;
+  const low=Math.ceil(price*85/(100*5000))*5000;
   const target=Math.round(Math.max(450000,450000+100000*average)/5000)*5000;
   const after=played?Math.max(450000,Math.min(high,Math.max(low,target))):price;
   const requiredScore=targetPrice=>((targetPrice-450000)/100000)*games-pastTotal;
