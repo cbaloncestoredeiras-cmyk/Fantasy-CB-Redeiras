@@ -35,7 +35,7 @@ async function load(){
  toPromise(c.from('eligible_voters').select('fixture_id').eq('user_id',u.id)),
  toPromise(c.from('player_accounts').select('player_id').eq('user_id',u.id)),
  toPromise(c.from('game_stats').select('*')),
- toPromise(c.from('price_history').select('player_id,round_number,price_before,price_after').eq('season_id',season.id).order('round_number',{ascending:false}))
+ toPromise(c.from('price_history').select('player_id,round_number,price_before,price_after,accumulated_average,played_games').eq('season_id',season.id).order('round_number',{ascending:false}))
  ]);
  const roster=teams.length?await toPromise(c.from('team_rosters').select('player_id').eq('team_id',teams[0].id)):[];
  const transfers=teams.length?await toPromise(c.from('transfers').select('*').eq('team_id',teams[0].id).order('executed_at',{ascending:true})):[];
@@ -70,10 +70,16 @@ async function init(){
  });
 }
 function showPlayer(id){
- const p=player(id);if(!p)return;const cost=prices()[id],estimate=brokerEstimate(cost,0,true);
+ const p=player(id);if(!p)return;
+ const cost=prices()[id];
+ const finished=new Set(state.data.fixtures.filter(f=>f.status==='finalized').map(f=>f.id));
+ const pastScores=state.data.stats
+  .filter(s=>s.player_id===id&&finished.has(s.fixture_id)&&s.played&&s.fantasy_points!==null)
+  .map(s=>Number(s.fantasy_points));
+ const estimate=brokerEstimate(cost,0,true,pastScores);
  const hist=state.data.history.filter(x=>x.player_id===id).slice(0,8);
  const el=document.createElement('div');el.className='modalcover';
- el.innerHTML='<div class="modal" role="dialog" aria-modal="true" aria-label="Perfil do xogador"><div class="row"><div class="person"><span class="playerlogo" style="width:54px;height:54px;font-size:20px">'+h(p.name.slice(0,2).toUpperCase())+'</span><div><h2 style="margin:0">'+h(p.name)+'</h2><p class="mini">'+h(p.positions.join(' / '))+(p.category==='junior'?' · JÚNIOR':'')+'</p></div></div><button class="btn secondary" data-action="close-modal">Pechar</button></div><hr class="separator"><div class="grid three"><div><div class="kpi-label">Prezo actual</div><div class="kpi">'+euroShort(cost)+'</div></div><div><div class="kpi-label">Puntuación obxectivo</div><div class="kpi">'+pts(estimate.expected)+'</div></div><div><div class="kpi-label">Máxima variación</div><div class="kpi">±15 %</div></div></div><div class="notice info" style="margin:15px 0">Bróker orientativo: +15 % arredor de '+pts(estimate.thresholdPlus15)+' puntos Fantasy; −15 % arredor de '+pts(estimate.thresholdMinus15)+'. Por arredondamentos a variación final pode ser menor. Sen xogar, o prezo permanece.</div><h3>Historial de prezo</h3>'+(hist.length?hist.map(x=>'<div class="row" style="padding:8px 0;border-bottom:1px solid #e8eef3"><span>X'+x.round_number+'</span><b>'+euroShort(x.price_before)+' → '+euroShort(x.price_after)+'</b></div>').join(''):'<p class="help">Aínda non hai variacións publicadas.</p>')+'</div>';
+ el.innerHTML='<div class="modal" role="dialog" aria-modal="true" aria-label="Perfil do xogador"><div class="row"><div class="person"><span class="playerlogo" style="width:54px;height:54px;font-size:20px">'+h(p.name.slice(0,2).toUpperCase())+'</span><div><h2 style="margin:0">'+h(p.name)+'</h2><p class="mini">'+h(p.positions.join(' / '))+(p.category==='junior'?' · JÚNIOR':'')+'</p></div></div><button class="btn secondary" data-action="close-modal">Pechar</button></div><hr class="separator"><div class="grid three"><div><div class="kpi-label">Prezo actual</div><div class="kpi">'+euroShort(cost)+'</div></div><div><div class="kpi-label">Puntos para manter o prezo</div><div class="kpi">'+pts(estimate.expected)+'</div></div><div><div class="kpi-label">Máxima variación</div><div class="kpi">±15 %</div></div></div><div class="notice info" style="margin:15px 0">Bróker por media acumulada · '+pastScores.length+' partidos puntuados. Para subir ata +15 % precisa arredor de '+pts(estimate.thresholdPlus15)+' puntos Fantasy no próximo partido; para baixar ata −15 %, arredor de '+pts(estimate.thresholdMinus15)+'. Pode subir incluso cunha valoración negativa se a media acumulada segue sendo alta. Os límites e os arredondamentos poden modificar o resultado; sen xogar, o prezo non cambia.</div><h3>Historial de prezo</h3>'+(hist.length?hist.map(x=>'<div class="row" style="padding:8px 0;border-bottom:1px solid #e8eef3"><span>X'+x.round_number+'</span><b>'+euroShort(x.price_before)+' → '+euroShort(x.price_after)+(x.accumulated_average!==null&&x.accumulated_average!==undefined?' · Media '+pts(x.accumulated_average):'')+'</b></div>').join(''):'<p class="help">Aínda non hai variacións publicadas.</p>')+'</div>';
  document.body.append(el);state.modal=el;
 }
 async function interact(action,element){
