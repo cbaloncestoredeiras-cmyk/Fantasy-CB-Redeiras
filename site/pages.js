@@ -91,7 +91,7 @@ function team(){
 }
 function ranking(){
  const d=state.data;return pageHeader('Clasificación xeral','A puntuación acumúlase coas valoracións publicadas de cada xornada.')+
- panel('<h2>Equipos participantes</h2><div class="tablewrap"><table class="table"><thead><tr><th>#</th><th>Equipo Fantasy</th><th>Mánager</th><th class="num">Puntos</th></tr></thead><tbody>'+d.leaderboard.map(t=>'<tr><td><b>'+t.position+'</b></td><td><b>'+h(t.team_name)+'</b>'+(d.team?.id===t.team_id?' <span class="tag good">TI</span>':'')+'</td><td>'+h(t.manager_alias)+'</td><td class="num"><b>'+pts(t.total_points)+'</b></td></tr>').join('')+'</tbody></table></div>'+(d.leaderboard.length?'':empty('Aínda non hai puntuacións nin equipos','♛'))+'</section>');
+ panel('<h2>Equipos participantes</h2><div class="tablewrap"><table class="table"><thead><tr><th>#</th><th>Equipo Fantasy</th><th>Mánager</th><th class="num">Puntos</th></tr></thead><tbody>'+d.leaderboard.map(t=>'<tr><td><b>'+t.position+'</b></td><td><b>'+h(t.team_name)+'</b>'+(d.team?.id===t.team_id?' <span class="tag good">TI</span>':'')+'</td><td>'+h(t.manager_alias)+'</td><td class="num"><b>'+pts(t.total_points)+'</b></td></tr>').join('')+'</tbody></table></div>'+(d.leaderboard.length?'':empty('Aínda non hai puntuacións nin equipos','♛')) );
 }
 function calendar(){
  const d=state.data,{pending}=current();return pageHeader('Calendario de partidos','Os horarios definitivos confírmanse cada martes e poden cambiar.')+
@@ -102,3 +102,5 @@ function voting(){
  return pageHeader('Votación do vestiario','Os convocados poden dar 3, 2 e 1 punto a tres compañeiros. Non se permite o autovoto.')+
  (usable.length?usable.map(f=>panel('<h2>Votación · Xornada '+f.round_number+'</h2><p>Prazo ata '+dateText(new Date(new Date(f.ended_at).getTime()+72*3600e3).toISOString())+'. Os votos permanecen privados ata pechar.</p><div class="vote-grid">'+[3,2,1].map(w=>'<div class="field"><label>'+w+' puntos</label><select id="vote-'+w+'">'+option('','Escoller xogador')+d.callups.filter(c=>c.fixture_id===f.id&&c.player_id!==d.linkedPlayer).map(c=>option(c.player_id,player(c.player_id)?.name||'?')).join('')+'</select></div>').join('')+'</div><button class="btn primary" data-action="vote" data-fixture="'+f.id+'" style="margin-top:18px">Enviar votación</button>') ).join(''):panel(empty('Non tes votacións abertas. Só os xogadores convocados poden votar durante as 72 h posteriores ao partido.','✦')));
 }
+
+export {state,renderAuth,renderForbidden,shell,home,market,marketTable,team,ranking,calendar,voting,toast,rpc,query,admin,current,player,prices,h,dateText,panel,pageHeader,person,option,euroShort};
