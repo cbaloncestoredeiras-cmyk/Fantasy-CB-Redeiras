@@ -1,20 +1,30 @@
 # Fantasy CB Redeiras
 
-Aplicación de Fantasy del CB Redeiras. **Proyecto en desarrollo: todavía no apto para participantes reales.**
+Aplicación Fantasy del CB Redeiras. **En desarrollo: no apta todavía para participantes reales.**
 
-## Reglas aprobadas
-- 18 jugadores (15 sénior + Mateo, Gil y Yosue).
-- Presupuesto inicial: **6.000.000 €** virtuales.
-- Quinteto de cinco: mínimo un **BA** y un **AP/P**, en dos jugadores distintos; tres plazas libres.
-- Tres transferencias por jornada.
-- Inicio previsto: jornada 5, sábado 7 de noviembre de 2026 a las 20:00 (Europe/Madrid). Los horarios se actualizan los martes.
-- Puntuación ACB/PIR, +20 % de bonificación por victoria sobre valoración positiva y votación del vestuario (3/2/1) durante 72 horas tras el final.
-- Bróker limitado a ±15 % por jornada, fórmula por calibrar.
-- Se pueden simular fichajes con estadísticas pendientes, pero no confirmarlos.
-- Acceso por invitación; un administrador inicial.
+## Lo que hay ahora
 
-## Estado técnico
-Este repositorio ya contiene los datos iniciales de jugadores y las instrucciones de despliegue. El prototipo V5 aún no se ha subido completo. Antes de publicar faltan la aplicación multiusuario, autenticación, RLS, operaciones de fichajes transaccionales, importación de estadísticas, votaciones y pruebas.
+- [Prototipo interactivo V5](prototype/index.html): funciona en el navegador con datos locales. **No dispone de autenticación real ni de base de datos compartida**.
+- [Textos legales provisionales](prototype/legal.html): requieren verificación antes de abrir registros, particularmente para menores.
+- [Datos y precios iniciales de los 18 jugadores](data/jugadores.json).
+- [Calendario](data/calendario.csv).
+- [Pasos para preparar el despliegue](docs/despliegue.md).
 
-## Infraestructura prevista
-Cloudflare Pages + Supabase. No publicar claves privadas ni datos personales de participantes en GitHub.
+## Reglas confirmadas
+
+- 18 jugadores (15 sénior y 3 juniors: Mateo, Gil y Yosue).
+- Presupuesto inicial **6.000.000 € virtuales**.
+- Quinteto de **5**: al menos **1 BA** y **1 AP/P**, ocupados por dos jugadores distintos; 3 plazas libres.
+- Máximo **3 transferencias por jornada**.
+- Inicio previsto: jornada 5, sábado **7/11/2026, 20:00** (Europe/Madrid). Horarios modificables cuando se confirman los martes.
+- Puntuación: valoración ACB/PIR, bonus de victoria del 20 % sobre valoración positiva y premio por votaciones del vestuario.
+- Votan convocados con 3/2/1 a tres compañeros distintos; ventana de 72 horas desde el fin del encuentro.
+- Bróker: cambio de precio máximo ±15 % por jornada. **Calibración pendiente**.
+- Si faltan resultados, se permiten simulaciones de fichajes, pero no su confirmación.
+- Acceso a la futura aplicación real por invitación; un único administrador inicial.
+
+## Estado y seguridad
+
+El prototipo es una prueba local: contiene controles de administrador **simulados**. No constituye un sistema seguro, aunque esté guardado en un repositorio privado. No desplegar ni habilitar registros de usuarios reales hasta desarrollar autenticación, reglas RLS, operaciones transaccionales, importación validada, votaciones seguras y pruebas de privacidad. No subir contraseñas ni claves secretas.
+
+Infraestructura prevista: **GitHub → Cloudflare Pages** (frontend) + **Supabase** (PostgreSQL/Auth).
