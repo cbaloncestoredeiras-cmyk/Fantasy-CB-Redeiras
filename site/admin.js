@@ -22,19 +22,19 @@ export function adminView(){
  panel('<h2>Publicar xornada e Bróker</h2><p>A publicación calcula valoración + bonus de vitoria + votos, conxelando o quinteto, recalculando prezos e xerando a clasificación. Por seguridade só é posible 72 h despois do final real, con estatísticas gardadas.</p><div class="notice">Esta operación é definitiva. Verifica antes o PIR de cada xogador, a convocatoria, os resultados e a data real de finalización.</div><button class="btn primary" data-action="publish-round" style="margin-top:14px">Publicar xornada '+(fixture?.round_number||'')+'</button>'),
  '<div class="grid two">',
  panel('<h2>Engadir un junior</h2><div class="stack"><div class="field"><label>Nome</label><input id="junior-name" placeholder="Nome deportivo"></div><div class="field"><label>Posicións (separadas por coma)</label><input id="junior-positions" placeholder="BA, ES"></div><div class="field"><label>Prezo inicial virtual (€)</label><input id="junior-price" type="number" min="450000" max="5000000" step="50000" value="800000"></div><div class="field"><label>Dispoñible desde a xornada</label><input id="junior-round" type="number" min="5" value="'+(current().pending?.round_number||5)+'"></div><button class="btn primary" data-action="add-junior">Engadir ao mercado</button></div>'),
- panel('<h2>Invitar participantes</h2><p>Podes invitar usuarios desde o panel de autenticación de Supabase. A función automática de invitación require ter despregada a Edge Function correspondente.</p><div class="stack"><div class="field"><label>Correo</label><input id="invite-email" type="email" placeholder="correo@exemplo.com"></div><div class="field"><label>Rol</label><select id="invite-role"><option value="participant">Participante</option><option value="admin">Administrador</option></select></div><div class="field"><label>Vincular xogador para votar (opcional)</label><select id="invite-player">'+option('','Non vincular')+d.players.map(p=>option(p.id,p.name)).join('')+'</select></div><button class="btn primary" data-action="send-invite">Enviar invitación</button></div>')
+ panel('<h2>Invitar participantes</h2><p>Podes invitar usuarios desde o panel de autenticación de Supabase. A función automática de invitación require ter despregada a Edge Function correspondente.</p><div class="stack"><div class="field"><label>Correo</label><input id="invite-email" type="email" placeholder="correo@exemplo.com"></div><div class="field"><label>Rol</label><select id="invite-role"><option value="participant">Participante</option><option value="admin">Administrador</option></select></div><div class="field"><label>Vincular xogador para votar (opcional)</label><select id="invite-player">'+option('','Non vincular')+d.players.map(p=>option(p.id,p.name)).join('')+'</select></div><label class="mini"><input type="checkbox" id="invite-privacy"> Confirmo que o club verificou a autorización e información de privacidade necesarias para esta persoa (especialmente se é menor).</label><button class="btn primary" data-action="send-invite">Enviar invitación</button></div>')
  ,'</div>'
  ];
  return pageHeader('Panel de administración','Só persoas autorizadas. Todos os cambios sensibles rexístranse.')+lines.join('<div style="height:17px"></div>');
 }
 function val(id,selector){return document.getElementById(id)?.value??selector??''}
-function localToIso(v){if(!v)throw Error('Indica a data e a hora');const d=new Date(v);if(Number.isNaN(d.getTime()))throw Error('Data incorrecta');return d.toISOString();}
+async function localToIso(v){if(!v)throw Error('Indica a data e a hora');return await rpc('fantasy_local_time',{p_clock:v});}
 export async function adminAction(action){
  const f=selectedFixture();if(!f)return toast('Non hai xornada dispoñible',true);
  switch(action){
   case 'activate-season':await rpc('fantasy_activate_season',{p_season:state.data.season.id});break;
-  case 'update-kickoff':await rpc('fantasy_set_kickoff',{p_fixture:f.id,p_time:localToIso(val('kickoff-time')),p_reason:val('kickoff-reason')});break;
-  case 'update-end':await rpc('fantasy_set_end',{p_fixture:f.id,p_time:localToIso(val('end-time')),p_won:val('end-won')==='true'});break;
+  case 'update-kickoff':await rpc('fantasy_set_kickoff',{p_fixture:f.id,p_time:await localToIso(val('kickoff-time')),p_reason:val('kickoff-reason')});break;
+  case 'update-end':await rpc('fantasy_set_end',{p_fixture:f.id,p_time:await localToIso(val('end-time')),p_won:val('end-won')==='true'});break;
   case 'save-callups':await rpc('fantasy_set_callups',{p_fixture:f.id,p_players:[...document.querySelectorAll('.callup-box:checked')].map(x=>x.value)});break;
   case 'save-stats':{
     const rows=state.data.players.map(p=>{
@@ -51,8 +51,8 @@ export async function adminAction(action){
     await rpc('fantasy_publish_fixture',{p_fixture:f.id});break;
   case 'add-junior':await rpc('fantasy_add_junior',{p_season:state.data.season.id,p_name:val('junior-name'),p_positions:val('junior-positions').split(',').map(x=>x.trim().toUpperCase()).filter(Boolean),p_price:Number(val('junior-price')),p_from_round:Number(val('junior-round'))});break;
   case 'send-invite':{
-    const email=val('invite-email').trim(),role=val('invite-role'),linkedPlayer=val('invite-player')||null;
-    const {data,error}=await state.client.functions.invoke('invite-user',{body:{clubId:state.data.club.id,email,role,linkedPlayer}});
+    const email=val('invite-email').trim(),role=val('invite-role'),linkedPlayer=val('invite-player')||null;const privacyVerified=!!document.getElementById('invite-privacy')?.checked; if(!privacyVerified)throw Error('Confirma a verificación de privacidade antes de invitar');
+    const {data,error}=await state.client.functions.invoke('invite-user',{body:{clubId:state.data.club.id,email,role,linkedPlayer,privacyVerified}});
     if(error)throw Error('A función de invitación non está lista ou devolveu un erro: '+error.message);
     if(data?.error)throw Error(data.error);
     break;
