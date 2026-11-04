@@ -9,7 +9,7 @@ function toast(message,error=false){document.querySelector('.toast')?.remove();c
 const dateText=(v,opts={day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'})=>v?new Intl.DateTimeFormat('gl-ES',{timeZone:'Europe/Madrid',...opts}).format(new Date(v)):'Horario por confirmar';
 const euroShort=n=>new Intl.NumberFormat('es-ES',{maximumFractionDigits:2}).format((n||0)/1000000)+' M€';
 const admin=()=>state.data?.role==='admin';
-const current=()=>pickUpcoming(state.data.fixtures,state.data.season);
+const current=()=>{const result=pickUpcoming(state.data.fixtures,state.data.season);return {...result,open:Boolean(state.data.season?.active&&result.open)};};
 const player=(id)=>state.data?.playerMap[id];
 const prices=()=>state.data?.prices||{};
 const option=(value,label,selected='')=>'<option value="'+h(value)+'"'+(String(value)===String(selected)?' selected':'')+'>'+h(label)+'</option>';
