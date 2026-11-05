@@ -108,15 +108,28 @@ function showPlayer(id){
  el.innerHTML='<div class="modal" role="dialog" aria-modal="true" aria-label="Perfil do xogador"><div class="row"><div class="person">'+playerAvatar(p,'profile-photo')+'<div><h2 style="margin:0">'+h(p.name)+'</h2><p class="mini">'+h(p.positions.join(' / '))+(p.category==='junior'?' · JÚNIOR':'')+'</p></div></div><button class="btn secondary" data-action="close-modal">Pechar</button></div><hr class="separator"><div class="grid three"><div><div class="kpi-label">Prezo actual</div><div class="kpi">'+euroShort(cost)+'</div></div><div><div class="kpi-label">Puntos para manter o prezo</div><div class="kpi">'+pts(estimate.expected)+'</div></div><div><div class="kpi-label">Máxima variación</div><div class="kpi">±15 %</div></div></div><div class="notice info" style="margin:15px 0">Bróker por media acumulada · '+pastScores.length+' partidos puntuados. Para subir ata +15 % precisa arredor de '+pts(estimate.thresholdPlus15)+' puntos Fantasy no próximo partido; para baixar ata −15 %, arredor de '+pts(estimate.thresholdMinus15)+'. Pode subir incluso cunha valoración negativa se a media acumulada segue sendo alta. Os límites e os arredondamentos poden modificar o resultado; sen xogar, o prezo non cambia.</div><h3>Historial de prezo</h3>'+(hist.length?hist.map(x=>'<div class="row" style="padding:8px 0;border-bottom:1px solid #e8eef3"><span>X'+x.round_number+'</span><b>'+euroShort(x.price_before)+' → '+euroShort(x.price_after)+(x.accumulated_average!==null&&x.accumulated_average!==undefined?' · Media '+pts(x.accumulated_average):'')+'</b></div>').join(''):'<p class="help">Aínda non hai variacións publicadas.</p>')+'</div>';
  document.body.append(el);state.modal=el;
 }
+function toggleMobileMore(open){
+ state.mobileMenuOpen=Boolean(open);
+ const overlay=root.querySelector('.mobile-more-backdrop');
+ if(overlay)overlay.hidden=!state.mobileMenuOpen;
+ const trigger=root.querySelector('[data-action="mobile-more"]');
+ trigger?.setAttribute('aria-expanded',String(state.mobileMenuOpen));
+ (state.mobileMenuOpen?root.querySelector('.menuclose'):trigger)?.focus();
+}
 async function interact(action,element){
+ if(action==='mobile-more'){toggleMobileMore(!state.mobileMenuOpen);return;}
+ if(action==='close-more'){toggleMobileMore(false);return;}
+
  if(action==='password-page'){
    if(!state.session)return;
+   state.mobileMenuOpen=false;
    state.page='security';present();return;
  }
 
- if(action==='logout'){await state.client?.auth.signOut();state.session=null;state.data=null;renderAuth();return;}
+ if(action==='logout'){await state.client?.auth.signOut();state.session=null;state.data=null;state.mobileMenuOpen=false;renderAuth();return;}
  if(action==='retry'){await refresh();return;}
  if(action==='set-alias'){
+   state.mobileMenuOpen=false;
    const alias=prompt('Alias público (2-40 caracteres):',state.data?.alias||'');
    if(alias===null)return;
    if(alias.trim().length<2||alias.trim().length>40)throw Error('O alias debe ter entre 2 e 40 caracteres');
@@ -162,6 +175,7 @@ async function interact(action,element){
  }
 }
 root.addEventListener('click',async e=>{
+ if(e.target.matches?.('[data-overlay="mobile-more"]')){toggleMobileMore(false);return;}
  const authModeButton=e.target.closest('[data-auth-mode]');
  if(authModeButton){
    state.authMode=authModeButton.dataset.authMode;
@@ -169,7 +183,7 @@ root.addEventListener('click',async e=>{
  }
  const element=e.target.closest('[data-action],[data-page],[data-player]');
  if(!element)return;
- if(element.dataset.page){state.page=element.dataset.page;state.search='';state.filter='all';window.scrollTo({top:0,behavior:'instant'});present();return;}
+ if(element.dataset.page){state.page=element.dataset.page;state.mobileMenuOpen=false;state.search='';state.filter='all';window.scrollTo({top:0,behavior:'instant'});present();root.querySelector('#main-content')?.focus({preventScroll:true});return;}
  if(element.dataset.player){showPlayer(element.dataset.player);return;}
  const action=element.dataset.action;if(!action)return;
  element.disabled=true;
@@ -246,5 +260,18 @@ root.addEventListener('change',async e=>{
  }
 });
 document.addEventListener('click',e=>{if(state.modal&&(e.target===state.modal||e.target.closest('[data-action="close-modal"]'))){state.modal.remove();state.modal=null;}});
-window.addEventListener('keydown',e=>{if(e.key==='Escape'&&state.modal){state.modal.remove();state.modal=null;}});
+window.addEventListener('keydown',e=>{
+ if(e.key==='Tab'&&state.mobileMenuOpen){
+   const sheet=root.querySelector('.mobile-more-sheet');
+   const focusable=[...(sheet?.querySelectorAll('button:not(:disabled),a[href]')||[])].filter(el=>el.getClientRects().length);
+   if(focusable.length){
+     const first=focusable[0],last=focusable[focusable.length-1],active=document.activeElement;
+     if(e.shiftKey&&(active===first||!sheet.contains(active))){e.preventDefault();last.focus();}
+     else if(!e.shiftKey&&(active===last||!sheet.contains(active))){e.preventDefault();first.focus();}
+   }
+ }
+ if(e.key!=='Escape')return;
+ if(state.modal){state.modal.remove();state.modal=null;}
+ else if(state.mobileMenuOpen){toggleMobileMore(false);}
+});
 init().catch(err=>missingDb(err));

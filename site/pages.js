@@ -2,7 +2,7 @@ import {euro,pts,escapeHtml as h,byId,validateLineup,transferPlan,brokerEstimate
 
 const cfg=window.FANTASY_CONFIG||{};
 const root=document.querySelector('#root');
-const state={client:null,session:null,page:'home',data:null,draft:[],search:'',filter:'all',modal:null,rawPdf:'',importRows:null,loading:false,authMode:'password',recoveringPassword:false};
+const state={client:null,session:null,page:'home',data:null,draft:[],search:'',filter:'all',modal:null,rawPdf:'',importRows:null,loading:false,authMode:'password',recoveringPassword:false,mobileMenuOpen:false};
 const LOGO='<img class="brand-emblem" src="assets/redeiras-logo.webp" alt="Escudo do CB Redeiras">';
 const NAV=[['home','⌂','Inicio'],['market','◫','Mercado'],['team','▣','O meu equipo'],['ranking','♛','Clasificación'],['calendar','▦','Calendario'],['vote','✦','Votación'],['admin','⚙','Administración']];
 function toast(message,error=false){document.querySelector('.toast')?.remove();const div=document.createElement('div');div.className='toast'+(error?' error':'');div.textContent=message;document.body.append(div);setTimeout(()=>div.remove(),6000);}
@@ -31,7 +31,7 @@ function renderAuth(){
  const title=mode==='setup'?'Crear contrasinal':mode==='reset'?'Recuperar contrasinal':'Entra no Fantasy';
  const description=mode==='setup'?'Xa recibiches unha invitación? Solicita unha ligazón de correo para crear a túa primeira contrasinal.':mode==='reset'?'Enviarémosche unha ligazón para establecer unha contrasinal nova.':'Introduce o correo da túa invitación e a túa contrasinal para acceder.';
  const emailField='<div class="field"><label for="auth-email">Correo electrónico</label><input id="auth-email" name="email" type="email" required autocomplete="email" placeholder="nome@exemplo.com"></div>';
- const passwordField='<div class="field"><label for="auth-password">Contrasinal</label><input id="auth-password" name="password" type="password" required autocomplete="current-password" placeholder="A túa contrasinal" minlength="8"></div>';
+ const passwordField='<div class="field"><label for="auth-password-input">Contrasinal</label><input id="auth-password-input" name="password" type="password" required autocomplete="current-password" placeholder="A túa contrasinal" minlength="8"></div>';
  const primary=mode==='setup'?'Enviar ligazón para crear contrasinal':mode==='reset'?'Enviar correo de recuperación':'Iniciar sesión';
  const form=mode==='setup'?'auth-setup':mode==='reset'?'auth-reset':'auth-password';
  const extras=mode==='password'
@@ -50,8 +50,15 @@ function renderForbidden(){
 function shell(body){
  const d=state.data,{pending,open}=current(),hasTeam=!!d.team;
  const status=open?'Mercado aberto':'Mercado pechado';
- const nav= NAV.filter(n=>n[0]!=='admin'||admin());
- root.innerHTML='<div class="layout"><aside class="sidebar"><div class="brand">'+LOGO+'<div><b>FANTASY</b><small>CB REDEIRAS</small></div></div><div class="navgroup">COMPETICIÓN</div>'+nav.map(n=>'<button class="nav '+(state.page===n[0]?'active':'')+'" data-page="'+n[0]+'"><span class="sym">'+n[1]+'</span>'+n[2]+(n[0]==='team'&&!hasTeam?'<span class="smallmark">NOVO</span>':'')+'</button>').join('')+'<div class="sidefoot"><b>'+h(d.alias||'Participante')+'</b><small>'+h(state.session.user.email)+'</small><button data-action="set-alias">Editar alias</button> <button data-action="password-page">Contrasinal</button> <button data-action="logout">Saír</button></div></aside><div class="content"><header class="topbar"><div><span class="eyebrow">XORNADA '+h(pending?.round_number||'—')+'</span><b>'+h(pending?.opponent||'CB Redeiras')+'</b></div><div class="topright"><span class="pill '+(open?'':'negative')+'">'+status+'</span><button class="avatar" data-action="password-page" type="button" title="Contrasinal da conta" aria-label="Contrasinal da conta">'+h((d.alias||'R').slice(0,1).toUpperCase())+'</button></div></header><main class="container">'+body+'<footer class="foot">© CB Redeiras · Competición gratuíta · Prezos virtuais <a href="legal.html">Legal e privacidade</a></footer></main></div><nav class="mobilebar">'+nav.filter(x=>x[0]!=='vote'&&x[0]!=='admin').map(n=>'<button class="'+(state.page===n[0]?'active':'')+'" data-page="'+n[0]+'"><span>'+n[1]+'</span>'+n[2]+'</button>').join('')+'</nav></div>';
+ const nav=NAV.filter(n=>n[0]!=='admin'||admin());
+ const mobilePrimary=nav.filter(n=>['home','market','team','ranking'].includes(n[0]));
+ const mobileSecondary=nav.filter(n=>['calendar','vote','admin'].includes(n[0]));
+ const moreActive=['calendar','vote','admin','security'].includes(state.page);
+ const navButton=n=>'<button type="button" class="nav '+(state.page===n[0]?'active':'')+'" data-page="'+n[0]+'" aria-label="'+h(n[2])+'" title="'+h(n[2])+'" '+(state.page===n[0]?'aria-current="page"':'')+'><span class="sym" aria-hidden="true">'+n[1]+'</span><span class="nav-label">'+n[2]+'</span>'+(n[0]==='team'&&!hasTeam?'<span class="smallmark">NOVO</span>':'')+'</button>';
+ const bottomButton=n=>'<button type="button" class="'+(state.page===n[0]?'active':'')+'" data-page="'+n[0]+'" '+(state.page===n[0]?'aria-current="page"':'')+'><span aria-hidden="true">'+n[1]+'</span>'+n[2]+'</button>';
+ const moreMenu=
+ '<div class="mobile-more-backdrop" data-overlay="mobile-more" '+(state.mobileMenuOpen?'':'hidden')+'><section class="mobile-more-sheet" role="dialog" aria-modal="true" aria-labelledby="mobile-more-title"><div class="row"><h2 id="mobile-more-title">Máis opcións</h2><button type="button" class="btn secondary menuclose" data-action="close-more" aria-label="Pechar menú">Pechar ×</button></div><nav class="mobile-more-links" aria-label="Outras seccións">'+mobileSecondary.map(n=>'<button type="button" data-page="'+n[0]+'" class="mobile-more-link '+(state.page===n[0]?'active':'')+'"><span aria-hidden="true">'+n[1]+'</span>'+n[2]+'</button>').join('')+'</nav><hr class="separator"><div class="mobile-account"><div><b>'+h(d.alias||'Participante')+'</b><small>'+h(state.session.user.email)+'</small></div><div class="actions"><button class="btn secondary" data-action="set-alias">Editar alias</button><button class="btn secondary" data-action="password-page">Contrasinal</button><button class="btn outline" data-action="logout">Saír</button></div></div></section></div>';
+ root.innerHTML='<a href="#main-content" class="skip-link">Saltar ao contido principal</a><div class="layout"><aside class="sidebar"><div class="brand">'+LOGO+'<div class="brand-words"><b>FANTASY</b><small>CB REDEIRAS</small></div></div><div class="navgroup">COMPETICIÓN</div><nav class="sidebar-links" aria-label="Navegación principal">'+nav.map(navButton).join('')+'</nav><div class="sidefoot"><b>'+h(d.alias||'Participante')+'</b><small>'+h(state.session.user.email)+'</small><button data-action="set-alias" aria-label="Editar alias" title="Editar alias"><span aria-hidden="true">✎</span> <span class="side-action-label">Editar alias</span></button> <button data-action="password-page" aria-label="Configurar contrasinal" title="Contrasinal"><span aria-hidden="true">⚿</span> <span class="side-action-label">Contrasinal</span></button> <button data-action="logout" aria-label="Pechar sesión" title="Saír"><span aria-hidden="true">↪</span> <span class="side-action-label">Saír</span></button></div></aside><div class="content"><header class="topbar"><div class="topbar-match"><span class="eyebrow">XORNADA '+h(pending?.round_number||'—')+'</span><b>'+h(pending?.opponent||'CB Redeiras')+'</b></div><div class="topright"><span class="pill '+(open?'':'negative')+'">'+status+'</span><button type="button" class="avatar" data-action="password-page" title="Contrasinal da conta" aria-label="Abrir a configuración da conta">'+h((d.alias||'R').slice(0,1).toUpperCase())+'</button></div></header><main id="main-content" tabindex="-1" class="container">'+body+'<footer class="foot">© CB Redeiras · Competición gratuíta · Prezos virtuais <a href="legal.html">Legal e privacidade</a></footer></main></div><nav class="mobilebar" aria-label="Navegación móbil">'+mobilePrimary.map(bottomButton).join('')+'<button type="button" data-action="mobile-more" aria-haspopup="dialog" aria-expanded="'+(state.mobileMenuOpen?'true':'false')+'" class="'+(moreActive?'active':'')+'"><span aria-hidden="true">☰</span>Máis</button></nav>'+moreMenu+'</div>';
 }
 
 function home(){
@@ -71,13 +78,19 @@ function marketTable(){
  const d=state.data,round=current().pending?.round_number||5;
  const list=d.players.filter(p=>(state.filter==='all'||p.positions.includes(state.filter)||(state.filter==='junior'&&p.category==='junior'))&&p.name.toLowerCase().includes(state.search.toLowerCase())).sort((a,b)=>(prices()[b.id]||0)-(prices()[a.id]||0));
  const draft=state.draft;
- return '<div class="tablewrap"><table class="table"><thead><tr><th>Xogador</th><th>Posicións</th><th class="num">Prezo</th><th class="num">Acción</th></tr></thead><tbody>'+
- list.map(p=>{
-   const future=p.available_from_round>round;
-   const btn=future?'<span class="tag warn">Desde X'+p.available_from_round+'</span>':'<button class="btn small '+(draft.includes(p.id)?'danger':'primary')+'" data-action="toggle" data-id="'+p.id+'">'+(draft.includes(p.id)?'Quitar':'Fichar')+'</button>';
-   return '<tr><td>'+person(p)+'</td><td><span class="tag '+(p.category==='junior'?'junior':'')+'">'+(p.category==='junior'?'JÚNIOR · ':'')+h(p.positions.join(' / '))+'</span></td><td class="num"><b>'+euroShort(prices()[p.id])+'</b></td><td class="num"><div class="actions" style="justify-content:flex-end"><button class="btn small secondary" data-player="'+p.id+'">Detalles</button>'+btn+'</div></td></tr>';
- }).join('')+'</tbody></table></div>';
+ const controls=(p)=>p.available_from_round>round
+  ?'<span class="tag warn">Desde X'+p.available_from_round+'</span>'
+  :'<button type="button" class="btn small '+(draft.includes(p.id)?'danger':'primary')+'" data-action="toggle" data-id="'+p.id+'" aria-label="'+(draft.includes(p.id)?'Quitar ':'Fichar ')+h(p.name)+'">'+(draft.includes(p.id)?'Quitar':'Fichar')+'</button>';
+ if(!list.length)return empty('Non se atoparon xogadores cos filtros seleccionados.','⌕');
+ const table='<div class="tablewrap market-tablewrap"><table class="table"><thead><tr><th scope="col">Xogador</th><th scope="col">Posicións</th><th scope="col" class="num">Prezo</th><th scope="col" class="num">Acción</th></tr></thead><tbody>'+
+ list.map(p=>'<tr><td>'+person(p)+'</td><td><span class="tag '+(p.category==='junior'?'junior':'')+'">'+(p.category==='junior'?'JÚNIOR · ':'')+h(p.positions.join(' / '))+'</span></td><td class="num"><b>'+euroShort(prices()[p.id])+'</b></td><td class="num"><div class="actions action-right"><button type="button" class="btn small secondary" data-player="'+p.id+'">Detalles</button>'+controls(p)+'</div></td></tr>').join('')+'</tbody></table></div>';
+ const cards='<ul class="market-cards" aria-label="Xogadores dispoñibles">'+list.map(p=>
+ '<li class="market-player-card"><div class="market-player-top">'+person(p)+'<span class="tag '+(p.category==='junior'?'junior':'')+'">'+(p.category==='junior'?'JÚNIOR · ':'')+h(p.positions.join(' / '))+'</span></div>'+
+ '<div class="market-player-bottom"><div><span class="kpi-label">Prezo</span><strong>'+euroShort(prices()[p.id])+'</strong></div><div class="actions"><button type="button" class="btn small secondary" data-player="'+p.id+'">Detalles</button>'+controls(p)+'</div></div></li>'
+ ).join('')+'</ul>';
+ return '<div class="market-results">'+table+cards+'</div>';
 }
+
 function market(){
  const d=state.data,{pending,open}=current();
  const isFirst=!d.team, summary=validateLineup(state.draft,d.playerMap,prices());
@@ -91,8 +104,9 @@ function market(){
  ['Quinteto seleccionado',state.draft.length+' / 5','Mínimo 1 BA e 1 AP/P'],
  ['Cambios restantes',isFirst?'3':String(Math.max(0,3-used)),'Por xornada']
  ].map(k=>panel('<div class="kpi-label">'+k[0]+'</div><div class="kpi">'+k[1]+'</div><div class="kpi-caption">'+k[2]+'</div>')).join('')+'</div>'+
- '<div class="grid two market-layout"><section class="panel"><div class="row"><h2>Plantel de xogadores</h2><span class="tag">'+d.players.length+' dispoñibles</span></div><div class="toolbar"><input id="search" placeholder="Buscar xogador…" value="'+h(state.search)+'"/><select id="pos-filter">'+[['all','Todas as posicións'],['BA','Bases'],['ES','Escoltas'],['AL','Aleros'],['AP','Ala-pivotes'],['P','Pivotes'],['junior','Juniors']].map(v=>option(...v,state.filter)).join('')+'</select></div><div id="market-table">'+marketTable()+'</div></section>'+
- '<aside class="panel"><h2>O teu quinteto</h2><div class="stack">'+state.draft.map(id=>{const p=player(id);return p?'<div class="playeritem">'+person(p)+'<div class="actions"><b>'+euroShort(prices()[id])+'</b><button class="btn small secondary" data-action="toggle" data-id="'+id+'">×</button></div></div>':''}).join('')+Array.from({length:Math.max(0,5-state.draft.length)},()=>'<div class="playeritem" style="color:#a0b1ba;border-style:dashed">＋ Praza libre</div>').join('')+'</div><hr class="separator">'+
+ '<a class="mobile-draft-link" href="#draft-summary"><span>◫ Ver o teu quinteto</span><strong>'+state.draft.length+' / 5 · '+euroShort(summary.cost)+'</strong></a>'+
+ '<div class="grid two market-layout"><section class="panel market-panel"><div class="row"><h2>Plantel de xogadores</h2><span class="tag">'+d.players.length+' dispoñibles</span></div><div class="toolbar"><input id="search" placeholder="Buscar xogador…" value="'+h(state.search)+'"/><select id="pos-filter">'+[['all','Todas as posicións'],['BA','Bases'],['ES','Escoltas'],['AL','Aleros'],['AP','Ala-pivotes'],['P','Pivotes'],['junior','Juniors']].map(v=>option(...v,state.filter)).join('')+'</select></div><div id="market-table">'+marketTable()+'</div></section>'+
+ '<aside id="draft-summary" class="panel draft-panel" tabindex="-1"><h2>O teu quinteto</h2><div class="stack">'+state.draft.map(id=>{const p=player(id);return p?'<div class="playeritem">'+person(p)+'<div class="actions"><b>'+euroShort(prices()[id])+'</b><button class="btn small secondary" data-action="toggle" data-id="'+id+'">×</button></div></div>':''}).join('')+Array.from({length:Math.max(0,5-state.draft.length)},()=>'<div class="playeritem" style="color:#a0b1ba;border-style:dashed">＋ Praza libre</div>').join('')+'</div><hr class="separator">'+
  '<div class="row"><span class="muted mini">Custo de selección</span><b>'+euroShort(summary.cost)+'</b></div><div class="row" style="margin-top:10px"><span class="muted mini">Efectivo tras confirmar</span><b style="color:'+(plan.cashAfter<0?'var(--bad)':'var(--good)')+'">'+euroShort(plan.cashAfter)+'</b></div>'+
  '<div class="metricbar" style="margin-top:12px"><span style="width:'+Math.min(100,summary.cost/(isFirst?6000000:(d.team.cash+ d.roster.reduce((n,id)=>n+(prices()[id]||0),0)))*100)+'%"></span></div>'+
  '<p class="help">Un BA e un interior AP/P en dous xogadores diferentes. Máximo 3 fichaxes por xornada.</p>'+
@@ -114,9 +128,16 @@ function team(){
  panel('<h2>Historial de fichaxes</h2>'+(d.transfers.length?d.transfers.slice().reverse().slice(0,8).map(t=>'<div class="mini" style="margin:8px 0">X'+t.round_number+': '+h(player(t.sold_player_id)?.name||'?')+' → '+h(player(t.bought_player_id)?.name||'?')+'</div>').join(''):empty('Aínda non fixeches transferencias','⇄')))+'</div>';
 }
 function ranking(){
- const d=state.data;return pageHeader('Clasificación xeral','A puntuación acumúlase coas valoracións publicadas de cada xornada.')+
- panel('<h2>Equipos participantes</h2><div class="tablewrap"><table class="table"><thead><tr><th>#</th><th>Equipo Fantasy</th><th>Mánager</th><th class="num">Puntos</th></tr></thead><tbody>'+d.leaderboard.map(t=>'<tr><td><b>'+t.position+'</b></td><td><b>'+h(t.team_name)+'</b>'+(d.team?.id===t.team_id?' <span class="tag good">TI</span>':'')+'</td><td>'+h(t.manager_alias)+'</td><td class="num"><b>'+pts(t.total_points)+'</b></td></tr>').join('')+'</tbody></table></div>'+(d.leaderboard.length?'':empty('Aínda non hai puntuacións nin equipos','♛')) );
+ const d=state.data;
+ const table='<div class="tablewrap ranking-tablewrap"><table class="table"><thead><tr><th scope="col">#</th><th scope="col">Equipo Fantasy</th><th scope="col">Mánager</th><th scope="col" class="num">Puntos</th></tr></thead><tbody>'+
+ d.leaderboard.map(t=>'<tr><td><b>'+t.position+'</b></td><td><b>'+h(t.team_name)+'</b>'+(d.team?.id===t.team_id?' <span class="tag good">TI</span>':'')+'</td><td>'+h(t.manager_alias)+'</td><td class="num"><b>'+pts(t.total_points)+'</b></td></tr>').join('')+'</tbody></table></div>';
+ const cards='<ol class="ranking-cards" aria-label="Clasificación de equipos">'+d.leaderboard.map(t=>
+  '<li class="ranking-card"><span class="ranking-position">'+t.position+'</span><div class="ranking-names"><b>'+h(t.team_name)+'</b>'+(d.team?.id===t.team_id?' <span class="tag good">TI</span>':'')+'<small>'+h(t.manager_alias)+'</small></div><strong class="ranking-points">'+pts(t.total_points)+'<small>pts</small></strong></li>'
+ ).join('')+'</ol>';
+ return pageHeader('Clasificación xeral','A puntuación acumúlase coas valoracións publicadas de cada xornada.')+
+ panel('<h2>Equipos participantes</h2>'+(d.leaderboard.length?'<div class="ranking-results">'+table+cards+'</div>':empty('Aínda non hai puntuacións nin equipos','♛')));
 }
+
 function calendar(){
  const d=state.data,{pending}=current();return pageHeader('Calendario de partidos','Os horarios definitivos confírmanse cada martes e poden cambiar.')+
  panel('<h2>Primeira fase · 2026/27</h2><div class="schedule">'+d.fixtures.map(f=>'<div class="match"><div class="date">X'+f.round_number+'</div><div style="flex:1"><strong>CB Redeiras · '+h(f.opponent)+'</strong><small>'+(f.is_home?'Na casa':'Fóra')+' · '+h(f.status.replaceAll('_',' '))+'</small></div><div><b class="mini">'+dateText(f.starts_at)+'</b>'+(f.id===pending?.id?' <span class="tag">PRÓXIMA</span>':'')+'</div></div>').join('')+'</div>');
