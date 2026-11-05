@@ -81,6 +81,32 @@ try{
    assert.equal(await minutes.inputValue(),'23.5',size.label+' draft admin data was lost');
   }
   await page.screenshot({path:'responsive-artifacts/'+size.label+'-admin.png',fullPage:true});
+  // Every application route must remain usable and avoid viewport-level horizontal scrolling.
+  const navigateAll=async route=>{
+   if(mobile&&['calendar','vote','admin'].includes(route)){
+    await page.locator('.mobilebar [data-action="mobile-more"]').click();
+    await page.locator('.mobile-more-sheet [data-page="'+route+'"]').click();
+   }else await navigate(route);
+   await page.locator('#main-content h1').waitFor({timeout:3000});
+   const widths=await page.evaluate(()=>({viewport:innerWidth,body:document.body.scrollWidth,html:document.documentElement.scrollWidth}));
+   assert.ok(widths.html<=widths.viewport+2,JSON.stringify({case:size.label,route,...widths}));
+   assert.ok(await page.locator('.topbar').isVisible(),size.label+' '+route+' topbar');
+  };
+  for(const route of ['home','team','ranking','calendar','vote','market','admin']){
+   await navigateAll(route);
+   if(['mobile-390','tablet-820','desktop-1440'].includes(size.label)&&['team','ranking'].includes(route))
+    await page.screenshot({path:'responsive-artifacts/'+size.label+'-'+route+'.png',fullPage:true});
+  }
+  await navigateAll('market');
+  const details=page.locator('.market-results [data-player]:visible').first();
+  await details.click();
+  const modalBounds=await page.locator('.modal').evaluate(el=>({left:el.getBoundingClientRect().left,right:el.getBoundingClientRect().right,viewport:innerWidth}));
+  assert.ok(modalBounds.left>=-2&&modalBounds.right<=modalBounds.viewport+2,
+    JSON.stringify({case:size.label,modal:modalBounds}));
+  await page.locator('.modal [data-action="close-modal"]').click();
+  assert.equal(await page.locator('.modal').count(),0,size.label+' modal close');
+  await page.locator('.topbar [data-action="password-page"]').click();
+  assert.ok(await page.locator('#auth-set-password').isVisible(),size.label+' security page');
   const widths=await page.evaluate(()=>({viewport:window.innerWidth,body:document.body.scrollWidth,html:document.documentElement.scrollWidth}));
   assert.ok(widths.html<=widths.viewport+2,JSON.stringify({case:size.label,...widths}));
   assert.deepEqual(errors,[],size.label+' JS exceptions');
