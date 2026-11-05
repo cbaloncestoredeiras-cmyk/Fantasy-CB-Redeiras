@@ -63,8 +63,20 @@ serve(async (request) => {
     const options = { redirectTo: allowedOrigin };
     const { data: invited, error: inviteError } = await service.auth.admin.inviteUserByEmail(email, options);
     if (inviteError || !invited.user) {
+      // Default Supabase Auth email sending is heavily rate-limited. Do not
+      // present a failed invitation as if the account had been created.
+      if (inviteError?.status === 429 || inviteError?.code === "over_email_send_rate_limit") {
+        return response(429, {
+          error: "Límite de correos de Supabase alcanzado. Non se enviou a invitación. Configura un SMTP propio en Supabase (Authentication → SMTP) e volve tentalo máis tarde.",
+        }, origin);
+      }
+      if (inviteError?.code === "email_address_not_authorized") {
+        return response(403, {
+          error: "Supabase só permite enviar correos a enderezos autorizados. Configura un SMTP propio para invitar participantes.",
+        }, origin);
+      }
       // Existing auth users are assigned through the secured fantasy_add_member RPC.
-      return response(400, { error: "Invitation could not be sent. For existing users use the link-account procedure." }, origin);
+      return response(400, { error: "Non se puido enviar a invitación. Se a conta xa existe, hai que vinculala desde o procedemento de usuarios existentes." }, origin);
     }
     const uid = invited.user.id;
     const { error: memberError } = await service.from("club_memberships")
