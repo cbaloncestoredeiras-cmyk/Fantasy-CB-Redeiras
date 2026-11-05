@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import {readFileSync} from 'node:fs';
 import {simulatedLineup,priceBeforeRound,idealQuintet} from '../site/strategy.js';
 import {simulatorPanel,idealTeamPanel} from '../site/strategy-view.js';
 
@@ -112,4 +113,13 @@ test('ranking page can switch between overall and official single-round scores',
   assert.doesNotMatch(weekly,/Líder Xeral/);
   assert.match(weekly,/Puntos oficiais desta xornada/);
  }finally{views.state.rankRound=original;}
+});
+
+test('weekly RPC file excludes unpublished fixtures and denies anonymous execution',()=>{
+ const migration=readFileSync(new URL('../supabase/migrations/20261105235028_fantasy_round_leaderboard_read_only.sql',import.meta.url),'utf8');
+ assert.match(migration,/f\.status='finalized'/);
+ assert.match(migration,/private\.is_member\(v_club\)/);
+ assert.match(migration,/auth\.uid\(\) IS NULL/);
+ assert.match(migration,/REVOKE ALL ON FUNCTION public\.fantasy_round_leaderboard\(uuid\) FROM PUBLIC, anon, authenticated/);
+ assert.match(migration,/GRANT EXECUTE ON FUNCTION public\.fantasy_round_leaderboard\(uuid\) TO authenticated/);
 });
