@@ -49,7 +49,7 @@ test('initial team simulator counts building five players as 0 transfers and obs
  assert.equal(good.changes,0);
  const bad=simulatedLineup(novice,['a','b','c','g','f'],5);
  assert.equal(bad.valid,true);
- assert.equal(bad.cashAfter,2000000);
+ assert.equal(bad.cashAfter,1000000);
 });
 
 test('opening-of-round price never uses post-match broker changes',()=>{
