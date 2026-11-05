@@ -115,10 +115,25 @@ try{
  }
  for(const size of [{label:'mobile-login',width:390,height:844},{label:'tablet-login',width:820,height:1180},{label:'desktop-login',width:1440,height:900}]){
   const page=await browser.newPage({viewport:{width:size.width,height:size.height},deviceScaleFactor:1});
-  await page.route('**/cdn.jsdelivr.net/**',r=>r.fulfill({status:200,contentType:'application/javascript',body:"window.supabase={createClient:()=>({auth:{getSession:async()=>({data:{session:null},error:null}),onAuthStateChange:()=>({})}})};"}));
+  await page.route('**/cdn.jsdelivr.net/**',r=>r.fulfill({status:200,contentType:'application/javascript',body:"window.__recoveryAttempts=[];window.supabase={createClient:()=>({auth:{getSession:async()=>({data:{session:null},error:null}),onAuthStateChange:()=>({}),resetPasswordForEmail:async(email)=>{window.__recoveryAttempts.push(email);return {error:null}}}})};"}));
   await page.goto(url,{waitUntil:'load'});
   await page.locator('#auth-password').waitFor({timeout:9000});
   assert.equal(await page.locator('#auth-password-input').count(),1,size.label+' password field');
+  // Both first access and forgotten-password options must reach the same
+  // supported Supabase recovery endpoint (not disabled OTP/magic links).
+  await page.locator('[data-auth-mode="setup"]').click();
+  await page.locator('#auth-setup').waitFor({timeout:3000});
+  await page.locator('#auth-setup [name="email"]').fill('test@redeiras.test');
+  await page.locator('#auth-setup button[type="submit"]').click();
+  await page.locator('#auth-setup .auth-feedback:not([hidden])').waitFor({timeout:3000});
+  assert.match(await page.locator('#auth-setup .auth-feedback').innerText(),/ligazón/);
+  await page.locator('[data-auth-mode="password"]').click();
+  await page.locator('[data-auth-mode="reset"]').click();
+  await page.locator('#auth-reset [name="email"]').fill('test@redeiras.test');
+  await page.locator('#auth-reset button[type="submit"]').click();
+  await page.locator('#auth-reset .auth-feedback:not([hidden])').waitFor({timeout:3000});
+  const attempts=await page.evaluate(()=>window.__recoveryAttempts||[]);
+  assert.deepEqual(attempts,['test@redeiras.test','test@redeiras.test']);
   const w=await page.evaluate(()=>({viewport:innerWidth,page:document.documentElement.scrollWidth}));
   assert.ok(w.page<=w.viewport+2,size.label+' horizontal overflow');
   await page.screenshot({path:'responsive-artifacts/'+size.label+'.png',fullPage:true});
