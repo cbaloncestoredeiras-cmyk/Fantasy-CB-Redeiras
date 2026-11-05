@@ -32,3 +32,16 @@
 .person .playerlogo.profile-photo{width:68px;height:68px;border-radius:17px}
 .roster-card .playerlogo{width:72px;height:72px;border-radius:17px}
 @media(max-width:500px){.roster-card .playerlogo{width:58px;height:58px}}
+
+/* Sign-in with email/password, first-access links and recovery */
+.auth-fields{display:grid;gap:14px;margin:18px 0 12px}
+.auth-fields .field{min-width:0}
+.auth-fields input[type="password"]{font-size:15px}
+.auth-extras{display:flex;justify-content:space-between;align-items:flex-start;gap:14px;flex-wrap:wrap;margin:13px 0 15px}
+.auth-link{background:none;border:0;padding:3px 0;color:#1679a3;font-size:12px;text-decoration:underline;text-underline-offset:3px;font-weight:700}
+.auth-link:hover{color:#08415f}
+.auth-page .auth-form .panel>p{line-height:1.6}
+.sidebar .sidefoot [data-action="password-page"]{border-color:#3584a8}
+.topbar button.avatar{padding:0;font-size:13px;flex:0 0 34px;cursor:pointer}
+.topbar button.avatar:hover{background:#165879}
+@media(max-width:570px){.auth-extras{flex-direction:column;gap:9px}}
