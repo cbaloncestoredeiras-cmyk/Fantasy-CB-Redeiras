@@ -23,6 +23,41 @@ async function optimizedPortrait(file){
    return blob;
  }finally{bitmap.close?.();}
 }
+
+const number=n=>new Intl.NumberFormat('es-ES',{maximumFractionDigits:2}).format(Number(n)||0);
+const cash=n=>new Intl.NumberFormat('es-ES',{maximumFractionDigits:0}).format(Number(n)||0)+' €';
+function statsDraft(){
+ return state.data.players.map(p=>({
+  player_id:p.id,
+  played:!!document.querySelector('[data-stat-played="'+p.id+'"]')?.checked,
+  minutes:Number(document.querySelector('[data-stat-min="'+p.id+'"]')?.value||0),
+  pir:Number(document.querySelector('[data-stat-pir="'+p.id+'"]')?.value||0),
+  points:Number(document.querySelector('[data-stat-pts="'+p.id+'"]')?.value||0),
+  source_format:state.importRows?.find(r=>r.player_id===p.id)?.source_format||'manual'
+ }));
+}
+function previewHtml(pre){
+ if(!pre)return '<p class="mini muted">Calcula a vista previa antes de publicar.</p>';
+ const playerRows=(pre.players||[]).map(p=>'<tr><td>'+h(p.name)+'</td><td>'+number(p.pir)+'</td><td>+'+number(p.vote_bonus)+'</td><td><b>'+number(p.fantasy_points)+'</b></td><td>'+cash(p.price_before)+' → '+cash(p.price_after)+'</td></tr>').join('');
+ const teamRows=(pre.teams||[]).map(t=>'<tr><td>'+h(t.team_name)+'</td><td>'+number(t.fantasy_points)+'</td></tr>').join('');
+ return '<p class="mini">Vista previa calculada para a xornada '+number(pre.round)+'. '+number(pre.player_count)+' xogadores e '+number(pre.team_count)+' equipos. Non se modificaron datos.</p>'+
+ '<div class="tablewrap"><table class="table"><thead><tr><th>Xogador</th><th>PIR</th><th>Votos</th><th>Fantasy</th><th>Bróker</th></tr></thead><tbody>'+playerRows+'</tbody></table></div>'+
+ '<h3>Equipos Fantasy</h3><div class="tablewrap"><table class="table"><thead><tr><th>Equipo</th><th>Puntos</th></tr></thead><tbody>'+teamRows+'</tbody></table></div>';
+}
+function memberHtml(members){
+ if(!members)return '<p class="mini muted">Pulsa «Cargar participantes» para consultar as contas do club.</p>';
+ if(!members.length)return '<p class="mini muted">Non hai participantes asociados.</p>';
+ const players=state.data.players;
+ return '<p class="mini">Contas vinculadas: '+members.length+'. Só administración pode ver estes correos. Non se eliminan contas de Supabase desde este panel.</p>'+
+ '<div class="tablewrap"><table class="table"><thead><tr><th>Correo / estado</th><th>Rol</th><th>Xogador</th><th>Accións</th></tr></thead><tbody>'+
+ members.map(m=>'<tr><td><b>'+h(m.email)+'</b><small style="display:block">'+(m.confirmed?'Correo confirmado':'Invitación pendente')+'</small></td>'+
+ '<td><select data-member-role="'+h(m.user_id)+'">'+option('participant','Participante',m.role)+option('admin','Administrador',m.role)+'</select></td>'+
+ '<td><select data-member-player="'+h(m.user_id)+'">'+option('','Sen vinculación',m.linked_player)+players.map(p=>option(p.id,p.name,p.id===m.linked_player?m.linked_player:'')).join('')+'</select></td>'+
+ '<td><div class="actions"><button class="btn secondary" data-action="update-member" data-user="'+h(m.user_id)+'">Gardar</button>'+
+ '<button class="btn outline" data-action="revoke-member" data-user="'+h(m.user_id)+'">Retirar acceso</button></div></td></tr>').join('')+
+ '</tbody></table></div>';
+}
+
 const selectedFixture=()=>state.data.fixtures.find(f=>f.id===state.adminFixture)||current().pending||state.data.fixtures[0];
 const getStat=(id)=>state.importRows?.find(r=>r.player_id===id)||state.data.stats?.find(r=>r.player_id===id && r.fixture_id===selectedFixture()?.id)||{};
 export function adminView(){
@@ -45,11 +80,19 @@ export function adminView(){
  '<p class="mini muted">Rexistros preparados: '+(state.importRows?.length||'0')+'. Revisa a correspondencia dos xogadores antes de confirmar.</p>'+
  '<div class="tablewrap admin-stats-wrap"><table class="table admin-stats-table"><thead><tr><th scope="col">Xogador</th><th scope="col">Xogou?</th><th scope="col">Minutos</th><th scope="col">PIR (non EFF)</th><th scope="col">Puntos</th></tr></thead><tbody>'+
  d.players.map(p=>{const v=getStat(p.id),played=Boolean(v.played);return '<tr><th scope="row">'+h(p.name)+'</th><td><label class="stat-input stat-check"><span class="stat-mobile-label">Xogou?</span><input type="checkbox" data-stat-played="'+p.id+'" '+(played?'checked':'')+' aria-label="Xogou '+h(p.name)+'"></label></td><td><label class="stat-input"><span class="stat-mobile-label">Minutos</span><input data-stat-min="'+p.id+'" type="number" inputmode="decimal" step="0.01" min="0" max="60" value="'+h(v.minutes??0)+'" aria-label="Minutos de '+h(p.name)+'"></label></td><td><label class="stat-input"><span class="stat-mobile-label">PIR</span><input data-stat-pir="'+p.id+'" type="number" inputmode="decimal" step="0.01" min="-100" max="100" value="'+h(v.pir??0)+'" aria-label="Valoración PIR de '+h(p.name)+'"></label></td><td><label class="stat-input"><span class="stat-mobile-label">Puntos</span><input data-stat-pts="'+p.id+'" type="number" inputmode="numeric" step="1" value="'+h(v.points??0)+'" aria-label="Puntos de '+h(p.name)+'"></label></td></tr>'}).join('')+'</tbody></table></div><button class="btn primary" data-action="save-stats" style="margin-top:14px">Gardar estatísticas revisadas</button>'),
- panel('<h2>Publicar xornada e Bróker</h2><p>A publicación calcula valoración + bonus de vitoria + votos, conxelando o quinteto, recalculando prezos e xerando a clasificación. Por seguridade só é posible 72 h despois do final real, con estatísticas gardadas.</p><div class="notice">Esta operación é definitiva. Verifica antes o PIR de cada xogador, a convocatoria, os resultados e a data real de finalización.</div><button class="btn primary" data-action="publish-round" style="margin-top:14px">Publicar xornada '+(fixture?.round_number||'')+'</button>'),
+ panel('<h2 id="admin-publication">Vista previa, publicación e rectificación</h2><p>A vista previa usa o mesmo cálculo servidor que a publicación. Debe transcorrer o prazo de votación de 72 horas e existir convocatoria e estatísticas completas.</p>'+
+ '<div class="actions"><button class="btn secondary" data-action="preview-round">Calcular vista previa da xornada '+(fixture?.round_number||'')+'</button></div>'+
+ '<div id="admin-preview-results" style="margin-top:14px">'+previewHtml(state.adminPreview?.fixture_id===fixture?.id?state.adminPreview:null)+'</div>'+
+ (fixture?.status==='finalized'?'<div class="field" style="margin-top:14px"><label>Motivo da rectificación (obrigatorio, mínimo 10 caracteres)</label><textarea id="correction-reason" rows="2" placeholder="Explica que valoración foi corrixida e por que"></textarea></div>'+
+ '<p class="mini muted">As rectificacións non poden modificar fichaxes nin xornadas posteriores xa pechadas.</p><button class="btn danger" data-action="correct-round">Rectificar xornada publicada</button>':
+ '<div class="notice">Revisa todo antes de publicar. Esta operación será definitiva e auditada.</div><button class="btn primary" data-action="publish-round">Publicar xornada '+(fixture?.round_number||'')+'</button>')),
  '<div class="grid two">',
  panel('<h2>Engadir un junior</h2><div class="stack"><div class="field"><label>Nome</label><input id="junior-name" placeholder="Nome deportivo"></div><div class="field"><label>Posicións (separadas por coma)</label><input id="junior-positions" placeholder="BA, ES"></div><div class="field"><label>Prezo inicial virtual (€)</label><input id="junior-price" type="number" min="450000" max="5000000" step="50000" value="800000"></div><div class="field"><label>Dispoñible desde a xornada</label><input id="junior-round" type="number" min="5" value="'+(current().pending?.round_number||5)+'"></div><button class="btn primary" data-action="add-junior">Engadir ao mercado</button></div>'),
  panel('<h2>Invitar participantes</h2><p>Podes invitar usuarios desde o panel de autenticación de Supabase. A función automática de invitación require ter despregada a Edge Function correspondente.</p><div class="stack"><div class="field"><label>Correo</label><input id="invite-email" type="email" placeholder="correo@exemplo.com"></div><div class="field"><label>Rol</label><select id="invite-role"><option value="participant">Participante</option><option value="admin">Administrador</option></select></div><div class="field"><label>Vincular xogador para votar (opcional)</label><select id="invite-player">'+option('','Non vincular')+d.players.map(p=>option(p.id,p.name)).join('')+'</select></div><label class="mini"><input type="checkbox" id="invite-privacy"> Confirmo que o club verificou a autorización e información de privacidade necesarias para esta persoa (especialmente se é menor).</label><button class="btn primary" data-action="send-invite">Enviar invitación</button></div>')
  ,'</div>',
+ panel('<h2 id="admin-members">Xestionar contas e permisos</h2><p>Consulta estados de invitación, permisos e vinculacións. Os cambios quedan rexistrados na auditoría.</p>'+
+ '<button class="btn secondary" data-action="load-participants">Cargar participantes</button><div id="admin-participants-results" style="margin-top:12px">'+memberHtml(state.adminMembers)+'</div>'),
+ panel('<h2 id="admin-backups">Exportar datos do club</h2><p>Garda unha copia administrativa JSON da tempada. Contén datos persoais, polo que debe almacenarse de forma segura. Esta exportación non substitúe unha copia completa de PostgreSQL nin dos arquivos de Storage.</p><button class="btn secondary" data-action="export-snapshot">Descargar exportación JSON</button>'),
  panel('<h2>Fotografías dos xogadores</h2><p>Sube un retrato para amosalo no mercado, no quinteto e na ficha do xogador. Só se pode ver desde unha conta autorizada do club. JPEG, PNG ou WebP, ata 25 MB; a app reduce a foto automaticamente e elimina os metadatos.</p>'+
  '<div class="grid two"><div class="stack"><div class="field"><label>Xogador</label><select id="admin-photo-player">'+d.players.map(p=>option(p.id,p.name,photoPlayer?.id)).join('')+'</select></div>'+
  '<div class="field"><label>Seleccionar foto</label><input id="admin-photo-file" type="file" accept="image/jpeg,image/png,image/webp"></div>'+
@@ -62,12 +105,12 @@ export function adminView(){
   .replace('<h2>Importar valoracións</h2>','<h2 id="admin-stats">Importar valoracións</h2>')
   .replace('<h2>Invitar participantes</h2>','<h2 id="admin-invites">Invitar participantes</h2>')
   .replace('<h2>Fotografías dos xogadores</h2>','<h2 id="admin-photos">Fotografías dos xogadores</h2>');
- const jumps='<nav class="admin-jumps" aria-label="Ir á sección de administración"><a href="#admin-callups">Convocatoria</a><a href="#admin-stats">Estatísticas</a><a href="#admin-invites">Participantes</a><a href="#admin-photos">Fotos</a></nav>';
+ const jumps='<nav class="admin-jumps" aria-label="Ir á sección de administración"><a href="#admin-callups">Convocatoria</a><a href="#admin-stats">Estatísticas</a><a href="#admin-invites">Invitacións</a><a href="#admin-members">Contas</a><a href="#admin-publication">Publicación</a><a href="#admin-backups">Exportación</a><a href="#admin-photos">Fotos</a></nav>';
  return pageHeader('Panel de administración','Só persoas autorizadas. Todos os cambios sensibles rexístranse.')+jumps+sections;
 }
 function val(id,selector){return document.getElementById(id)?.value??selector??''}
 async function localToIso(v){if(!v)throw Error('Indica a data e a hora');return await rpc('fantasy_local_time',{p_clock:v});}
-export async function adminAction(action){
+export async function adminAction(action,element){
  const f=selectedFixture();if(!f)return toast('Non hai xornada dispoñible',true);
  switch(action){
   case 'upload-player-photo':{
@@ -101,18 +144,65 @@ export async function adminAction(action){
   case 'update-end':await rpc('fantasy_set_end',{p_fixture:f.id,p_time:await localToIso(val('end-time')),p_won:val('end-won')==='true'});break;
   case 'save-callups':await rpc('fantasy_set_callups',{p_fixture:f.id,p_players:[...document.querySelectorAll('.callup-box:checked')].map(x=>x.value)});break;
   case 'save-stats':{
-    const rows=state.data.players.map(p=>{
-      const played=document.querySelector('[data-stat-played="'+p.id+'"]')?.checked||false;
-      const mins=Number(document.querySelector('[data-stat-min="'+p.id+'"]')?.value||0);
-      const pir=Number(document.querySelector('[data-stat-pir="'+p.id+'"]')?.value||0);
-      const points=Number(document.querySelector('[data-stat-pts="'+p.id+'"]')?.value||0);
-      return {player_id:p.id,played,minutes:mins,pir,points,source_format:state.importRows?.find(r=>r.player_id===p.id)?.source_format||'manual'};
-    });
-    await rpc('fantasy_save_stats',{p_fixture:f.id,p_rows:rows});state.importRows=null;state.rawPdf='';break;
+    const rows=statsDraft();
+    await rpc('fantasy_save_stats',{p_fixture:f.id,p_rows:rows});
+    state.importRows=null;state.rawPdf='';state.adminPreview=null;state.adminPreviewRows=null;break;
+  }
+  case 'preview-round':{
+    const rows=f.status==='finalized'?statsDraft():null;
+    const preview=await rpc('fantasy_preview_fixture',{p_fixture:f.id,p_rows:rows});
+    state.adminPreview=preview;state.adminPreviewRows=rows;
+    const holder=document.getElementById('admin-preview-results');
+    if(holder)holder.innerHTML=previewHtml(preview);
+    toast('Vista previa calculada: revisa puntuacións e prezos');return false;
   }
   case 'publish-round':
-    if(!confirm('Publicar definitivamente puntuacións, prezos e clasificación desta xornada?'))return false;
-    await rpc('fantasy_publish_fixture',{p_fixture:f.id});break;
+    if(state.adminPreview?.fixture_id!==f.id||state.adminPreviewRows!==null)
+      throw Error('Primeiro debes calcular e revisar a vista previa desta xornada');
+    if(!confirm('Publicar definitivamente os puntos, prezos e clasificación da xornada?'))return false;
+    await rpc('fantasy_publish_fixture',{p_fixture:f.id});
+    state.adminPreview=null;state.adminPreviewRows=null;break;
+  case 'correct-round':{
+    const rows=statsDraft(),reason=val('correction-reason').trim();
+    if(f.status!=='finalized')throw Error('Esta xornada non está publicada');
+    if(state.adminPreview?.fixture_id!==f.id||JSON.stringify(rows)!==JSON.stringify(state.adminPreviewRows))
+      throw Error('Calcula primeiro a vista previa cos mesmos datos que queres rectificar');
+    if(reason.length<10)throw Error('Indica un motivo de polo menos 10 caracteres');
+    if(!confirm('Rectificar definitivamente a xornada '+f.round_number+' e rexistrar os cambios?'))return false;
+    await rpc('fantasy_correct_fixture',{p_fixture:f.id,p_rows:rows,p_reason:reason});
+    state.adminPreview=null;state.adminPreviewRows=null;break;
+  }
+  case 'load-participants':{
+    state.adminMembers=await rpc('fantasy_admin_participants',{p_club:state.data.club.id});
+    const holder=document.getElementById('admin-participants-results');
+    if(holder)holder.innerHTML=memberHtml(state.adminMembers);
+    return false;
+  }
+  case 'update-member':{
+    const uid=element?.dataset.user,role=document.querySelector('[data-member-role="'+uid+'"]')?.value,
+      linked=document.querySelector('[data-member-player="'+uid+'"]')?.value||null;
+    if(!uid||!role)throw Error('Selecciona un participante');
+    if(!confirm('Gardar o rol e a vinculación desta conta?'))return false;
+    await rpc('fantasy_admin_update_participant',{p_club:state.data.club.id,p_user:uid,p_role:role,p_player:linked});
+    state.adminMembers=null;break;
+  }
+  case 'revoke-member':{
+    const uid=element?.dataset.user,m=state.adminMembers?.find(x=>x.user_id===uid);
+    if(!uid||!m)throw Error('Selecciona unha conta');
+    if(!confirm('Retirar a '+m.email+' o acceso ao club? A conta de autenticación non será eliminada.'))return false;
+    await rpc('fantasy_admin_revoke_participant',{p_club:state.data.club.id,p_user:uid});
+    state.adminMembers=null;break;
+  }
+  case 'export-snapshot':{
+    const data=await rpc('fantasy_admin_export',{p_club:state.data.club.id});
+    const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
+    const url=URL.createObjectURL(blob);
+    const link=document.createElement('a');
+    link.href=url;link.download='fantasy-redeiras-export-'+new Date().toISOString().slice(0,10)+'.json';
+    document.body.appendChild(link);link.click();link.remove();
+    setTimeout(()=>URL.revokeObjectURL(url),5000);
+    toast('Exportación descargada. Gárdaa nun lugar seguro.');return false;
+  }
   case 'add-junior':await rpc('fantasy_add_junior',{p_season:state.data.season.id,p_name:val('junior-name'),p_positions:val('junior-positions').split(',').map(x=>x.trim().toUpperCase()).filter(Boolean),p_price:Number(val('junior-price')),p_from_round:Number(val('junior-round'))});break;
   case 'send-invite':{
     const email=val('invite-email').trim(),role=val('invite-role'),linkedPlayer=val('invite-player')||null;const privacyVerified=!!document.getElementById('invite-privacy')?.checked; if(!privacyVerified)throw Error('Confirma a verificación de privacidade antes de invitar');
