@@ -1,4 +1,4 @@
-import {state,rpc,admin,current,player,prices,h,dateText,panel,pageHeader,option,euroShort,toast} from './pages.js';
+import {state,rpc,admin,current,player,prices,h,dateText,panel,pageHeader,option,euroShort,toast,playerAvatar} from './pages.js';
 import {parseDelimited,rowsFromTable,pts} from './logic.js';
 
 const localDateTime=value=>value?new Intl.DateTimeFormat('sv-SE',{timeZone:'Europe/Madrid',year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',hour12:false}).format(new Date(value)).replace(' ','T'):'';
@@ -6,6 +6,7 @@ const selectedFixture=()=>state.data.fixtures.find(f=>f.id===state.adminFixture)
 const getStat=(id)=>state.importRows?.find(r=>r.player_id===id)||state.data.stats?.find(r=>r.player_id===id && r.fixture_id===selectedFixture()?.id)||{};
 export function adminView(){
  const d=state.data,fixture=selectedFixture();if(!admin())return pageHeader('Administración','Acceso restrinxido.');
+ const photoPlayer=d.players.find(p=>p.id===state.adminPlayer)||d.players[0];
  const lines=[
  '<div class="grid four" style="margin-bottom:16px">'+[
  ['Participantes',d.metrics?.members||0],['Equipos Fantasy',d.metrics?.teams||0],
@@ -27,7 +28,13 @@ export function adminView(){
  '<div class="grid two">',
  panel('<h2>Engadir un junior</h2><div class="stack"><div class="field"><label>Nome</label><input id="junior-name" placeholder="Nome deportivo"></div><div class="field"><label>Posicións (separadas por coma)</label><input id="junior-positions" placeholder="BA, ES"></div><div class="field"><label>Prezo inicial virtual (€)</label><input id="junior-price" type="number" min="450000" max="5000000" step="50000" value="800000"></div><div class="field"><label>Dispoñible desde a xornada</label><input id="junior-round" type="number" min="5" value="'+(current().pending?.round_number||5)+'"></div><button class="btn primary" data-action="add-junior">Engadir ao mercado</button></div>'),
  panel('<h2>Invitar participantes</h2><p>Podes invitar usuarios desde o panel de autenticación de Supabase. A función automática de invitación require ter despregada a Edge Function correspondente.</p><div class="stack"><div class="field"><label>Correo</label><input id="invite-email" type="email" placeholder="correo@exemplo.com"></div><div class="field"><label>Rol</label><select id="invite-role"><option value="participant">Participante</option><option value="admin">Administrador</option></select></div><div class="field"><label>Vincular xogador para votar (opcional)</label><select id="invite-player">'+option('','Non vincular')+d.players.map(p=>option(p.id,p.name)).join('')+'</select></div><label class="mini"><input type="checkbox" id="invite-privacy"> Confirmo que o club verificou a autorización e información de privacidade necesarias para esta persoa (especialmente se é menor).</label><button class="btn primary" data-action="send-invite">Enviar invitación</button></div>')
- ,'</div>'
+ ,'</div>',
+ panel('<h2>Fotografías dos xogadores</h2><p>Sube un retrato para amosalo no mercado, no quinteto e na ficha do xogador. Só se pode ver desde unha conta autorizada do club. JPEG, PNG ou WebP, máximo 4 MB.</p>'+
+ '<div class="grid two"><div class="stack"><div class="field"><label>Xogador</label><select id="admin-photo-player">'+d.players.map(p=>option(p.id,p.name,photoPlayer?.id)).join('')+'</select></div>'+
+ '<div class="field"><label>Seleccionar foto</label><input id="admin-photo-file" type="file" accept="image/jpeg,image/png,image/webp"></div>'+
+ '<label class="mini"><input type="checkbox" id="admin-photo-consent"> Confirmo que o club dispón da autorización necesaria para utilizar esta fotografía no Fantasy, tamén se a persoa é menor.</label>'+
+ '<div class="actions"><button class="btn primary" data-action="upload-player-photo">Gardar foto</button><button class="btn danger" data-action="remove-player-photo" '+(!photoPlayer?.photo_path?'disabled':'')+'>Retirar foto</button></div></div>'+
+ '<div class="admin-photo-preview" id="admin-photo-preview">'+(photoPlayer?playerAvatar(photoPlayer,'admin-photo-avatar'):'')+'<p>'+h(photoPlayer?.photo_path?'Foto actual':'Sen foto cargada')+'</p></div></div>')
  ];
  return pageHeader('Panel de administración','Só persoas autorizadas. Todos os cambios sensibles rexístranse.')+lines.join('');
 }
@@ -36,6 +43,34 @@ async function localToIso(v){if(!v)throw Error('Indica a data e a hora');return 
 export async function adminAction(action){
  const f=selectedFixture();if(!f)return toast('Non hai xornada dispoñible',true);
  switch(action){
+  case 'upload-player-photo':{
+    const id=val('admin-photo-player'),p=state.data.players.find(x=>x.id===id);
+    const file=document.getElementById('admin-photo-file')?.files?.[0];
+    if(!p)throw Error('Selecciona un xogador');
+    if(!file)throw Error('Selecciona unha foto');
+    if(!document.getElementById('admin-photo-consent')?.checked)throw Error('Confirma a autorización da fotografía antes de subila');
+    const formats={'image/jpeg':'jpg','image/png':'png','image/webp':'webp'};
+    const ext=formats[file.type];
+    if(!ext||file.size<1||file.size>4*1024*1024)throw Error('Formato incorrecto ou arquivo maior de 4 MB: usa JPG, PNG ou WebP');
+    const newPath=state.data.club.id+'/'+p.id+'/'+crypto.randomUUID()+'.'+ext;
+    const store=state.client.storage.from('player-photos');
+    const upload=await store.upload(newPath,file,{upsert:false,contentType:file.type,cacheControl:'3600'});
+    if(upload.error)throw upload.error;
+    try{await rpc('fantasy_set_player_photo',{p_player:p.id,p_path:newPath});}
+    catch(error){await store.remove([newPath]);throw error;}
+    if(p.photo_path){const cleanup=await store.remove([p.photo_path]);if(cleanup.error)console.warn('Foto antiga sen retirar:',cleanup.error.message);}
+    state.adminPlayer=p.id;
+    break;
+  }
+  case 'remove-player-photo':{
+    const id=val('admin-photo-player'),p=state.data.players.find(x=>x.id===id);
+    if(!p?.photo_path)return false;
+    if(!confirm('Retirar a fotografía de '+p.name+' do Fantasy?'))return false;
+    await rpc('fantasy_set_player_photo',{p_player:p.id,p_path:null});
+    const cleanup=await state.client.storage.from('player-photos').remove([p.photo_path]);
+    if(cleanup.error)console.warn('Non se puido eliminar o ficheiro anterior:',cleanup.error.message);
+    state.adminPlayer=p.id;break;
+  }
   case 'activate-season':await rpc('fantasy_activate_season',{p_season:state.data.season.id});break;
   case 'update-kickoff':await rpc('fantasy_set_kickoff',{p_fixture:f.id,p_time:await localToIso(val('kickoff-time')),p_reason:val('kickoff-reason')});break;
   case 'update-end':await rpc('fantasy_set_end',{p_fixture:f.id,p_time:await localToIso(val('end-time')),p_won:val('end-won')==='true'});break;
