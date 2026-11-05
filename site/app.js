@@ -1,4 +1,4 @@
-import {state,renderAuth,renderForbidden,shell,home,market,marketTable,team,ranking,calendar,voting,toast,rpc,current,player,prices,h,dateText,panel,pageHeader,admin,euroShort,playerAvatar} from './pages.js';
+import {state,renderAuth,renderForbidden,securityPage,shell,home,market,marketTable,team,ranking,calendar,voting,toast,rpc,current,player,prices,h,dateText,panel,pageHeader,admin,euroShort,playerAvatar} from './pages.js';
 import {adminView,adminAction,handleStatsFile} from './admin.js';
 import {validateLineup,transferPlan,brokerEstimate,pts} from './logic.js';
 
@@ -6,7 +6,7 @@ const root=document.querySelector('#root');
 function present(){
  if(!state.session){renderAuth();return;}
  if(!state.data){renderForbidden();return;}
- const pages={home,market,team,ranking,calendar,vote:voting,admin:adminView};
+ const pages={home,market,team,ranking,calendar,vote:voting,admin:adminView,security:securityPage};
  const content=(pages[state.page]||home)();
  shell(content);
 }
@@ -69,13 +69,30 @@ async function init(){
  if(!url||!key){state.session=null;renderAuth();return;}
  if(!window.supabase?.createClient){root.innerHTML='<div class="splash"><h2>Non se puido cargar a biblioteca de autenticación.</h2><p>Comproba a conexión a Internet e actualiza a páxina.</p></div>';return;}
  state.client=window.supabase.createClient(url,key,{auth:{autoRefreshToken:true,persistSession:true,detectSessionInUrl:true}});
+ // A recovery email returns with an authenticated session and must open the password form.
+ const hash=new URLSearchParams(location.hash.startsWith('#')?location.hash.slice(1):location.hash);
+ if(hash.get('type')==='recovery'||new URLSearchParams(location.search).get('type')==='recovery'){
+   state.recoveringPassword=true;state.page='security';
+ }
  const {data,error}=await state.client.auth.getSession();
  if(error){state.session=null;renderAuth();toast('Non foi posible recuperar a sesión',true);return;}
  state.session=data.session;
  if(state.session){try{await load();}catch(e){missingDb(e);}}else renderAuth();
  state.client.auth.onAuthStateChange((event,session)=>{
-   if(event==='SIGNED_IN'&&session?.user?.id!==state.session?.user?.id){state.session=session;setTimeout(()=>load().catch(missingDb),0);}
-   if(event==='SIGNED_OUT'){state.session=null;state.data=null;state.page='home';renderAuth();}
+   if(event==='PASSWORD_RECOVERY'){
+     state.recoveringPassword=true;state.page='security';
+     state.session=session;
+     if(session)setTimeout(()=>load().catch(missingDb),0);
+     return;
+   }
+   if(event==='SIGNED_IN'&&session?.user?.id!==state.session?.user?.id){
+     state.session=session;
+     setTimeout(()=>load().catch(missingDb),0);
+   }
+   if(event==='SIGNED_OUT'){
+     state.session=null;state.data=null;state.page='home';
+     state.recoveringPassword=false;state.authMode='password';renderAuth();
+   }
  });
 }
 function showPlayer(id){
@@ -92,6 +109,11 @@ function showPlayer(id){
  document.body.append(el);state.modal=el;
 }
 async function interact(action,element){
+ if(action==='password-page'){
+   if(!state.session)return;
+   state.page='security';present();return;
+ }
+
  if(action==='logout'){await state.client?.auth.signOut();state.session=null;state.data=null;renderAuth();return;}
  if(action==='retry'){await refresh();return;}
  if(action==='set-alias'){
@@ -140,6 +162,11 @@ async function interact(action,element){
  }
 }
 root.addEventListener('click',async e=>{
+ const authModeButton=e.target.closest('[data-auth-mode]');
+ if(authModeButton){
+   state.authMode=authModeButton.dataset.authMode;
+   renderAuth();return;
+ }
  const element=e.target.closest('[data-action],[data-page],[data-player]');
  if(!element)return;
  if(element.dataset.page){state.page=element.dataset.page;state.search='';state.filter='all';window.scrollTo({top:0,behavior:'instant'});present();return;}
@@ -149,16 +176,52 @@ root.addEventListener('click',async e=>{
  try{await interact(action,element);}catch(error){toast(error.message||String(error),true);}finally{if(element.isConnected)element.disabled=false;}
 });
 root.addEventListener('submit',async e=>{
- if(e.target.id!=='auth')return;
+ const form=e.target,formId=form.id;
+ if(!['auth-password','auth-magic','auth-reset','auth-set-password'].includes(formId))return;
  e.preventDefault();
- const btn=e.target.querySelector('button'),email=e.target.elements.namedItem('email').value.trim().toLowerCase();btn.disabled=true;
+ const button=form.querySelector('button[type="submit"]');
+ if(button)button.disabled=true;
  try{
-  const {error}=await state.client.auth.signInWithOtp({email,options:{shouldCreateUser:false,emailRedirectTo:location.origin}});
-  if(error)throw error;
-  toast('Se a túa conta está invitada, recibirás unha ligazón por correo.');
-  e.target.reset();
- }catch(error){toast('Non foi posible enviar a ligazón. Comproba que tes invitación.',true);}
- finally{btn.disabled=false;}
+   if(formId==='auth-set-password'){
+     if(!state.session)throw Error('Precisas iniciar sesión antes de establecer a contrasinal');
+     const password=form.elements.namedItem('password').value;
+     const confirmPassword=form.elements.namedItem('confirm').value;
+     if(password.length<10||password.length>128)throw Error('A contrasinal debe ter entre 10 e 128 caracteres');
+     if(password!==confirmPassword)throw Error('As contrasinais non coinciden');
+     const {error}=await state.client.auth.updateUser({password});
+     if(error)throw error;
+     form.reset();
+     state.recoveringPassword=false;
+     state.page='home';
+     toast('Contrasinal gardada. Xa podes entrar co teu correo e contrasinal.');
+     await refresh();
+     return;
+   }
+   const email=form.elements.namedItem('email').value.trim().toLowerCase();
+   if(formId==='auth-password'){
+     const password=form.elements.namedItem('password').value;
+     const {data,error}=await state.client.auth.signInWithPassword({email,password});
+     if(error||!data.session)throw Error('Correo ou contrasinal incorrectos. Se aínda non configuraches unha contrasinal, utiliza «Primeiro acceso».');
+     state.session=data.session;
+     state.page='home';state.recoveringPassword=false;
+     await load();
+   }else if(formId==='auth-magic'){
+     const {error}=await state.client.auth.signInWithOtp({
+       email,options:{shouldCreateUser:false,emailRedirectTo:location.origin}
+     });
+     if(error)throw Error('Non foi posible enviar a ligazón de acceso. Téntao máis tarde.');
+     toast('Se a túa conta xa está invitada, recibirás unha ligazón de acceso.');
+     form.reset();
+   }else if(formId==='auth-reset'){
+     const {error}=await state.client.auth.resetPasswordForEmail(email,{redirectTo:location.origin});
+     if(error)throw Error('Non foi posible solicitar a recuperación. Téntao máis tarde.');
+     toast('Se a conta existe, recibirás un correo para restablecer a contrasinal.');
+     state.authMode='password';
+     renderAuth();
+   }
+ }catch(error){
+   toast(error.message||'Produciuse un erro. Reinténtao.',true);
+ }finally{if(button?.isConnected)button.disabled=false;}
 });
 root.addEventListener('input',e=>{
  if(e.target.id==='search'){state.search=e.target.value;const box=document.getElementById('market-table');if(box)box.innerHTML=marketTable();}
