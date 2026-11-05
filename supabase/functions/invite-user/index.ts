@@ -7,7 +7,8 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 const url = Deno.env.get("SUPABASE_URL") ?? "";
 const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
 const publicKey = Deno.env.get("SUPABASE_ANON_KEY") ?? "";
-const allowedOrigin = (Deno.env.get("PUBLIC_APP_URL") ?? "").replace(/\/$/, "");
+// The live Workers origin is public configuration, not a secret.
+const allowedOrigin = "https://fantasy-cb-redeiras.cbaloncestoredeiras.workers.dev";
 const headers = (origin: string) => ({
   "Access-Control-Allow-Origin": origin,
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
@@ -51,6 +52,13 @@ serve(async (request) => {
       const { data: p, error: pe } = await service.from("players")
         .select("id,club_id").eq("id", linkedPlayer).eq("club_id", clubId).maybeSingle();
       if (pe || !p) return response(400, { error: "Player is not from this club" }, origin);
+    }
+    // A player's voting identity must never be silently reassigned by an invitation.
+    if (linkedPlayer) {
+      const { data: existingLink, error: linkError } = await service.from("player_accounts")
+        .select("user_id").eq("player_id", linkedPlayer).maybeSingle();
+      if (linkError) return response(500, { error: "Could not verify player mapping" }, origin);
+      if (existingLink) return response(409, { error: "Player already linked; ask admin to review the existing account" }, origin);
     }
     const options = { redirectTo: allowedOrigin };
     const { data: invited, error: inviteError } = await service.auth.admin.inviteUserByEmail(email, options);
