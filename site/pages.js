@@ -31,7 +31,7 @@ function renderAuth(){
  const title=mode==='setup'?'Crear contrasinal':mode==='reset'?'Recuperar contrasinal':'Entra no Fantasy';
  const description=mode==='setup'?'Xa recibiches unha invitación? Solicita unha ligazón de correo para crear a túa primeira contrasinal.':mode==='reset'?'Enviarémosche unha ligazón para establecer unha contrasinal nova.':'Introduce o correo da túa invitación e a túa contrasinal para acceder.';
  const emailField='<div class="field"><label for="auth-email">Correo electrónico</label><input id="auth-email" name="email" type="email" required autocomplete="email" placeholder="nome@exemplo.com"></div>';
- const passwordField='<div class="field"><label for="auth-password">Contrasinal</label><input id="auth-password" name="password" type="password" required autocomplete="current-password" placeholder="A túa contrasinal" minlength="8"></div>';
+ const passwordField='<div class="field"><label for="auth-password-input">Contrasinal</label><input id="auth-password-input" name="password" type="password" required autocomplete="current-password" placeholder="A túa contrasinal" minlength="8"></div>';
  const primary=mode==='setup'?'Enviar ligazón para crear contrasinal':mode==='reset'?'Enviar correo de recuperación':'Iniciar sesión';
  const form=mode==='setup'?'auth-setup':mode==='reset'?'auth-reset':'auth-password';
  const extras=mode==='password'
