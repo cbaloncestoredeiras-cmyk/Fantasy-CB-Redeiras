@@ -1,8 +1,9 @@
 import {euro,pts,escapeHtml as h,byId,validateLineup,transferPlan,brokerEstimate,pickUpcoming,parseDelimited,rowsFromTable} from './logic.js';
+import {formBadge,compareButton,comparisonPanel} from './insights-view.js';
 
 const cfg=window.FANTASY_CONFIG||{};
 const root=document.querySelector('#root');
-const state={client:null,session:null,page:'home',data:null,draft:[],search:'',filter:'all',modal:null,rawPdf:'',importRows:null,loading:false,authMode:'password',recoveringPassword:false,mobileMenuOpen:false};
+const state={client:null,session:null,page:'home',data:null,draft:[],search:'',filter:'all',compareIds:[],modal:null,rawPdf:'',importRows:null,loading:false,authMode:'password',recoveringPassword:false,mobileMenuOpen:false};
 const LOGO='<img class="brand-emblem" src="assets/redeiras-logo.webp" alt="Escudo do CB Redeiras">';
 const NAV=[['home','⌂','Inicio'],['market','◫','Mercado'],['team','▣','O meu equipo'],['ranking','♛','Clasificación'],['calendar','▦','Calendario'],['vote','✦','Votación'],['admin','⚙','Administración']];
 function toast(message,error=false){document.querySelector('.toast')?.remove();const div=document.createElement('div');div.className='toast'+(error?' error':'');div.textContent=message;document.body.append(div);setTimeout(()=>div.remove(),6000);}
@@ -82,11 +83,11 @@ function marketTable(){
   ?'<span class="tag warn">Desde X'+p.available_from_round+'</span>'
   :'<button type="button" class="btn small '+(draft.includes(p.id)?'danger':'primary')+'" data-action="toggle" data-id="'+p.id+'" aria-label="'+(draft.includes(p.id)?'Quitar ':'Fichar ')+h(p.name)+'">'+(draft.includes(p.id)?'Quitar':'Fichar')+'</button>';
  if(!list.length)return empty('Non se atoparon xogadores cos filtros seleccionados.','⌕');
- const table='<div class="tablewrap market-tablewrap"><table class="table"><thead><tr><th scope="col">Xogador</th><th scope="col">Posicións</th><th scope="col" class="num">Prezo</th><th scope="col" class="num">Acción</th></tr></thead><tbody>'+
- list.map(p=>'<tr><td>'+person(p)+'</td><td><span class="tag '+(p.category==='junior'?'junior':'')+'">'+(p.category==='junior'?'JÚNIOR · ':'')+h(p.positions.join(' / '))+'</span></td><td class="num"><b>'+euroShort(prices()[p.id])+'</b></td><td class="num"><div class="actions action-right"><button type="button" class="btn small secondary" data-player="'+p.id+'">Detalles</button>'+controls(p)+'</div></td></tr>').join('')+'</tbody></table></div>';
+ const table='<div class="tablewrap market-tablewrap"><table class="table"><thead><tr><th scope="col">Xogador</th><th scope="col">Posicións</th><th scope="col" class="num">Prezo</th><th scope="col">Forma (3P)</th><th scope="col" class="num">Acción</th></tr></thead><tbody>'+
+ list.map(p=>'<tr><td>'+person(p)+'</td><td><span class="tag '+(p.category==='junior'?'junior':'')+'">'+(p.category==='junior'?'JÚNIOR · ':'')+h(p.positions.join(' / '))+'</span></td><td class="num"><b>'+euroShort(prices()[p.id])+'</b></td><td>'+formBadge(d,p.id)+'</td><td class="num"><div class="actions action-right"><button type="button" class="btn small secondary" data-player="'+p.id+'">Detalles</button>'+compareButton(p.id,state.compareIds)+controls(p)+'</div></td></tr>').join('')+'</tbody></table></div>';
  const cards='<ul class="market-cards" aria-label="Xogadores dispoñibles">'+list.map(p=>
  '<li class="market-player-card"><div class="market-player-top">'+person(p)+'<span class="tag '+(p.category==='junior'?'junior':'')+'">'+(p.category==='junior'?'JÚNIOR · ':'')+h(p.positions.join(' / '))+'</span></div>'+
- '<div class="market-player-bottom"><div><span class="kpi-label">Prezo</span><strong>'+euroShort(prices()[p.id])+'</strong></div><div class="actions"><button type="button" class="btn small secondary" data-player="'+p.id+'">Detalles</button>'+controls(p)+'</div></div></li>'
+ '<div class="market-player-bottom"><div><span class="kpi-label">Prezo</span><strong>'+euroShort(prices()[p.id])+'</strong>'+formBadge(d,p.id)+'</div><div class="actions"><button type="button" class="btn small secondary" data-player="'+p.id+'">Detalles</button>'+compareButton(p.id,state.compareIds)+controls(p)+'</div></div></li>'
  ).join('')+'</ul>';
  return '<div class="market-results">'+table+cards+'</div>';
 }
@@ -105,7 +106,7 @@ function market(){
  ['Cambios restantes',isFirst?'3':String(Math.max(0,3-used)),'Por xornada']
  ].map(k=>panel('<div class="kpi-label">'+k[0]+'</div><div class="kpi">'+k[1]+'</div><div class="kpi-caption">'+k[2]+'</div>')).join('')+'</div>'+
  '<a class="mobile-draft-link" href="#draft-summary"><span>◫ Ver o teu quinteto</span><strong>'+state.draft.length+' / 5 · '+euroShort(summary.cost)+'</strong></a>'+
- '<div class="grid two market-layout"><section class="panel market-panel"><div class="row"><h2>Plantel de xogadores</h2><span class="tag">'+d.players.length+' dispoñibles</span></div><div class="toolbar"><input id="search" placeholder="Buscar xogador…" value="'+h(state.search)+'"/><select id="pos-filter">'+[['all','Todas as posicións'],['BA','Bases'],['ES','Escoltas'],['AL','Aleros'],['AP','Ala-pivotes'],['P','Pivotes'],['junior','Juniors']].map(v=>option(...v,state.filter)).join('')+'</select></div><div id="market-table">'+marketTable()+'</div></section>'+
+ comparisonPanel(d,state.compareIds,person)+'<div class="grid two market-layout"><section class="panel market-panel"><div class="row"><h2>Plantel de xogadores</h2><span class="tag">'+d.players.length+' dispoñibles</span></div><div class="toolbar"><input id="search" placeholder="Buscar xogador…" value="'+h(state.search)+'"/><select id="pos-filter">'+[['all','Todas as posicións'],['BA','Bases'],['ES','Escoltas'],['AL','Aleros'],['AP','Ala-pivotes'],['P','Pivotes'],['junior','Juniors']].map(v=>option(...v,state.filter)).join('')+'</select></div><div id="market-table">'+marketTable()+'</div></section>'+
  '<aside id="draft-summary" class="panel draft-panel" tabindex="-1"><h2>O teu quinteto</h2><div class="stack">'+state.draft.map(id=>{const p=player(id);return p?'<div class="playeritem">'+person(p)+'<div class="actions"><b>'+euroShort(prices()[id])+'</b><button class="btn small secondary" data-action="toggle" data-id="'+id+'">×</button></div></div>':''}).join('')+Array.from({length:Math.max(0,5-state.draft.length)},()=>'<div class="playeritem" style="color:#a0b1ba;border-style:dashed">＋ Praza libre</div>').join('')+'</div><hr class="separator">'+
  '<div class="row"><span class="muted mini">Custo de selección</span><b>'+euroShort(summary.cost)+'</b></div><div class="row" style="margin-top:10px"><span class="muted mini">Efectivo tras confirmar</span><b style="color:'+(plan.cashAfter<0?'var(--bad)':'var(--good)')+'">'+euroShort(plan.cashAfter)+'</b></div>'+
  '<div class="metricbar" style="margin-top:12px"><span style="width:'+Math.min(100,summary.cost/(isFirst?6000000:(d.team.cash+ d.roster.reduce((n,id)=>n+(prices()[id]||0),0)))*100)+'%"></span></div>'+

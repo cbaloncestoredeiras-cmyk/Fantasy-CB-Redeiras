@@ -1,0 +1,38 @@
+/* Player insights · scoped visual language, desktop and mobile. */
+.compare-panel{margin-bottom:18px}
+.compare-panel>.row{align-items:flex-start;margin-bottom:14px}
+.compare-panel h2{margin:0 0 4px}
+.compare-panel .mini{margin:4px 0 0}
+.compare-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:13px}
+.compare-card{border:1px solid #d8ebf3;border-radius:15px;background:linear-gradient(145deg,#f4fbff,#fff);padding:17px;min-width:0}
+.compare-card>.row{align-items:flex-start;gap:12px}
+.compare-card .person{min-width:0}
+.compare-card .person b{overflow-wrap:anywhere}
+.compare-card .person .mini{font-size:10px}
+.compare-card dl{margin:16px 0 12px}
+.compare-card dl>div{display:flex;justify-content:space-between;gap:15px;align-items:baseline;border-bottom:1px solid #e6f0f4;padding:9px 0}
+.compare-card dt{font-size:11px;color:#57798a;line-height:1.35}
+.compare-card dd{margin:0;font-size:12px;text-align:right;font-weight:800;color:#093652;line-height:1.4}
+.compare-placeholder{border:1px dashed #bcd7e4;border-radius:15px;background:#f7fbfd;min-height:170px;padding:28px 15px;display:grid;place-content:center;text-align:center;color:#66899d;font-size:12px;line-height:1.65}
+.compare-card>.btn{margin-top:3px}
+.form-chip{display:inline-flex;align-items:center;padding:5px 8px;margin-top:6px;border-radius:8px;background:#e8f6fc;color:#136b93;font-size:10px;font-weight:800;white-space:nowrap}
+.form-chip.no-form{color:#698491;background:#f1f5f7}
+.market-tablewrap td .form-chip{margin:0}
+.insight-section{margin-top:18px}
+.insight-section h3{margin-bottom:11px}
+.insight-kpis{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.insight-kpis>div{background:#f3f9fc;border-radius:11px;padding:12px;min-width:0}
+.insight-kpis span,.insight-kpis small{display:block;color:#658495;font-size:10px;line-height:1.5}
+.insight-kpis strong{display:block;font-size:20px;font-weight:900;color:#0c3b58;margin:4px 0}
+.insight-empty{background:#f4f8fa;border-radius:11px;padding:15px;color:#638293;line-height:1.6;font-size:12px}
+.form-rounds{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+.form-rounds span{font-size:11px;color:#13638b;border:1px solid #d6e9f3;border-radius:9px;padding:7px 10px}
+.price-chart{display:block;width:100%;height:auto;max-height:190px;margin:8px 0 5px;background:linear-gradient(180deg,#f4fbff,#fff);border:1px solid #e2eef5;border-radius:12px;overflow:visible}
+.price-chart polyline{fill:none;stroke:#209bcf;stroke-width:2.8;stroke-linecap:round;stroke-linejoin:round}
+.price-chart circle{fill:#0c597d;stroke:#fff;stroke-width:1.8}
+.price-chart-labels{display:flex;justify-content:space-between;gap:15px;color:#577789;font-size:11px;font-weight:750}
+.price-history-rows{margin-top:12px;max-height:170px;overflow:auto}
+.price-history-rows>.row{padding:8px 3px;border-bottom:1px solid #e8eff3;font-size:12px}
+.price-history-rows>.row span{color:#648296}
+@media(max-width:760px){.compare-grid{grid-template-columns:1fr}.compare-placeholder{min-height:85px}.compare-card{padding:14px}.insight-kpis{gap:7px}}
+@media(max-width:380px){.insight-kpis{grid-template-columns:1fr}.insight-kpis>div{display:flex;align-items:center;justify-content:space-between}.insight-kpis strong{font-size:18px}}
