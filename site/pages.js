@@ -16,7 +16,11 @@ const option=(value,label,selected='')=>'<option value="'+h(value)+'"'+(String(v
 const pageHeader=(title,subtitle='',extras='')=>'<div class="heading"><div><span class="eyebrow">FANTASY CB REDEIRAS / 2026-27</span><h1>'+h(title)+'</h1><p>'+h(subtitle)+'</p></div>'+extras+'</div>';
 const panel=(content,extra='')=>'<section class="panel '+extra+'">'+content+'</section>';
 const empty=(message,emoji='◌')=>'<div class="empty-state"><div class="symbol">'+emoji+'</div>'+h(message)+'</div>';
-const person=(p)=>'<div class="person"><span class="playerlogo">'+h(p.name.slice(0,2).toUpperCase())+'</span><div><b>'+h(p.name)+'</b><div class="mini muted">'+h(p.positions.join(' · '))+'</div></div></div>';
+const playerAvatar=(p,extra='')=>{
+ const url=state.data?.photoUrls?.[p.id];
+ return '<span class="playerlogo '+h(extra)+'">'+(url?'<img class="playerphoto" loading="lazy" alt="Foto de '+h(p.name)+'" src="'+h(url)+'">':h(p.name.slice(0,2).toUpperCase()))+'</span>';
+};
+const person=(p)=>'<div class="person">'+playerAvatar(p)+'<div><b>'+h(p.name)+'</b><div class="mini muted">'+h(p.positions.join(' · '))+'</div></div></div>';
 const friendlyError=(error)=>error?.message||String(error||'Erro descoñecido');
 async function rpc(name,args){const {data,error}=await state.client.rpc(name,args);if(error)throw error;return data;}
 async function query(table,columns='*',filter=()=>{}){const r=await filter(state.client.from(table).select(columns));if(r.error)throw r.error;return r.data||[];}
@@ -90,7 +94,7 @@ function team(){
  '<div class="grid three" style="margin-bottom:17px">'+[
  ['Valor de mercado',euroShort(sum),'Valor actual do teu quinteto'],['Efectivo',euroShort(d.team.cash),'Dispoñible para fichaxes'],['Patrimonio total',euroShort(sum+d.team.cash),'Valor do equipo + saldo']
  ].map(k=>panel('<div class="kpi-label">'+k[0]+'</div><div class="kpi">'+k[1]+'</div><div class="kpi-caption">'+k[2]+'</div>')).join('')+'</div>'+
- panel('<h2>O meu quinteto</h2><div class="roster-list">'+roster.map(p=>'<div class="roster-card"><div class="playerlogo">'+h(p.name.slice(0,2).toUpperCase())+'</div><b>'+h(p.name)+'</b><div class="small">'+h(p.positions.join(' / '))+'</div><div class="small" style="color:#146f94;font-weight:800">'+euroShort(prices()[p.id])+'</div><button class="btn small secondary" data-player="'+p.id+'" style="margin-top:12px">Perfil</button></div>').join('')+'</div>')+
+ panel('<h2>O meu quinteto</h2><div class="roster-list">'+roster.map(p=>'<div class="roster-card">'+playerAvatar(p)+'<b>'+h(p.name)+'</b><div class="small">'+h(p.positions.join(' / '))+'</div><div class="small" style="color:#146f94;font-weight:800">'+euroShort(prices()[p.id])+'</div><button class="btn small secondary" data-player="'+p.id+'" style="margin-top:12px">Perfil</button></div>').join('')+'</div>')+
  '<div class="grid two" style="margin-top:17px">'+panel('<h2>Normas</h2><p>Cinco xogadores · Mínimo un base e un interior · Tres transferencias por xornada. Os cambios confírmanse só co mercado aberto.</p>')+
  panel('<h2>Historial de fichaxes</h2>'+(d.transfers.length?d.transfers.slice().reverse().slice(0,8).map(t=>'<div class="mini" style="margin:8px 0">X'+t.round_number+': '+h(player(t.sold_player_id)?.name||'?')+' → '+h(player(t.bought_player_id)?.name||'?')+'</div>').join(''):empty('Aínda non fixeches transferencias','⇄')))+'</div>';
 }
@@ -108,4 +112,4 @@ function voting(){
  (usable.length?usable.map(f=>panel('<h2>Votación · Xornada '+f.round_number+'</h2><p>Prazo ata '+dateText(new Date(new Date(f.ended_at).getTime()+72*3600e3).toISOString())+'. Os votos permanecen privados ata pechar.</p><div class="vote-grid">'+[3,2,1].map(w=>'<div class="field"><label>'+w+' puntos</label><select id="vote-'+w+'">'+option('','Escoller xogador')+d.callups.filter(c=>c.fixture_id===f.id&&c.player_id!==d.linkedPlayer).map(c=>option(c.player_id,player(c.player_id)?.name||'?')).join('')+'</select></div>').join('')+'</div><button class="btn primary" data-action="vote" data-fixture="'+f.id+'" style="margin-top:18px">Enviar votación</button>') ).join(''):panel(empty('Non tes votacións abertas. Só os xogadores convocados poden votar durante as 72 h posteriores ao partido.','✦')));
 }
 
-export {state,renderAuth,renderForbidden,shell,home,market,marketTable,team,ranking,calendar,voting,toast,rpc,query,admin,current,player,prices,h,dateText,panel,pageHeader,person,option,euroShort};
+export {state,renderAuth,renderForbidden,shell,home,market,marketTable,team,ranking,calendar,voting,toast,rpc,query,admin,current,player,prices,h,dateText,panel,pageHeader,person,playerAvatar,option,euroShort};
