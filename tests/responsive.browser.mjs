@@ -63,6 +63,14 @@ try{
    await page.locator('.mobile-more-sheet [data-page="admin"]').click();
   }else await navigate('admin');
   assert.ok(await page.locator('.admin-stats-table').count(),size.label+' admin stats');
+  if(mobile){
+   // Opening and closing the menu must not lose unsaved data in the admin editor.
+   const minutes=page.locator('[data-stat-min="a"]');
+   await minutes.fill('23.5');
+   await page.locator('.mobilebar [data-action="mobile-more"]').click();
+   await page.locator('.mobile-more-sheet [data-action="close-more"]').click();
+   assert.equal(await minutes.inputValue(),'23.5',size.label+' draft admin data was lost');
+  }
   await page.screenshot({path:'responsive-artifacts/'+size.label+'-admin.png',fullPage:true});
   const widths=await page.evaluate(()=>({viewport:window.innerWidth,body:document.body.scrollWidth,html:document.documentElement.scrollWidth}));
   assert.ok(widths.html<=widths.viewport+2,JSON.stringify({case:size.label,...widths}));
@@ -75,6 +83,7 @@ try{
   await page.route('**/cdn.jsdelivr.net/**',r=>r.fulfill({status:200,contentType:'application/javascript',body:"window.supabase={createClient:()=>({auth:{getSession:async()=>({data:{session:null},error:null}),onAuthStateChange:()=>({})}})};"}));
   await page.goto(url,{waitUntil:'load'});
   await page.locator('#auth-password').waitFor({timeout:9000});
+  assert.equal(await page.locator('#auth-password-input').count(),1,size.label+' password field');
   const w=await page.evaluate(()=>({viewport:innerWidth,page:document.documentElement.scrollWidth}));
   assert.ok(w.page<=w.viewport+2,size.label+' horizontal overflow');
   await page.screenshot({path:'responsive-artifacts/'+size.label+'.png',fullPage:true});
