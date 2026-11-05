@@ -2,6 +2,27 @@ import {state,rpc,admin,current,player,prices,h,dateText,panel,pageHeader,option
 import {parseDelimited,rowsFromTable,pts} from './logic.js';
 
 const localDateTime=value=>value?new Intl.DateTimeFormat('sv-SE',{timeZone:'Europe/Madrid',year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',hour12:false}).format(new Date(value)).replace(' ','T'):'';
+
+// Downscale large camera photographs in the browser; remove EXIF by re-encoding.
+async function optimizedPortrait(file){
+ const supported=['image/jpeg','image/png','image/webp'];
+ if(!supported.includes(file.type)||!file.size||file.size>25*1024*1024)
+   throw Error('Escolle unha foto JPG, PNG ou WebP de ata 25 MB');
+ let bitmap;
+ try{bitmap=await createImageBitmap(file);}
+ catch{throw Error('Non foi posible abrir a imaxe: proba cun arquivo JPG ou PNG');}
+ try{
+   const max=960,scale=Math.min(1,max/Math.max(bitmap.width,bitmap.height));
+   const canvas=document.createElement('canvas');
+   canvas.width=Math.max(1,Math.round(bitmap.width*scale));
+   canvas.height=Math.max(1,Math.round(bitmap.height*scale));
+   canvas.getContext('2d').drawImage(bitmap,0,0,canvas.width,canvas.height);
+   const blob=await new Promise(resolve=>canvas.toBlob(resolve,'image/webp',.82));
+   if(!blob||blob.type!=='image/webp'||blob.size>4*1024*1024)
+     throw Error('Non se puido comprimir a foto: proba cun JPG máis pequeno');
+   return blob;
+ }finally{bitmap.close?.();}
+}
 const selectedFixture=()=>state.data.fixtures.find(f=>f.id===state.adminFixture)||current().pending||state.data.fixtures[0];
 const getStat=(id)=>state.importRows?.find(r=>r.player_id===id)||state.data.stats?.find(r=>r.player_id===id && r.fixture_id===selectedFixture()?.id)||{};
 export function adminView(){
@@ -29,7 +50,7 @@ export function adminView(){
  panel('<h2>Engadir un junior</h2><div class="stack"><div class="field"><label>Nome</label><input id="junior-name" placeholder="Nome deportivo"></div><div class="field"><label>Posicións (separadas por coma)</label><input id="junior-positions" placeholder="BA, ES"></div><div class="field"><label>Prezo inicial virtual (€)</label><input id="junior-price" type="number" min="450000" max="5000000" step="50000" value="800000"></div><div class="field"><label>Dispoñible desde a xornada</label><input id="junior-round" type="number" min="5" value="'+(current().pending?.round_number||5)+'"></div><button class="btn primary" data-action="add-junior">Engadir ao mercado</button></div>'),
  panel('<h2>Invitar participantes</h2><p>Podes invitar usuarios desde o panel de autenticación de Supabase. A función automática de invitación require ter despregada a Edge Function correspondente.</p><div class="stack"><div class="field"><label>Correo</label><input id="invite-email" type="email" placeholder="correo@exemplo.com"></div><div class="field"><label>Rol</label><select id="invite-role"><option value="participant">Participante</option><option value="admin">Administrador</option></select></div><div class="field"><label>Vincular xogador para votar (opcional)</label><select id="invite-player">'+option('','Non vincular')+d.players.map(p=>option(p.id,p.name)).join('')+'</select></div><label class="mini"><input type="checkbox" id="invite-privacy"> Confirmo que o club verificou a autorización e información de privacidade necesarias para esta persoa (especialmente se é menor).</label><button class="btn primary" data-action="send-invite">Enviar invitación</button></div>')
  ,'</div>',
- panel('<h2>Fotografías dos xogadores</h2><p>Sube un retrato para amosalo no mercado, no quinteto e na ficha do xogador. Só se pode ver desde unha conta autorizada do club. JPEG, PNG ou WebP, máximo 4 MB.</p>'+
+ panel('<h2>Fotografías dos xogadores</h2><p>Sube un retrato para amosalo no mercado, no quinteto e na ficha do xogador. Só se pode ver desde unha conta autorizada do club. JPEG, PNG ou WebP, ata 25 MB; a app reduce a foto automaticamente e elimina os metadatos.</p>'+
  '<div class="grid two"><div class="stack"><div class="field"><label>Xogador</label><select id="admin-photo-player">'+d.players.map(p=>option(p.id,p.name,photoPlayer?.id)).join('')+'</select></div>'+
  '<div class="field"><label>Seleccionar foto</label><input id="admin-photo-file" type="file" accept="image/jpeg,image/png,image/webp"></div>'+
  '<label class="mini"><input type="checkbox" id="admin-photo-consent"> Confirmo que o club dispón da autorización necesaria para utilizar esta fotografía no Fantasy, tamén se a persoa é menor.</label>'+
@@ -49,12 +70,10 @@ export async function adminAction(action){
     if(!p)throw Error('Selecciona un xogador');
     if(!file)throw Error('Selecciona unha foto');
     if(!document.getElementById('admin-photo-consent')?.checked)throw Error('Confirma a autorización da fotografía antes de subila');
-    const formats={'image/jpeg':'jpg','image/png':'png','image/webp':'webp'};
-    const ext=formats[file.type];
-    if(!ext||file.size<1||file.size>4*1024*1024)throw Error('Formato incorrecto ou arquivo maior de 4 MB: usa JPG, PNG ou WebP');
-    const newPath=state.data.club.id+'/'+p.id+'/'+crypto.randomUUID()+'.'+ext;
+    const optimized=await optimizedPortrait(file);
+    const newPath=state.data.club.id+'/'+p.id+'/'+crypto.randomUUID()+'.webp';
     const store=state.client.storage.from('player-photos');
-    const upload=await store.upload(newPath,file,{upsert:false,contentType:file.type,cacheControl:'3600'});
+    const upload=await store.upload(newPath,optimized,{upsert:false,contentType:'image/webp',cacheControl:'3600'});
     if(upload.error)throw upload.error;
     try{await rpc('fantasy_set_player_photo',{p_player:p.id,p_path:newPath});}
     catch(error){await store.remove([newPath]);throw error;}
