@@ -366,3 +366,8 @@ button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,te
 }
 
 .mobile-more-backdrop[hidden]{display:none!important}
+
+/* Authentication messages remain visible in-place after email requests. */
+.auth-feedback{font-size:.86rem;line-height:1.5;padding:12px 14px;border-radius:11px;background:#e4f4fc;color:#155675;border:1px solid #b4dcee}
+.auth-feedback.error{background:#fff0f0;color:#922f3e;border-color:#efb5bc}
+.auth-feedback[hidden]{display:none!important}

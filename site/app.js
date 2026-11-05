@@ -189,11 +189,20 @@ root.addEventListener('click',async e=>{
  element.disabled=true;
  try{await interact(action,element);}catch(error){toast(error.message||String(error),true);}finally{if(element.isConnected)element.disabled=false;}
 });
+function authRecoveryError(error){
+ if(error?.status===429||['over_email_send_rate_limit','over_request_rate_limit'].includes(error?.code))
+  return 'Superouse o límite temporal de correos de Supabase. Non repitas a solicitude; cómpre configurar un servidor SMTP propio para o club.';
+ if(error?.code==='email_address_not_authorized')
+  return 'Supabase só permite enviar ao equipo do proxecto co correo de proba. Debemos activar un servidor SMTP propio antes de invitar máis persoas.';
+ return 'Non foi posible enviar o correo. Comproba a configuración de SMTP e volve tentalo.';
+}
 root.addEventListener('submit',async e=>{
  const form=e.target,formId=form.id;
- if(!['auth-password','auth-magic','auth-reset','auth-set-password'].includes(formId))return;
+ if(!['auth-password','auth-setup','auth-reset','auth-set-password'].includes(formId))return;
  e.preventDefault();
  const button=form.querySelector('button[type="submit"]');
+ const feedback=form.querySelector('.auth-feedback');
+ if(feedback){feedback.hidden=true;feedback.textContent='';feedback.classList.remove('error');}
  if(button)button.disabled=true;
  try{
    if(formId==='auth-set-password'){
@@ -219,22 +228,19 @@ root.addEventListener('submit',async e=>{
      state.session=data.session;
      state.page='home';state.recoveringPassword=false;
      await load();
-   }else if(formId==='auth-magic'){
-     const {error}=await state.client.auth.signInWithOtp({
-       email,options:{shouldCreateUser:false,emailRedirectTo:location.origin}
-     });
-     if(error)throw Error('Non foi posible enviar a ligazón de acceso. Téntao máis tarde.');
-     toast('Se a túa conta xa está invitada, recibirás unha ligazón de acceso.');
-     form.reset();
-   }else if(formId==='auth-reset'){
+   }else if(formId==='auth-setup'||formId==='auth-reset'){
+     // Invited users may establish their first password using the recovery flow;
+     // public signup remains disabled and disabled OTP/magic-link endpoints are not used.
      const {error}=await state.client.auth.resetPasswordForEmail(email,{redirectTo:location.origin});
-     if(error)throw Error('Non foi posible solicitar a recuperación. Téntao máis tarde.');
-     toast('Se a conta existe, recibirás un correo para restablecer a contrasinal.');
-     state.authMode='password';
-     renderAuth();
+     if(error)throw new Error(authRecoveryError(error));
+     const msg='Se a conta está invitada, recibirás unha ligazón para crear unha contrasinal. Revisa o correo e o spam.';
+     if(feedback){feedback.textContent=msg;feedback.hidden=false;}
+     form.reset();
    }
  }catch(error){
-   toast(error.message||'Produciuse un erro. Reinténtao.',true);
+   const msg=error.message||'Produciuse un erro. Reinténtao.';
+   if(feedback){feedback.textContent=msg;feedback.hidden=false;feedback.classList.add('error');}
+   else toast(msg,true);
  }finally{if(button?.isConnected)button.disabled=false;}
 });
 root.addEventListener('input',e=>{
