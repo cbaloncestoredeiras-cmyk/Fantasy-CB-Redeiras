@@ -249,5 +249,18 @@ root.addEventListener('change',async e=>{
  }
 });
 document.addEventListener('click',e=>{if(state.modal&&(e.target===state.modal||e.target.closest('[data-action="close-modal"]'))){state.modal.remove();state.modal=null;}});
-window.addEventListener('keydown',e=>{if(e.key!=='Escape')return;if(state.modal){state.modal.remove();state.modal=null;}else if(state.mobileMenuOpen){state.mobileMenuOpen=false;present();root.querySelector('[data-action="mobile-more"]')?.focus();}});
+window.addEventListener('keydown',e=>{
+ if(e.key==='Tab'&&state.mobileMenuOpen){
+   const sheet=root.querySelector('.mobile-more-sheet');
+   const focusable=[...(sheet?.querySelectorAll('button:not(:disabled),a[href]')||[])].filter(el=>el.getClientRects().length);
+   if(focusable.length){
+     const first=focusable[0],last=focusable[focusable.length-1],active=document.activeElement;
+     if(e.shiftKey&&(active===first||!sheet.contains(active))){e.preventDefault();last.focus();}
+     else if(!e.shiftKey&&(active===last||!sheet.contains(active))){e.preventDefault();first.focus();}
+   }
+ }
+ if(e.key!=='Escape')return;
+ if(state.modal){state.modal.remove();state.modal=null;}
+ else if(state.mobileMenuOpen){state.mobileMenuOpen=false;present();root.querySelector('[data-action="mobile-more"]')?.focus();}
+});
 init().catch(err=>missingDb(err));
