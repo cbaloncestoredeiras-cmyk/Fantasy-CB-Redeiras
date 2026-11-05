@@ -1,0 +1,71 @@
+name: Erro do Fantasy Redeiras
+description: Rexistrar un problema reproducible sen datos persoais nin credenciais
+title: "[Erro] "
+labels: []
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Non inclúas contrasinais, tokens, fotos, correos persoais de participantes, nomes de menores nin estatísticas privadas. As capturas deben ocultar os datos persoais.
+  - type: dropdown
+    id: area
+    attributes:
+      label: Área afectada
+      options:
+        - Inicio de sesión
+        - Mercado e fichaxes
+        - Quinteto
+        - Puntuación e bróker
+        - Votación
+        - Administración
+        - Fotografías
+        - Deseño e móbil
+        - Outro
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Pasos para reproducir
+      description: Usa contas de proba e exemplos ficticios.
+      placeholder: |
+        1. Acceder como participante de proba
+        2. Abrir o mercado
+        3. ...
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Resultado esperado
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Resultado obtido
+    validations:
+      required: true
+  - type: dropdown
+    id: device
+    attributes:
+      label: Dispositivo
+      options:
+        - iPhone/Safari
+        - Android/Chrome
+        - Windows/Chrome
+        - Mac/Safari
+        - Outro
+    validations:
+      required: true
+  - type: dropdown
+    id: severity
+    attributes:
+      label: Prioridade
+      options:
+        - Bloqueante (acceso, seguridade, datos incorrectos)
+        - Alta
+        - Media
+        - Baixa (cosmética)
+    validations:
+      required: true
