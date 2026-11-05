@@ -1,4 +1,7 @@
-# Guía de puesta en marcha — Fantasy CB Redeiras (noviembre 2026)
+# Guía histórica de puesta en marcha — Fantasy CB Redeiras (noviembre 2026)
+
+> **ATENCIÓN: ARCHIVO HISTÓRICO.** La aplicación ya está desplegada en Cloudflare Workers y las migraciones iniciales ya se ejecutaron. No repitas estas instrucciones de instalación en la base de datos de producción. Para el estado real y los pasos pendientes de seguridad, consulta [Fases 0 y 1 · Operaciones](PHASE01_OPERATIONS.md).
+
 
 > **Estado:** Código en GitHub, NO desplegado; migraciones sin ejecutar ni validar en Supabase. No invitar a menores ni publicar el enlace hasta completar pruebas de privacidad y seguridad. La creación de cuentas Cloudflare y Supabase por sí sola no publica nada.
 
