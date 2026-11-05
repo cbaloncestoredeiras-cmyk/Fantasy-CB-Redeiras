@@ -339,12 +339,14 @@ button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,te
 
 
 
-/* Tablet rail retains readable section names for touch-first navigation. */
+/* Tablet rail: icons over readable labels, without broken words. */
 @media(min-width:640px) and (max-width:1099px){
-  .layout{grid-template-columns:clamp(128px,16vw,160px) minmax(0,1fr);}
-  .sidebar .nav-label{display:inline;min-width:0;overflow-wrap:anywhere;font-size:.76rem;line-height:1.18;text-align:left;}
-  .sidebar .nav{justify-content:flex-start;gap:8px;padding:10px 8px;min-height:50px;}
-  .sidebar .nav .sym{font-size:19px;width:22px;flex:0 0 22px;}
+  .layout{grid-template-columns:clamp(104px,13vw,130px) minmax(0,1fr);}
+  .sidebar{padding:18px 8px;}
+  .sidebar-links{gap:5px;}
+  .sidebar .nav{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;padding:8px 3px;min-height:65px;}
+  .sidebar .nav .sym{font-size:22px;width:auto;flex:none;}
+  .sidebar .nav-label{display:block;min-width:0;white-space:normal;word-break:normal;overflow-wrap:normal;font-size:.69rem;line-height:1.2;text-align:center;}
 }
 .foot{font-size:.79rem;line-height:1.5;}
 .auth-form a{font-size:.8rem;}
