@@ -100,10 +100,10 @@ begin
      'played_games',v_prior_count+case when v_played then 1 else 0 end));
  end loop;
  for t in
-   select t.id,t.name from public.fantasy_teams t where t.season_id=s.id
+   select tm.id,tm.name from public.fantasy_teams tm where tm.season_id=s.id
      and (f.status<>'finalized' or exists(
-       select 1 from public.team_round_scores rs where rs.team_id=t.id and rs.fixture_id=f.id
-     )) order by t.name
+       select 1 from public.team_round_scores rs where rs.team_id=tm.id and rs.fixture_id=f.id
+     )) order by tm.name
  loop
    if f.status='finalized' then
      select coalesce(sum((j.value->>'fantasy_points')::numeric),0) into v_total
