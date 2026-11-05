@@ -122,12 +122,14 @@ async function interact(action,element){
 
  if(action==='password-page'){
    if(!state.session)return;
+   state.mobileMenuOpen=false;
    state.page='security';present();return;
  }
 
- if(action==='logout'){await state.client?.auth.signOut();state.session=null;state.data=null;renderAuth();return;}
+ if(action==='logout'){await state.client?.auth.signOut();state.session=null;state.data=null;state.mobileMenuOpen=false;renderAuth();return;}
  if(action==='retry'){await refresh();return;}
  if(action==='set-alias'){
+   state.mobileMenuOpen=false;
    const alias=prompt('Alias público (2-40 caracteres):',state.data?.alias||'');
    if(alias===null)return;
    if(alias.trim().length<2||alias.trim().length>40)throw Error('O alias debe ter entre 2 e 40 caracteres');
