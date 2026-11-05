@@ -18,3 +18,11 @@
 .admin-photo-preview .admin-photo-avatar,.admin-photo-preview>img.admin-photo-avatar{width:125px;height:125px;border-radius:16px;object-fit:cover;object-position:center 20%;font-size:25px}
 .admin-photo-preview p{margin:0;font-size:12px}
 @media(max-width:800px){.admin-photo-preview{min-height:135px}}
+
+/* Original club emblem (optimized WebP) */
+.brand-emblem{width:51px;height:62px;object-fit:contain;flex:0 0 auto;filter:drop-shadow(0 4px 6px #041f3540)}
+.auth-art .brand-emblem{width:70px;height:84px}
+.hero-graphic{font-size:initial;opacity:.78;transform:none;display:flex;justify-content:center;align-items:center;flex:0 0 220px}
+.hero-graphic .hero-emblem{display:block;width:190px;height:auto;max-height:225px;object-fit:contain;filter:drop-shadow(0 12px 18px #001c3055)}
+.splash .brand-emblem{margin:0 auto 15px;width:110px;height:130px}
+@media(max-width:800px){.hero-graphic{display:none}.auth-art .brand-emblem{width:56px;height:68px}.brand-emblem{width:45px;height:54px}}
