@@ -3,7 +3,7 @@ import {euro,pts,escapeHtml as h,byId,validateLineup,transferPlan,brokerEstimate
 const cfg=window.FANTASY_CONFIG||{};
 const root=document.querySelector('#root');
 const state={client:null,session:null,page:'home',data:null,draft:[],search:'',filter:'all',modal:null,rawPdf:'',importRows:null,loading:false};
-const LOGO='<span class="brand-icon">R<span>.</span></span>';
+const LOGO='<img class="brand-emblem" src="assets/redeiras-logo.webp" alt="Escudo do CB Redeiras">';
 const NAV=[['home','⌂','Inicio'],['market','◫','Mercado'],['team','▣','O meu equipo'],['ranking','♛','Clasificación'],['calendar','▦','Calendario'],['vote','✦','Votación'],['admin','⚙','Administración']];
 function toast(message,error=false){document.querySelector('.toast')?.remove();const div=document.createElement('div');div.className='toast'+(error?' error':'');div.textContent=message;document.body.append(div);setTimeout(()=>div.remove(),6000);}
 const dateText=(v,opts={day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'})=>v?new Intl.DateTimeFormat('gl-ES',{timeZone:'Europe/Madrid',...opts}).format(new Date(v)):'Horario por confirmar';
@@ -45,7 +45,7 @@ function home(){
  const budget=d.team?d.team.cash:6000000;
  return pageHeader('Benvido ao Fantasy','Toda a competición do CB Redeiras nun só lugar.',
  '<div class="actions"><button class="btn primary" data-page="market">Ir ao mercado →</button></div>')+
- '<div class="hero"><div><span class="eyebrow" style="color:#9bdcff">TEMPADA 26/27 · XORNADA '+h(pending?.round_number||5)+'</span><h2>Non se gaña só cos nomes.</h2><p>Constrúe o teu quinteto con cabeza, atopa xogadores infravalorados e fai crecer o teu equipo co bróker.</p><button class="btn primary" data-page="'+(d.team?'team':'market')+'">'+(d.team?'Ver o meu quinteto':'Crear o meu quinteto')+' →</button></div><div class="hero-graphic">◉</div></div>'+
+ '<div class="hero"><div><span class="eyebrow" style="color:#9bdcff">TEMPADA 26/27 · XORNADA '+h(pending?.round_number||5)+'</span><h2>Non se gaña só cos nomes.</h2><p>Constrúe o teu quinteto con cabeza, atopa xogadores infravalorados e fai crecer o teu equipo co bróker.</p><button class="btn primary" data-page="'+(d.team?'team':'market')+'">'+(d.team?'Ver o meu quinteto':'Crear o meu quinteto')+' →</button></div><div class="hero-graphic"><img class="hero-emblem" src="assets/redeiras-logo.webp" alt=""></div></div>'+
  '<div class="grid four" style="margin:18px 0">'+[
  ['Orzamento inicial','6 M€','Por equipo'],['O teu efectivo',euroShort(budget),'Dispoñible para fichar'],['Puntuación total',pts(total),'Puntos Fantasy'],['Xogadores no mercado',String(d.players.length),'Inclúe juniors']
  ].map(k=>panel('<div class="kpi-label">'+k[0]+'</div><div class="kpi">'+k[1]+'</div><div class="kpi-caption">'+k[2]+'</div>')).join('')+'</div>'+
