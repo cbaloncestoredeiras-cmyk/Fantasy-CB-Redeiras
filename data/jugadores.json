@@ -6,7 +6,7 @@
       "BA",
       "ES"
     ],
-    "precio": 2300000
+    "precio": 2250000
   },
   {
     "id": "yoel",
@@ -15,7 +15,7 @@
       "BA",
       "ES"
     ],
-    "precio": 2000000,
+    "precio": 2050000,
     "premios_ledicia": 2
   },
   {
@@ -34,7 +34,7 @@
       "AP",
       "P"
     ],
-    "precio": 1550000
+    "precio": 1500000
   },
   {
     "id": "edu",
@@ -43,7 +43,7 @@
       "AP",
       "P"
     ],
-    "precio": 1400000
+    "precio": 1200000
   },
   {
     "id": "diego",
@@ -79,7 +79,7 @@
       "BA",
       "ES"
     ],
-    "precio": 1200000
+    "precio": 1050000
   },
   {
     "id": "adan",
@@ -88,7 +88,7 @@
       "AL",
       "AP"
     ],
-    "precio": 1050000
+    "precio": 1300000
   },
   {
     "id": "manuel",
@@ -133,7 +133,7 @@
       "AL",
       "AP"
     ],
-    "precio": 800000
+    "precio": 700000
   },
   {
     "id": "mateo",
@@ -142,7 +142,7 @@
       "BA",
       "ES"
     ],
-    "precio": 1150000,
+    "precio": 900000,
     "premios_ledicia": 1,
     "junior": true
   },
@@ -153,7 +153,7 @@
       "ES",
       "BA"
     ],
-    "precio": 1200000,
+    "precio": 1350000,
     "junior": true
   },
   {
@@ -163,7 +163,7 @@
       "AL",
       "AP"
     ],
-    "precio": 1000000,
+    "precio": 1150000,
     "junior": true
   }
 ]
