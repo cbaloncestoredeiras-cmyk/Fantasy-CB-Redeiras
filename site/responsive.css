@@ -267,6 +267,31 @@ button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,te
   .market-player-bottom .actions>*{flex:1;}
 }
 
+
+/* Ranking: retain comparison table only while its content has enough room. */
+.ranking-results{container-type:inline-size;container-name:ranking;}
+.ranking-cards{display:none;padding:0;margin:0;list-style:none;}
+.ranking-card{display:flex;align-items:center;gap:12px;padding:13px 12px;background:#fafdff;border:1px solid #dfebf2;border-radius:13px;min-width:0;}
+.ranking-position{display:grid;place-items:center;flex:0 0 34px;height:34px;
+  background:#e5f5fd;border-radius:10px;color:#105578;font-size:.93rem;font-weight:900;}
+.ranking-names{flex:1 1 auto;min-width:0;overflow-wrap:anywhere;}
+.ranking-names b{font-size:.93rem;}
+.ranking-names small{display:block;margin-top:4px;color:#688296;font-size:.8rem;}
+.ranking-points{white-space:nowrap;font-size:1rem;color:#104b6a;text-align:right;}
+.ranking-points small{display:block;font-size:.7rem;color:#688296;font-weight:600;}
+@container ranking (max-width:620px){
+  .ranking-tablewrap{display:none;}
+  .ranking-cards{display:grid;gap:8px;}
+}
+/* Match cards keep time and venue readable without requiring sideways swipes. */
+@media(max-width:639px){
+  .match{align-items:start;gap:8px;flex-wrap:wrap;min-width:0;}
+  .match>div:nth-child(2){min-width:0;flex:1 1 190px;}
+  .match>div:nth-child(3){margin-inline-start:auto;}
+  .match :is(strong,small){overflow-wrap:anywhere;}
+  .vote-grid{grid-template-columns:minmax(0,1fr);}
+}
+
 /* Admin screens: the same fields become readable cards at constrained widths. */
 .admin-callup-grid{grid-template-columns:repeat(auto-fit,minmax(min(100%,175px),1fr));gap:9px;}
 .admin-callup-grid .callup-item{font-size:.9rem;min-width:0;min-height:50px;justify-content:flex-start;}
