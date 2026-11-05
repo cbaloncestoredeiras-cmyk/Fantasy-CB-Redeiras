@@ -40,8 +40,12 @@ async function load(){
  ]);
  const roster=teams.length?await toPromise(c.from('team_rosters').select('player_id').eq('team_id',teams[0].id)):[];
  const transfers=teams.length?await toPromise(c.from('transfers').select('*').eq('team_id',teams[0].id).order('executed_at',{ascending:true})):[];
- const rankR=await c.rpc('fantasy_leaderboard',{p_season:season.id});
+ const [rankR,weeklyR]=await Promise.all([
+  c.rpc('fantasy_leaderboard',{p_season:season.id}),
+  c.rpc('fantasy_round_leaderboard',{p_season:season.id})
+ ]);
  if(rankR.error)throw rankR.error;
+ if(weeklyR.error)console.warn('Clasificación semanal non dispoñible:',weeklyR.error.message);
  const metricsR=role==='admin'?await c.rpc('fantasy_admin_metrics',{p_club:clubId}):{data:null,error:null};
  if(metricsR.error)throw metricsR.error;
  const launchR=role==='admin'?await c.rpc('fantasy_launch_status',{p_season:season.id}):{data:null,error:null};
@@ -60,7 +64,7 @@ async function load(){
  const fullPlayers=players.map(p=>({...p,positions:positionMap[p.id]||[]}));
  const playerMap=Object.fromEntries(fullPlayers.map(p=>[p.id,p]));
  state.data={role,club:clubR.data,season,players:fullPlayers,playerMap,prices:priceMap,photoUrls,fixtures,
- team:teams[0]||null,roster:roster.map(r=>r.player_id),transfers,leaderboard:rankR.data||[],
+ team:teams[0]||null,roster:roster.map(r=>r.player_id),transfers,leaderboard:rankR.data||[],weeklyRanking:weeklyR.data||[],weeklyRankingError:weeklyR.error?.message||null,
  alias:alias[0]?.display_name||'Redeirista',callups,eligibleFixtures:eligible.map(x=>x.fixture_id),
  linkedPlayer:voterAccount[0]?.player_id||null,stats,history,metrics:metricsR.data,launchStatus:launchR.data};
  state.draft=[...state.data.roster];
@@ -148,6 +152,10 @@ async function interact(action,element){
   present();return;
  }
  if(action==='clear-compare'){state.compareIds=[];present();return;}
+ if(action==='restore-simulation'){
+   state.draft=state.data.team?[...state.data.roster]:[];
+   present();return;
+ }
  if(action==='toggle'){
   const id=element.dataset.id;
   if(state.draft.includes(id))state.draft=state.draft.filter(x=>x!==id);
@@ -260,6 +268,7 @@ root.addEventListener('input',e=>{
 });
 root.addEventListener('change',async e=>{
  if(e.target.id==='pos-filter'){state.filter=e.target.value;const box=document.getElementById('market-table');if(box)box.innerHTML=marketTable();}
+ if(e.target.id==='ranking-round'){state.rankRound=e.target.value;present();}
  if(e.target.id==='admin-photo-player'){state.adminPlayer=e.target.value;present();}
  if(e.target.id==='admin-photo-file'){
    const file=e.target.files?.[0];
