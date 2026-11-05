@@ -68,12 +68,12 @@ async function init(){
  const {url,key}=window.FANTASY_CONFIG||{};
  if(!url||!key){state.session=null;renderAuth();return;}
  if(!window.supabase?.createClient){root.innerHTML='<div class="splash"><h2>Non se puido cargar a biblioteca de autenticación.</h2><p>Comproba a conexión a Internet e actualiza a páxina.</p></div>';return;}
- state.client=window.supabase.createClient(url,key,{auth:{autoRefreshToken:true,persistSession:true,detectSessionInUrl:true}});
- // A recovery email returns with an authenticated session and must open the password form.
+ // Read a password-recovery marker before Supabase consumes the URL fragment.
  const hash=new URLSearchParams(location.hash.startsWith('#')?location.hash.slice(1):location.hash);
  if(hash.get('type')==='recovery'||new URLSearchParams(location.search).get('type')==='recovery'){
    state.recoveringPassword=true;state.page='security';
  }
+ state.client=window.supabase.createClient(url,key,{auth:{autoRefreshToken:true,persistSession:true,detectSessionInUrl:true}});
  const {data,error}=await state.client.auth.getSession();
  if(error){state.session=null;renderAuth();toast('Non foi posible recuperar a sesión',true);return;}
  state.session=data.session;
