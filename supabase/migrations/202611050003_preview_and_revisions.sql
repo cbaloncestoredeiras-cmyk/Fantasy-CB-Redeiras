@@ -188,6 +188,7 @@ begin
  if not found then raise exception 'Partido non atopado'; end if;
  select * into s from public.seasons where id=f.season_id;
  if not private.is_admin(s.club_id) then raise exception 'Só administración'; end if;
+ if not s.active then raise exception 'A tempada segue desactivada'; end if;
  if f.status='finalized' then raise exception 'A xornada xa está publicada'; end if;
  if exists(select 1 from public.fixtures prev where prev.season_id=s.id
    and prev.round_number>=s.start_round and prev.round_number<f.round_number
