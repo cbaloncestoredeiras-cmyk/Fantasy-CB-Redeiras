@@ -11,7 +11,7 @@ Fecha de revisión: 2026-11-05. Mantener **la temporada desactivada** hasta supe
 
 ## Prueba de una jornada sin modificar datos reales
 
-En Supabase, ejecutar el test transaccional `tests/phase01.smoke.sql` usando una conexión de administración **solo en un entorno de prueba** o con las garantías de transacción/ROLLBACK correspondientes. Crea un fixture ficticio, un equipo, puntuaciones, publica y rectifica, y finalmente hace **ROLLBACK**. Los test unitarios y de navegador de GitHub no reemplazan esta prueba.
+En Supabase, ejecutar los tests transaccionales `tests/phase01.smoke.sql` y `tests/phase01.market_vote.sql` usando una conexión de administración **solo en un entorno de prueba** o con las garantías de transacción/ROLLBACK correspondientes. Cubren mercado, fichajes, cierre, voto, publicación y rectificación con **ROLLBACK**. Los test unitarios y de navegador de GitHub no reemplazan esta prueba.
 
 Para una simulación independiente, crear una rama/proyecto de Supabase **requiere aprobación del coste**. La rama debe poblarse con datos sintéticos: los usuarios de producción y sus fotografías no deben copiarse sin base jurídica.
 
