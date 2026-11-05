@@ -1,9 +1,10 @@
 import {euro,pts,escapeHtml as h,byId,validateLineup,transferPlan,brokerEstimate,pickUpcoming,parseDelimited,rowsFromTable} from './logic.js';
 import {formBadge,compareButton,comparisonPanel} from './insights-view.js';
+import {simulatorPanel,idealTeamPanel} from './strategy-view.js';
 
 const cfg=window.FANTASY_CONFIG||{};
 const root=document.querySelector('#root');
-const state={client:null,session:null,page:'home',data:null,draft:[],search:'',filter:'all',compareIds:[],modal:null,rawPdf:'',importRows:null,loading:false,authMode:'password',recoveringPassword:false,mobileMenuOpen:false};
+const state={client:null,session:null,page:'home',data:null,draft:[],search:'',filter:'all',compareIds:[],rankRound:'general',modal:null,rawPdf:'',importRows:null,loading:false,authMode:'password',recoveringPassword:false,mobileMenuOpen:false};
 const LOGO='<img class="brand-emblem" src="assets/redeiras-logo.webp" alt="Escudo do CB Redeiras">';
 const NAV=[['home','⌂','Inicio'],['market','◫','Mercado'],['team','▣','O meu equipo'],['ranking','♛','Clasificación'],['calendar','▦','Calendario'],['vote','✦','Votación'],['admin','⚙','Administración']];
 function toast(message,error=false){document.querySelector('.toast')?.remove();const div=document.createElement('div');div.className='toast'+(error?' error':'');div.textContent=message;document.body.append(div);setTimeout(()=>div.remove(),6000);}
@@ -106,7 +107,7 @@ function market(){
  ['Cambios restantes',isFirst?'3':String(Math.max(0,3-used)),'Por xornada']
  ].map(k=>panel('<div class="kpi-label">'+k[0]+'</div><div class="kpi">'+k[1]+'</div><div class="kpi-caption">'+k[2]+'</div>')).join('')+'</div>'+
  '<a class="mobile-draft-link" href="#draft-summary"><span>◫ Ver o teu quinteto</span><strong>'+state.draft.length+' / 5 · '+euroShort(summary.cost)+'</strong></a>'+
- comparisonPanel(d,state.compareIds,person)+'<div class="grid two market-layout"><section class="panel market-panel"><div class="row"><h2>Plantel de xogadores</h2><span class="tag">'+d.players.length+' dispoñibles</span></div><div class="toolbar"><input id="search" placeholder="Buscar xogador…" value="'+h(state.search)+'"/><select id="pos-filter">'+[['all','Todas as posicións'],['BA','Bases'],['ES','Escoltas'],['AL','Aleros'],['AP','Ala-pivotes'],['P','Pivotes'],['junior','Juniors']].map(v=>option(...v,state.filter)).join('')+'</select></div><div id="market-table">'+marketTable()+'</div></section>'+
+ comparisonPanel(d,state.compareIds,person)+simulatorPanel(d,state.draft,pending?.round_number||d.season.start_round,open)+'<div class="grid two market-layout"><section class="panel market-panel"><div class="row"><h2>Plantel de xogadores</h2><span class="tag">'+d.players.length+' dispoñibles</span></div><div class="toolbar"><input id="search" placeholder="Buscar xogador…" value="'+h(state.search)+'"/><select id="pos-filter">'+[['all','Todas as posicións'],['BA','Bases'],['ES','Escoltas'],['AL','Aleros'],['AP','Ala-pivotes'],['P','Pivotes'],['junior','Juniors']].map(v=>option(...v,state.filter)).join('')+'</select></div><div id="market-table">'+marketTable()+'</div></section>'+
  '<aside id="draft-summary" class="panel draft-panel" tabindex="-1"><h2>O teu quinteto</h2><div class="stack">'+state.draft.map(id=>{const p=player(id);return p?'<div class="playeritem">'+person(p)+'<div class="actions"><b>'+euroShort(prices()[id])+'</b><button class="btn small secondary" data-action="toggle" data-id="'+id+'">×</button></div></div>':''}).join('')+Array.from({length:Math.max(0,5-state.draft.length)},()=>'<div class="playeritem" style="color:#a0b1ba;border-style:dashed">＋ Praza libre</div>').join('')+'</div><hr class="separator">'+
  '<div class="row"><span class="muted mini">Custo de selección</span><b>'+euroShort(summary.cost)+'</b></div><div class="row" style="margin-top:10px"><span class="muted mini">Efectivo tras confirmar</span><b style="color:'+(plan.cashAfter<0?'var(--bad)':'var(--good)')+'">'+euroShort(plan.cashAfter)+'</b></div>'+
  '<div class="metricbar" style="margin-top:12px"><span style="width:'+Math.min(100,summary.cost/(isFirst?6000000:(d.team.cash+ d.roster.reduce((n,id)=>n+(prices()[id]||0),0)))*100)+'%"></span></div>'+
@@ -130,13 +131,27 @@ function team(){
 }
 function ranking(){
  const d=state.data;
+ const finished=d.fixtures.filter(f=>f.status==='finalized').slice().sort((a,b)=>b.round_number-a.round_number);
+ const requested=String(state.rankRound||'general');
+ const selected=requested==='general'||!finished.some(f=>String(f.round_number)===requested)?'general':requested;
+ const weekly=selected!=='general';
+ const rows=weekly?(d.weeklyRanking||[]).filter(t=>String(t.round_number)===selected).map(t=>({
+   position:t.position,team_id:t.team_id,team_name:t.team_name,manager_alias:t.manager_alias,total_points:t.round_points
+ })):d.leaderboard;
  const table='<div class="tablewrap ranking-tablewrap"><table class="table"><thead><tr><th scope="col">#</th><th scope="col">Equipo Fantasy</th><th scope="col">Mánager</th><th scope="col" class="num">Puntos</th></tr></thead><tbody>'+
- d.leaderboard.map(t=>'<tr><td><b>'+t.position+'</b></td><td><b>'+h(t.team_name)+'</b>'+(d.team?.id===t.team_id?' <span class="tag good">TI</span>':'')+'</td><td>'+h(t.manager_alias)+'</td><td class="num"><b>'+pts(t.total_points)+'</b></td></tr>').join('')+'</tbody></table></div>';
- const cards='<ol class="ranking-cards" aria-label="Clasificación de equipos">'+d.leaderboard.map(t=>
+  rows.map(t=>'<tr><td><b>'+t.position+'</b></td><td><b>'+h(t.team_name)+'</b>'+(d.team?.id===t.team_id?' <span class="tag good">TI</span>':'')+'</td><td>'+h(t.manager_alias)+'</td><td class="num"><b>'+pts(t.total_points)+'</b></td></tr>').join('')+'</tbody></table></div>';
+ const cards='<ol class="ranking-cards" aria-label="Clasificación de equipos">'+rows.map(t=>
   '<li class="ranking-card"><span class="ranking-position">'+t.position+'</span><div class="ranking-names"><b>'+h(t.team_name)+'</b>'+(d.team?.id===t.team_id?' <span class="tag good">TI</span>':'')+'<small>'+h(t.manager_alias)+'</small></div><strong class="ranking-points">'+pts(t.total_points)+'<small>pts</small></strong></li>'
  ).join('')+'</ol>';
- return pageHeader('Clasificación xeral','A puntuación acumúlase coas valoracións publicadas de cada xornada.')+
- panel('<h2>Equipos participantes</h2>'+(d.leaderboard.length?'<div class="ranking-results">'+table+cards+'</div>':empty('Aínda non hai puntuacións nin equipos','♛')));
+ const choose='<div class="ranking-selector"><label for="ranking-round">Ver clasificación</label><select id="ranking-round">'+
+  option('general','Xeral',selected)+finished.map(f=>option(String(f.round_number),'X'+f.round_number+' · '+f.opponent,selected)).join('')+'</select></div>';
+ const noRows=weekly?'Aínda non hai puntuacións rexistradas para esta xornada.':'Aínda non hai puntuacións nin equipos';
+ const error=weekly&&d.weeklyRankingError?'<div class="notice error">Non foi posible cargar a clasificación semanal. Revisa a conexión e actualiza a páxina.</div>':'';
+ const idealRound=weekly?Number(selected):finished[0]?.round_number;
+ return pageHeader(weekly?'Clasificación · X'+selected:'Clasificación xeral',
+  weekly?'Puntos oficiais desta xornada; non dependen do quinteto actual.':'Puntos acumulados de todas as xornadas publicadas.')+
+  panel(choose+error+(rows.length?'<div class="ranking-results">'+table+cards+'</div>':empty(noRows,'♛')))+
+  idealTeamPanel(d,idealRound,person);
 }
 
 function calendar(){
