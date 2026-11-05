@@ -25,6 +25,16 @@ Aplicación Fantasy de baloncesto para el Club Baloncesto Redeiras, diseñada en
 - Mercado bloqueado al inicio y hasta publicación de estadísticas y precios de la jornada anterior.
 - Un equipo por persona y temporada; acceso gratuito por invitación.
 
+## Fase 2 — lanzamento controlado
+
+- **Backend despregado en Supabase:** 5 verificaciones obrigatorias (`backup_restore`, `minor_privacy`, `browser_e2e`, `email_invites`, `security_review`), con trazabilidade de responsable, data e nota. A RPC de activación **rexeita o lanzamento ata completar as cinco**.
+- **Panel implementado no código:** administración amosa as tarefas e mantén desactivado o botón de activar a tempada cando faltan comprobacións. A publicación da versión visual en Cloudflare Workers aínda debe verificarse por separado.
+- **Prueba SQL reversible superada:** `tests/phase2.launch.sql` comprobou acceso de admin/participante e activación protexida sen deixar datos de simulación.
+- **Administradores confirmados:** Emilio e Brais, con permisos dentro do Fantasy. Colaboración en GitHub/Cloudflare require permisos separados.
+- **O inicio oficial segue bloqueado** pola restauración do backup, información/consentimento de menores, probas reais de navegador e email, e revisión final de seguridade.
+
+Guías: [fase 2](docs/PHASE2_ROLLOUT.md), [despregamento de Workers](docs/despliegue.md), [incidencia #10](https://github.com/cbaloncestoredeiras-cmyk/Fantasy-CB-Redeiras/issues/10).
+
 ## Pendiente para lanzamiento
 
 **Bloqueantes restantes:** comprobación manual de invitaciones y accesos reales, revisión documental de privacidad y consentimiento de menores, y **copia de seguridad completa con restauración probada** (la exportación JSON de la web es parcial). Las pruebas SQL reversibles cubren mercado, 3 fichajes, votos, publicación, cálculo y rectificación; no reemplazan un ensayo independiente. Consulta [operaciones fases 0/1](docs/PHASE01_OPERATIONS.md).
