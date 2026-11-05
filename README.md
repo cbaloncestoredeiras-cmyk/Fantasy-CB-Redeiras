@@ -1,12 +1,12 @@
 # Fantasy CB Redeiras · 2026/27
 
-Aplicación Fantasy de baloncesto para el Club Baloncesto Redeiras, diseñada en gallego y adaptada a móviles. **Estado: web publicada en Cloudflare Workers, conexión con Supabase operativa y acceso del primer administrador verificado. La temporada está desactivada hasta completar las pruebas de integración, votaciones, fichajes, invitaciones y protección de menores. No abrir todavía a participantes reales.**
+Aplicación Fantasy de baloncesto para el Club Baloncesto Redeiras, diseñada en gallego y adaptada a móviles. **Estado: web publicada en Cloudflare Workers, con 12 cuentas del club y 12 fotografías cargadas en la revisión del 5 de noviembre. Las fases 0/1 incluyen simulaciones transaccionales de mercado, votos, publicación y rectificaciones, junto con un panel administrativo ampliado. La temporada sigue desactivada: todavía es necesario verificar un respaldo externo restaurable y la privacidad/consentimientos de menores antes de abrir la competición oficialmente.**
 
 ## Código del proyecto
 
 - **\`site/\`**: aplicación web real, con login por invitación, inicio, mercado de 18 jugadores, quinteto flex, calendario, clasificación, votación del vestuario, perfiles de jugador y panel admin. Requiere una base de datos configurada para funcionar.
 - **\`site/logic.js\`**: reglas y cálculos preliminares (el servidor realiza la validación real).
-- **\`supabase/migrations/\`**: 10 migraciones SQL (estructura, 18 jugadores, 6 M€, fichajes, calendario, estadísticas, votación, Bróker, RLS). **Aplicadas a Supabase; pendientes de pruebas funcionales con dos cuentas**.
+- **\`supabase/migrations/\`**: migraciones SQL versionadas (estructura, 18 jugadores, 6 M€, fichajes, calendario, estadísticas, votación, Bróker, RLS). **Aplicadas a Supabase; pruebas de SQL/RLS ejecutadas con transacciones reversibles**.
 - **\`supabase/functions/invite-user/\`**: Edge Function protegida para invitar y vincular cuentas de jugadores. Desplegada, pendiente de prueba end-to-end.
 - **\`tests/\`**: pruebas unitarias de reglas y lógica.
 - **\`prototype/\`**: demostración HTML local V5 anterior, con datos ficticios. **No desplegar como app de producción**.
@@ -27,7 +27,7 @@ Aplicación Fantasy de baloncesto para el Club Baloncesto Redeiras, diseñada en
 
 ## Pendiente para lanzamiento
 
-**Bloqueantes:** probar invitaciones reales y acceso de un usuario no admin, fichajes y bloqueo del mercado, congelación de quintetos al inicio, votos y bróker con una jornada simulada, y revisión de privacidad para menores. Consulta [la guía](docs/GO_LIVE.md).
+**Bloqueantes restantes:** comprobación manual de invitaciones y accesos reales, revisión documental de privacidad y consentimiento de menores, y **copia de seguridad completa con restauración probada** (la exportación JSON de la web es parcial). Las pruebas SQL reversibles cubren mercado, 3 fichajes, votos, publicación, cálculo y rectificación; no reemplazan un ensayo independiente. Consulta [operaciones fases 0/1](docs/PHASE01_OPERATIONS.md).
 
 **Mejoras siguientes, no prometer como presentes:** ligas privadas, duelos, pronósticos, notificaciones, juego multiclub operativo, comparación avanzada, equipo ideal automatizado, estadísticas de popularidad. La arquitectura está preparada para ampliarlas, pero estas funciones **no están implementadas aún**.
 
@@ -40,3 +40,9 @@ Aplicación Fantasy de baloncesto para el Club Baloncesto Redeiras, diseñada en
 - As fotos están gardadas no bucket **privado** `player-photos` de Supabase. Só as contas autenticadas do club poden obter unha URL asinada; só as administradoras poden subir ou retirar fotos.
 - Comprobar consentimento/lexitimación antes de subir retratos, especialmente de menores. Non se gardan metadatos EXIF no ficheiro comprimido.
 - Probas visuais e de subida pendentes de verificación desde un navegador real.
+
+## Control de publicación y rectificaciones (fase 1)
+
+- Administración permite vista previa del cálculo **antes de publicar** y registro de corrección con motivo.
+- La corrección de una jornada publicada se bloquea si ya existen jornadas, fichajes o equipos creados después que dependan de los precios históricos; no se reescriben operaciones pasadas.
+- La exportación administrativa es un **respaldo parcial**, no una restauración completa. Consulta [el plan de backup y seguridad](docs/PHASE01_OPERATIONS.md).
