@@ -47,8 +47,7 @@ begin
    jsonb_build_object('fixture',p_fixture,'reason',trim(p_reason),'players',v_count));
  return jsonb_build_object('corrected',true,'round',f.round_number,'players_updated',v_count,
                            'team_count',v_after->'team_count');
-end; $function$
-
+end; $function$;
 revoke all on function public.fantasy_correct_fixture(uuid,jsonb,text) from public,anon;
 grant execute on function public.fantasy_correct_fixture(uuid,jsonb,text) to authenticated;
 commit;
