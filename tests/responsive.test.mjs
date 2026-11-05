@@ -94,6 +94,30 @@ test('admin stats fields remain available after card adaptation and admin quick 
  for(const attr of ['data-stat-played','data-stat-min','data-stat-pir','data-stat-pts'])assert.match(output,new RegExp(attr));
  assert.match(output,/admin-stats-table/);
 });
+test('phase 2 launch activation requires all five verified checks in the admin UI',()=>{
+ const old=views.state.data.launchStatus;
+ const names=['backup_restore','minor_privacy','browser_e2e','email_invites','security_review'];
+ try{
+  const checks=names.map(key=>({key,title:key,verified:false,note:null,verified_at:null}));
+  views.state.data.launchStatus={
+   season_id:'season',ready:false,completed_count:0,required_count:5,checks
+  };
+  const blocked=adminView();
+  assert.equal((blocked.match(/data-action="set-launch-check"/g)||[]).length,5);
+  assert.match(blocked,/data-action="activate-season"[^>]*disabled/);
+  assert.match(blocked,/0 \/ 5 comprobacións/);
+
+  views.state.data.launchStatus={
+   season_id:'season',ready:true,completed_count:5,required_count:5,
+   checks:checks.map(c=>({...c,verified:true,verified_at:'2026-11-05T12:00:00Z',
+     note:'Test visible en administración'}))
+  };
+  const ready=adminView();
+  assert.match(ready,/5 \/ 5 comprobacións/);
+  assert.doesNotMatch(ready,/data-action="activate-season"[^>]*disabled/);
+  assert.equal((ready.match(/data-launch-verified="false"/g)||[]).length,5);
+ }finally{views.state.data.launchStatus=old;}
+});
 test('the public site stays invitation-only',()=>{
  views.state.session=null;views.renderAuth();
  assert.match(root.innerHTML,/auth-password/);
