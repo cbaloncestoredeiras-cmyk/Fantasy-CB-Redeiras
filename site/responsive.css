@@ -337,6 +337,15 @@ button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,te
   :where(#admin-callups,#admin-stats,#admin-invites,#admin-photos){scroll-margin-top:145px;}
 }
 
+
+/* Admin and other long forms must use the full mobile width, not narrow columns. */
+.sidefoot small{display:block;overflow-wrap:anywhere;margin-top:5px;line-height:1.45;}
+@media(max-width:639px){
+  .grid.two{grid-template-columns:minmax(0,1fr);}
+  .grid.two.market-layout{grid-template-columns:minmax(0,1fr);}
+  .admin-photo-preview{min-height:150px;}
+}
+
 /* Keep motion optional and visual zoom readable. */
 @media(prefers-reduced-motion:reduce){
   *,*::before,*::after{scroll-behavior:auto!important;animation-duration:.01ms!important;
