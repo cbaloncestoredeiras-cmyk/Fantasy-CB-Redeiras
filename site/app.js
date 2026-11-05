@@ -168,9 +168,10 @@ async function interact(action,element){
   await rpc('fantasy_vote',{p_fixture:fixture,p_first:picks[0],p_second:picks[1],p_third:picks[2]});
   return toast('Voto rexistrado. Podes modificalo durante o prazo.');
  }
- if(['activate-season','update-kickoff','update-end','save-callups','save-stats','publish-round','add-junior','send-invite','upload-player-photo','remove-player-photo'].includes(action)){
+ if(['activate-season','update-kickoff','update-end','save-callups','save-stats','preview-round','publish-round','correct-round','load-participants','update-member','revoke-member','export-snapshot','add-junior','send-invite','upload-player-photo','remove-player-photo'].includes(action)){
   if(!admin())throw Error('Non tes permisos de administración');
-  const changed=await adminAction(action);
+  if(action==='activate-season'&&!confirm('Activar a tempada abre o mercado aos participantes. Antes comproba as probas, a privacidade e as copias de seguridade. Queres activala?'))return;
+  const changed=await adminAction(action,element);
   if(changed){toast('Operación realizada');await refresh();}
  }
 }
@@ -260,9 +261,9 @@ root.addEventListener('change',async e=>{
      holder.innerHTML='<img class="admin-photo-avatar" alt="Vista previa da fotografía" src="'+next+'"><p>Vista previa · '+h(file.name)+'</p>';
    }
  }
- if(e.target.id==='admin-fixture'){state.adminFixture=e.target.value;state.importRows=null;state.rawPdf='';present();}
+ if(e.target.id==='admin-fixture'){state.adminFixture=e.target.value;state.importRows=null;state.rawPdf='';state.adminPreview=null;state.adminPreviewRows=null;present();}
  if(e.target.id==='stats-file'){
-  try{const msg=await handleStatsFile(e.target.files[0]);toast(msg);present();}catch(error){toast(error.message||String(error),true);}
+  try{const msg=await handleStatsFile(e.target.files[0]);state.adminPreview=null;state.adminPreviewRows=null;toast(msg);present();}catch(error){toast(error.message||String(error),true);}
  }
 });
 document.addEventListener('click',e=>{if(state.modal&&(e.target===state.modal||e.target.closest('[data-action="close-modal"]'))){state.modal.remove();state.modal=null;}});
