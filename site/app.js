@@ -43,6 +43,8 @@ async function load(){
  if(rankR.error)throw rankR.error;
  const metricsR=role==='admin'?await c.rpc('fantasy_admin_metrics',{p_club:clubId}):{data:null,error:null};
  if(metricsR.error)throw metricsR.error;
+ const launchR=role==='admin'?await c.rpc('fantasy_launch_status',{p_season:season.id}):{data:null,error:null};
+ if(launchR.error)throw launchR.error;
  const photoUrls={};
  const withPhotos=players.filter(p=>p.photo_path);
  if(withPhotos.length){
@@ -59,7 +61,7 @@ async function load(){
  state.data={role,club:clubR.data,season,players:fullPlayers,playerMap,prices:priceMap,photoUrls,fixtures,
  team:teams[0]||null,roster:roster.map(r=>r.player_id),transfers,leaderboard:rankR.data||[],
  alias:alias[0]?.display_name||'Redeirista',callups,eligibleFixtures:eligible.map(x=>x.fixture_id),
- linkedPlayer:voterAccount[0]?.player_id||null,stats,history,metrics:metricsR.data};
+ linkedPlayer:voterAccount[0]?.player_id||null,stats,history,metrics:metricsR.data,launchStatus:launchR.data};
  state.draft=[...state.data.roster];
  present();
 }
@@ -168,7 +170,7 @@ async function interact(action,element){
   await rpc('fantasy_vote',{p_fixture:fixture,p_first:picks[0],p_second:picks[1],p_third:picks[2]});
   return toast('Voto rexistrado. Podes modificalo durante o prazo.');
  }
- if(['activate-season','update-kickoff','update-end','save-callups','save-stats','preview-round','publish-round','correct-round','load-participants','update-member','revoke-member','export-snapshot','add-junior','send-invite','upload-player-photo','remove-player-photo'].includes(action)){
+ if(['activate-season','set-launch-check','update-kickoff','update-end','save-callups','save-stats','preview-round','publish-round','correct-round','load-participants','update-member','revoke-member','export-snapshot','add-junior','send-invite','upload-player-photo','remove-player-photo'].includes(action)){
   if(!admin())throw Error('Non tes permisos de administración');
   if(action==='activate-season'&&!confirm('Activar a tempada abre o mercado aos participantes. Antes comproba as probas, a privacidade e as copias de seguridade. Queres activala?'))return;
   const changed=await adminAction(action,element);

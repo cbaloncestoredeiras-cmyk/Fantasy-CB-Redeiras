@@ -58,6 +58,23 @@ function memberHtml(members){
  '</tbody></table></div>';
 }
 
+function launchChecklistHtml(status){
+ if(!status)return panel('<h2 id="admin-launch">Preparación do lanzamento</h2><p class="notice">Non foi posible cargar as comprobacións.</p>');
+ const items=(status.checks||[]).map(c=>{
+  const key=h(c.key),title=h(c.title),verified=!!c.verified;
+  return '<div class="playeritem" style="display:block;margin:9px 0">'+
+   '<div class="row"><b>'+(verified?'Confirmado · ':'Pendente · ')+title+'</b><span class="tag '+(verified?'':'warn')+'">'+(verified?'Feito':'Pendente')+'</span></div>'+
+   (verified?'<p class="mini muted">Verificado o '+h(dateText(c.verified_at))+'. '+h(c.note||'')+'</p>':'')+
+   '<div class="field"><label for="launch-note-'+key+'">'+(verified?'Motivo da revogación':'Referencia da evidencia ou comprobación realizada')+'</label>'+
+   '<input id="launch-note-'+key+'" maxlength="1000" minlength="12" placeholder="Describe a evidencia; non inclúas datos persoais"></div>'+
+   '<button class="btn '+(verified?'secondary':'primary')+'" style="margin-top:8px" data-action="set-launch-check" data-launch-key="'+key+'" data-launch-verified="'+(verified?'false':'true')+'" '+(state.data.season.active?'disabled':'')+'>'+
+   (verified?'Revogar comprobación':'Confirmar comprobación')+'</button></div>';
+ }).join('');
+ return panel('<h2 id="admin-launch">Control previo ao lanzamento</h2>'+
+  '<p><b>'+Number(status.completed_count||0)+' / '+Number(status.required_count||5)+' comprobacións</b>. A tempada só se pode activar cando todas estean confirmadas.</p>'+
+  '<p class="mini muted">Marcar unha tarefa non substitúe a proba real: comproba a restauración, as autorizacións de menores e o acceso no navegador antes de confirmala. Non gardes datos persoais nas notas.</p>'+
+  '<div class="stack">'+items+'</div>');
+}
 const selectedFixture=()=>state.data.fixtures.find(f=>f.id===state.adminFixture)||current().pending||state.data.fixtures[0];
 const getStat=(id)=>state.importRows?.find(r=>r.player_id===id)||state.data.stats?.find(r=>r.player_id===id && r.fixture_id===selectedFixture()?.id)||{};
 export function adminView(){
@@ -69,7 +86,8 @@ export function adminView(){
  ['Juniors',d.metrics?.juniors||0],['Xornadas publicadas',d.metrics?.finalized_rounds||0]
  ].map(x=>panel('<div class="kpi-label">'+x[0]+'</div><div class="kpi">'+x[1]+'</div>')).join('')+'</div>',
  '<div class="notice '+(d.season.active?'info':'')+'">'+(d.season.active?'Tempada activa. Revisa horarios e resultados antes de publicar.':'TEMPADA DESACTIVADA: o mercado non admite equipos. Actívaa só cando se completen as probas e haxa participantes preparados.')+'</div>',
- (!d.season.active?'<button class="btn primary" data-action="activate-season" style="margin:13px 0">Activar tempada</button>':''),
+ launchChecklistHtml(d.launchStatus),
+ (!d.season.active?'<button class="btn primary" data-action="activate-season" style="margin:13px 0" '+(d.launchStatus?.ready?'':'disabled title="Completa primeiro as cinco comprobacións"')+'>Activar tempada</button>':''),
  '<div class="field" style="margin:17px 0"><label>Xornada de traballo</label><select id="admin-fixture">'+d.fixtures.map(f=>option(f.id,'X'+f.round_number+' · '+f.opponent,fixture?.id)).join('')+'</select></div>',
  '<div class="grid two">',
  panel('<h2>Horario do partido</h2><p>Os horarios publícanse normalmente cada martes ás 18:00. Non inventes unha hora se aínda non está confirmada.</p><div class="field"><label>Inicio · hora de Moaña</label><input type="datetime-local" id="kickoff-time" value="'+(fixture?localDateTime(fixture.starts_at):'')+'"></div><div class="field" style="margin:12px 0"><label>Motivo da actualización</label><input id="kickoff-reason" value="Horario confirmado"></div><button class="btn primary" data-action="update-kickoff">Gardar horario</button>'),
@@ -105,7 +123,7 @@ export function adminView(){
   .replace('<h2>Importar valoracións</h2>','<h2 id="admin-stats">Importar valoracións</h2>')
   .replace('<h2>Invitar participantes</h2>','<h2 id="admin-invites">Invitar participantes</h2>')
   .replace('<h2>Fotografías dos xogadores</h2>','<h2 id="admin-photos">Fotografías dos xogadores</h2>');
- const jumps='<nav class="admin-jumps" aria-label="Ir á sección de administración"><a href="#admin-callups">Convocatoria</a><a href="#admin-stats">Estatísticas</a><a href="#admin-invites">Invitacións</a><a href="#admin-members">Contas</a><a href="#admin-publication">Publicación</a><a href="#admin-backups">Exportación</a><a href="#admin-photos">Fotos</a></nav>';
+ const jumps='<nav class="admin-jumps" aria-label="Ir á sección de administración"><a href="#admin-launch">Lanzamento</a><a href="#admin-callups">Convocatoria</a><a href="#admin-stats">Estatísticas</a><a href="#admin-invites">Invitacións</a><a href="#admin-members">Contas</a><a href="#admin-publication">Publicación</a><a href="#admin-backups">Exportación</a><a href="#admin-photos">Fotos</a></nav>';
  return pageHeader('Panel de administración','Só persoas autorizadas. Todos os cambios sensibles rexístranse.')+jumps+sections;
 }
 function val(id,selector){return document.getElementById(id)?.value??selector??''}
@@ -143,6 +161,17 @@ export async function adminAction(action,element){
     if(cleanup.error)console.warn('Non se puido eliminar o ficheiro anterior:',cleanup.error.message);
     state.adminPlayer=p.id;break;
   }
+  case 'set-launch-check':{
+    const key=element?.dataset.launchKey,verified=element?.dataset.launchVerified==='true';
+    const note=val('launch-note-'+key).trim();
+    if(!key)throw Error('Non se seleccionou ningunha comprobación');
+    if(note.length<12)throw Error('Explica a verificación ou a revogación (mínimo 12 caracteres)');
+    if(!verified&&!confirm('Revogar esta comprobación do lanzamento?'))return false;
+    await rpc('fantasy_set_launch_check',{
+      p_season:state.data.season.id,p_key:key,p_verified:verified,p_note:note
+    });
+    break;
+   }
   case 'activate-season':await rpc('fantasy_activate_season',{p_season:state.data.season.id});break;
   case 'update-kickoff':await rpc('fantasy_set_kickoff',{p_fixture:f.id,p_time:await localToIso(val('kickoff-time')),p_reason:val('kickoff-reason')});break;
   case 'update-end':await rpc('fantasy_set_end',{p_fixture:f.id,p_time:await localToIso(val('end-time')),p_won:val('end-won')==='true'});break;
