@@ -24,3 +24,13 @@
 **No activar la temporada** ni copiar datos de menores a un ambiente de prueba sin respaldo legal.
 
 Véase `docs/PHASE01_OPERATIONS.md` para operaciones y recuperación.
+
+## Resultado de ejecución (05/11/2026)
+- `tests/phase01.smoke.sql`: **correcto**. Se verificaron vista previa, publicación, la igualdad de resultados antes/después, el registro de una rectificación, las dependencias históricas y la denegación a participantes.
+- `tests/phase01.market_vote.sql`: **correcto**. Se probaron mercado, los tres cambios, el bloqueo del cuarto, cierre de mercado y voto válido/propio prohibido.
+- `tests/phase01.last_admin.sql`: **correcto** tras aplicar la migración `phase01_atomic_admin_guard` en Supabase.
+- Todas las pruebas SQL anteriores se ejecutaron con `BEGIN` y `ROLLBACK`. La comprobación posterior confirmó temporada inactiva, 0 equipos, 0 transferencias, 0 votos y 0 revisiones.
+- La rama principal pasó `Checks` después de fusionar la [PR #9](https://github.com/cbaloncestoredeiras-cmyk/Fantasy-CB-Redeiras/pull/9).
+- El plan confirmado de la organización Supabase es **Free**. `Leaked Password Protection` requiere Pro o superior; esta opción no se habilitará a cambio de costes no aprobados. Revisar otros ajustes de robustez de contraseña de Free.
+
+El detalle de los pasos pendientes, con casillas de verificación, consta en la [incidencia #10](https://github.com/cbaloncestoredeiras-cmyk/Fantasy-CB-Redeiras/issues/10).
