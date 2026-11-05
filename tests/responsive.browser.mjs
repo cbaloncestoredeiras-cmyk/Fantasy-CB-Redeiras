@@ -70,6 +70,17 @@ try{
   console.log('PASS',size.label,JSON.stringify(widths));
   await page.close();
  }
+ for(const size of [{label:'mobile-login',width:390,height:844},{label:'tablet-login',width:820,height:1180},{label:'desktop-login',width:1440,height:900}]){
+  const page=await browser.newPage({viewport:{width:size.width,height:size.height},deviceScaleFactor:1});
+  await page.route('**/cdn.jsdelivr.net/**',r=>r.fulfill({status:200,contentType:'application/javascript',body:"window.supabase={createClient:()=>({auth:{getSession:async()=>({data:{session:null},error:null}),onAuthStateChange:()=>({})}})};"}));
+  await page.goto(url,{waitUntil:'load'});
+  await page.locator('#auth-password').waitFor({timeout:9000});
+  const w=await page.evaluate(()=>({viewport:innerWidth,page:document.documentElement.scrollWidth}));
+  assert.ok(w.page<=w.viewport+2,size.label+' horizontal overflow');
+  await page.screenshot({path:'responsive-artifacts/'+size.label+'.png',fullPage:true});
+  console.log('PASS',size.label);
+  await page.close();
+ }
 }finally{
  if(browser)await browser.close();
  await new Promise(resolve=>server.close(resolve));
