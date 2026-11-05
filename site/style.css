@@ -9,3 +9,12 @@
 
 .market-layout{grid-template-columns:minmax(0,1.7fr) minmax(280px,.9fr)}
 @media(max-width:1000px){.market-layout{grid-template-columns:1fr}}
+
+/* Official club branding and private member-only player portraits */
+.playerlogo{overflow:hidden;position:relative}
+.playerlogo .playerphoto{display:block;width:100%;height:100%;object-fit:cover;object-position:center 20%;border-radius:inherit}
+.playerlogo.profile-photo{width:64px;height:64px;min-width:64px;border-radius:16px;font-size:20px}
+.admin-photo-preview{min-height:190px;border:1px dashed #c8e0ed;border-radius:17px;background:#f5fbff;display:flex;align-items:center;justify-content:center;flex-direction:column;padding:15px;gap:7px}
+.admin-photo-preview .admin-photo-avatar,.admin-photo-preview>img.admin-photo-avatar{width:125px;height:125px;border-radius:16px;object-fit:cover;object-position:center 20%;font-size:25px}
+.admin-photo-preview p{margin:0;font-size:12px}
+@media(max-width:800px){.admin-photo-preview{min-height:135px}}
