@@ -128,9 +128,16 @@ function team(){
  panel('<h2>Historial de fichaxes</h2>'+(d.transfers.length?d.transfers.slice().reverse().slice(0,8).map(t=>'<div class="mini" style="margin:8px 0">X'+t.round_number+': '+h(player(t.sold_player_id)?.name||'?')+' → '+h(player(t.bought_player_id)?.name||'?')+'</div>').join(''):empty('Aínda non fixeches transferencias','⇄')))+'</div>';
 }
 function ranking(){
- const d=state.data;return pageHeader('Clasificación xeral','A puntuación acumúlase coas valoracións publicadas de cada xornada.')+
- panel('<h2>Equipos participantes</h2><div class="tablewrap"><table class="table"><thead><tr><th>#</th><th>Equipo Fantasy</th><th>Mánager</th><th class="num">Puntos</th></tr></thead><tbody>'+d.leaderboard.map(t=>'<tr><td><b>'+t.position+'</b></td><td><b>'+h(t.team_name)+'</b>'+(d.team?.id===t.team_id?' <span class="tag good">TI</span>':'')+'</td><td>'+h(t.manager_alias)+'</td><td class="num"><b>'+pts(t.total_points)+'</b></td></tr>').join('')+'</tbody></table></div>'+(d.leaderboard.length?'':empty('Aínda non hai puntuacións nin equipos','♛')) );
+ const d=state.data;
+ const table='<div class="tablewrap ranking-tablewrap"><table class="table"><thead><tr><th scope="col">#</th><th scope="col">Equipo Fantasy</th><th scope="col">Mánager</th><th scope="col" class="num">Puntos</th></tr></thead><tbody>'+
+ d.leaderboard.map(t=>'<tr><td><b>'+t.position+'</b></td><td><b>'+h(t.team_name)+'</b>'+(d.team?.id===t.team_id?' <span class="tag good">TI</span>':'')+'</td><td>'+h(t.manager_alias)+'</td><td class="num"><b>'+pts(t.total_points)+'</b></td></tr>').join('')+'</tbody></table></div>';
+ const cards='<ol class="ranking-cards" aria-label="Clasificación de equipos">'+d.leaderboard.map(t=>
+  '<li class="ranking-card"><span class="ranking-position">'+t.position+'</span><div class="ranking-names"><b>'+h(t.team_name)+'</b>'+(d.team?.id===t.team_id?' <span class="tag good">TI</span>':'')+'<small>'+h(t.manager_alias)+'</small></div><strong class="ranking-points">'+pts(t.total_points)+'<small>pts</small></strong></li>'
+ ).join('')+'</ol>';
+ return pageHeader('Clasificación xeral','A puntuación acumúlase coas valoracións publicadas de cada xornada.')+
+ panel('<h2>Equipos participantes</h2>'+(d.leaderboard.length?'<div class="ranking-results">'+table+cards+'</div>':empty('Aínda non hai puntuacións nin equipos','♛')));
 }
+
 function calendar(){
  const d=state.data,{pending}=current();return pageHeader('Calendario de partidos','Os horarios definitivos confírmanse cada martes e poden cambiar.')+
  panel('<h2>Primeira fase · 2026/27</h2><div class="schedule">'+d.fixtures.map(f=>'<div class="match"><div class="date">X'+f.round_number+'</div><div style="flex:1"><strong>CB Redeiras · '+h(f.opponent)+'</strong><small>'+(f.is_home?'Na casa':'Fóra')+' · '+h(f.status.replaceAll('_',' '))+'</small></div><div><b class="mini">'+dateText(f.starts_at)+'</b>'+(f.id===pending?.id?' <span class="tag">PRÓXIMA</span>':'')+'</div></div>').join('')+'</div>');
