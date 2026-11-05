@@ -80,7 +80,7 @@ select f.season_id,u.participant_id,'__FANTASY_LATE_TEST__',0,now()+interval '2 
 from public.fixtures f,_fantasy_test_users u where f.id=(select id from _fantasy_test_fixture);
 select set_config('request.jwt.claim.sub',(select admin_id::text from _fantasy_test_users),true);
 set local role authenticated;
-do $
+do $$
 declare fid uuid:=(select id from _fantasy_test_fixture);data jsonb;blocked boolean:=false;
 begin
  select jsonb_agg(jsonb_build_object('player_id',g.player_id,'played',g.played,
@@ -92,7 +92,7 @@ begin
   if position('Rectificación bloqueada' in sqlerrm)>0 then blocked:=true;else raise;end if;
  end;
  if not blocked then raise exception 'Unsafe correction after later team was permitted';end if;
-end $;
+end $$;
 -- Auth and RLS negative checks.
 select set_config('request.jwt.claim.sub',(select participant_id::text from _fantasy_test_users),true);
 do $$
