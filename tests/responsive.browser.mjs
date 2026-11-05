@@ -21,6 +21,7 @@ let browser;
 mkdirSync('responsive-artifacts',{recursive:true});
 const cases=[
  {label:'mobile-320',width:320,height:568},
+ {label:'mobile-375',width:375,height:812},
  {label:'mobile-390',width:390,height:844},
  {label:'mobile-430',width:430,height:932},
  {label:'tablet-768',width:768,height:1024},
@@ -42,6 +43,14 @@ try{
   const mobile=size.width<640;
   assert.equal(await page.locator('.mobilebar').isVisible(),mobile,size.label+' mobile nav');
   assert.equal(await page.locator('.sidebar').isVisible(),!mobile,size.label+' sidebar');
+  if(size.width>=640&&size.width<=1099){
+   const labels=await page.locator('.sidebar .nav-label').evaluateAll(nodes=>nodes.map(n=>({
+    label:n.textContent,
+    wrap:getComputedStyle(n).overflowWrap,
+    clip:n.scrollWidth>n.clientWidth+2
+   })));
+   assert.ok(labels.every(x=>x.wrap!=='anywhere'&&!x.clip),size.label+' broken tablet labels '+JSON.stringify(labels));
+  }
   if(mobile){
    await page.locator('.mobilebar [data-action="mobile-more"]').click();
    const drawer=page.locator('.mobile-more-sheet');

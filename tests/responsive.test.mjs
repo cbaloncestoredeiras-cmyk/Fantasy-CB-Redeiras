@@ -57,6 +57,20 @@ test('mobile navigation exposes both voting and administration, including logout
  assert.match(root.innerHTML,/class="skip-link"/);
  views.state.mobileMenuOpen=false;
 });
+test('participant navigation never exposes admin actions, on desktop or mobile',()=>{
+ const previous=views.state.data.role;
+ try{
+  views.state.data.role='participant';
+  views.state.mobileMenuOpen=true;
+  views.shell(views.home());
+  assert.doesNotMatch(root.innerHTML,/data-page="admin"/);
+  assert.match(root.innerHTML,/data-page="vote"/);
+  assert.match(root.innerHTML,/data-action="mobile-more"/);
+ }finally{
+  views.state.data.role=previous;
+  views.state.mobileMenuOpen=false;
+ }
+});
 test('market includes responsive player cards and draft shortcut without changing player actions',()=>{
  const output=views.market();
  assert.match(output,/market-tablewrap/);
