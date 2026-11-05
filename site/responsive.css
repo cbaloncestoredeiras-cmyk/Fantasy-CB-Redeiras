@@ -362,3 +362,5 @@ button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,te
   *,*::before,*::after{scroll-behavior:auto!important;animation-duration:.01ms!important;
     transition-duration:.01ms!important;}
 }
+
+.mobile-more-backdrop[hidden]{display:none!important}
