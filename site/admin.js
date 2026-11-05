@@ -112,6 +112,10 @@ function val(id,selector){return document.getElementById(id)?.value??selector??'
 async function localToIso(v){if(!v)throw Error('Indica a data e a hora');return await rpc('fantasy_local_time',{p_clock:v});}
 export async function adminAction(action,element){
  const f=selectedFixture();if(!f)return toast('Non hai xornada dispoñible',true);
+ // A change to the fixture, its data or its participants invalidates any older preview.
+ if(['update-kickoff','update-end','save-callups','add-junior'].includes(action)){
+   state.adminPreview=null;state.adminPreviewRows=null;
+ }
  switch(action){
   case 'upload-player-photo':{
     const id=val('admin-photo-player'),p=state.data.players.find(x=>x.id===id);
