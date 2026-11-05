@@ -165,6 +165,18 @@ root.addEventListener('input',e=>{
 });
 root.addEventListener('change',async e=>{
  if(e.target.id==='pos-filter'){state.filter=e.target.value;const box=document.getElementById('market-table');if(box)box.innerHTML=marketTable();}
+ if(e.target.id==='admin-photo-player'){state.adminPlayer=e.target.value;present();}
+ if(e.target.id==='admin-photo-file'){
+   const file=e.target.files?.[0];
+   const holder=document.getElementById('admin-photo-preview');
+   if(holder&&file&&['image/jpeg','image/png','image/webp'].includes(file.type)){
+     const previous=holder.dataset.objectUrl;
+     if(previous)URL.revokeObjectURL(previous);
+     const next=URL.createObjectURL(file);
+     holder.dataset.objectUrl=next;
+     holder.innerHTML='<img class="admin-photo-avatar" alt="Vista previa da fotografía" src="'+next+'"><p>Vista previa · '+h(file.name)+'</p>';
+   }
+ }
  if(e.target.id==='admin-fixture'){state.adminFixture=e.target.value;state.importRows=null;state.rawPdf='';present();}
  if(e.target.id==='stats-file'){
   try{const msg=await handleStatsFile(e.target.files[0]);toast(msg);present();}catch(error){toast(error.message||String(error),true);}
