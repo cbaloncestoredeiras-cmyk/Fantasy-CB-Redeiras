@@ -1,6 +1,7 @@
 import {state,renderAuth,renderForbidden,securityPage,shell,home,market,marketTable,team,ranking,calendar,voting,toast,rpc,current,player,prices,h,dateText,panel,pageHeader,admin,euroShort,playerAvatar} from './pages.js';
 import {adminView,adminAction,handleStatsFile} from './admin.js';
 import {validateLineup,transferPlan,brokerEstimate,pts} from './logic.js';
+import {formSection,priceHistorySection} from './insights-view.js';
 
 const root=document.querySelector('#root');
 function present(){
@@ -105,9 +106,8 @@ function showPlayer(id){
   .filter(s=>s.player_id===id&&finished.has(s.fixture_id)&&s.played&&s.fantasy_points!==null)
   .map(s=>Number(s.fantasy_points));
  const estimate=brokerEstimate(cost,0,true,pastScores);
- const hist=state.data.history.filter(x=>x.player_id===id).slice(0,8);
  const el=document.createElement('div');el.className='modalcover';
- el.innerHTML='<div class="modal" role="dialog" aria-modal="true" aria-label="Perfil do xogador"><div class="row"><div class="person">'+playerAvatar(p,'profile-photo')+'<div><h2 style="margin:0">'+h(p.name)+'</h2><p class="mini">'+h(p.positions.join(' / '))+(p.category==='junior'?' · JÚNIOR':'')+'</p></div></div><button class="btn secondary" data-action="close-modal">Pechar</button></div><hr class="separator"><div class="grid three"><div><div class="kpi-label">Prezo actual</div><div class="kpi">'+euroShort(cost)+'</div></div><div><div class="kpi-label">Puntos para manter o prezo</div><div class="kpi">'+pts(estimate.expected)+'</div></div><div><div class="kpi-label">Máxima variación</div><div class="kpi">±15 %</div></div></div><div class="notice info" style="margin:15px 0">Bróker por media acumulada · '+pastScores.length+' partidos puntuados. Para subir ata +15 % precisa arredor de '+pts(estimate.thresholdPlus15)+' puntos Fantasy no próximo partido; para baixar ata −15 %, arredor de '+pts(estimate.thresholdMinus15)+'. Pode subir incluso cunha valoración negativa se a media acumulada segue sendo alta. Os límites e os arredondamentos poden modificar o resultado; sen xogar, o prezo non cambia.</div><h3>Historial de prezo</h3>'+(hist.length?hist.map(x=>'<div class="row" style="padding:8px 0;border-bottom:1px solid #e8eef3"><span>X'+x.round_number+'</span><b>'+euroShort(x.price_before)+' → '+euroShort(x.price_after)+(x.accumulated_average!==null&&x.accumulated_average!==undefined?' · Media '+pts(x.accumulated_average):'')+'</b></div>').join(''):'<p class="help">Aínda non hai variacións publicadas.</p>')+'</div>';
+ el.innerHTML='<div class="modal" role="dialog" aria-modal="true" aria-label="Perfil do xogador"><div class="row"><div class="person">'+playerAvatar(p,'profile-photo')+'<div><h2 style="margin:0">'+h(p.name)+'</h2><p class="mini">'+h(p.positions.join(' / '))+(p.category==='junior'?' · JÚNIOR':'')+'</p></div></div><button class="btn secondary" data-action="close-modal">Pechar</button></div><hr class="separator"><div class="grid three"><div><div class="kpi-label">Prezo actual</div><div class="kpi">'+euroShort(cost)+'</div></div><div><div class="kpi-label">Puntos para manter o prezo</div><div class="kpi">'+pts(estimate.expected)+'</div></div><div><div class="kpi-label">Máxima variación</div><div class="kpi">±15 %</div></div></div><div class="notice info" style="margin:15px 0">Bróker por media acumulada · '+pastScores.length+' partidos puntuados. Para subir ata +15 % precisa arredor de '+pts(estimate.thresholdPlus15)+' puntos Fantasy no próximo partido; para baixar ata −15 %, arredor de '+pts(estimate.thresholdMinus15)+'. Pode subir incluso cunha valoración negativa se a media acumulada segue sendo alta. Os límites e os arredondamentos poden modificar o resultado; sen xogar, o prezo non cambia.</div>'+formSection(state.data,id)+priceHistorySection(state.data,id)+'</div>';
  document.body.append(el);state.modal=el;
 }
 function toggleMobileMore(open){
@@ -139,6 +139,15 @@ async function interact(action,element){
    toast('Alias gardado');await refresh();return;
  }
  if(action==='close-modal'){state.modal?.remove();state.modal=null;return;}
+ if(action==='compare-player'){
+  const id=element.dataset.id;if(!player(id))return;
+  const selected=state.compareIds||[];
+  if(selected.includes(id))state.compareIds=selected.filter(x=>x!==id);
+  else if(selected.length>=2){toast('Retira un xogador antes de seleccionar outro.',true);return;}
+  else state.compareIds=[...selected,id];
+  present();return;
+ }
+ if(action==='clear-compare'){state.compareIds=[];present();return;}
  if(action==='toggle'){
   const id=element.dataset.id;
   if(state.draft.includes(id))state.draft=state.draft.filter(x=>x!==id);
