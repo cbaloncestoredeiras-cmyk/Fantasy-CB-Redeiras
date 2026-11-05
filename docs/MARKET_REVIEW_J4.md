@@ -1,42 +1,45 @@
-# Mercado inicial · Revisión tras San José (X4)
+# Mercado inicial X5 · Corrección por valoración da X4
 
-Esta revisión é exclusivamente de **prezos de saída da X5**, non de puntuacións retroactivas.
+## Criterio de valoración
 
-## Fontes
+O dato que mellor anticipa a puntuación Fantasy é a **VAL/PIR** da foto do club. Os minutos oficiais da FEGABA serven para interpretar a participación, non como fonte alternativa da valoración. Non se usa EFF nin se recalculan as medias históricas anteriores sen os seus datos completos.
 
-- Foto de estatísticas achegada polo club: puntos, tiros e VAL individual. **Non usar os minutos da foto**, nin outros datos do PDF.
-- PDF FEGABA do San José–Redeiras: **só tempos individuais de xogo**.
-- Normalización: Yowi = Yoel, Lolo = Manuel, Yosu = Yosue, Pola = Edu. Non convocados: Manuel, Álex, Sergio, Diego, Iván e Luca.
-- Non houbo votos 3-2-1 nesta xornada. Os premios Ledicia anteriores seguen sendo Yoel (2) e Mateo (1).
+A X4 rematou en derrota e non tivo votación 3-2-1 do vestiario. Para comparar o posible rendemento Fantasy da X4, non habería bonificación por vitoria nin por votos. Por iso, a VAL é o mellor indicador nesta revisión; **a X4 non se incorpora á competición Fantasy nin se publica unha puntuación retroactiva**.
 
-## Prezo revisado
+Os prezos anteriores xa incorporan as estimacións de varias xornadas e os premios Ledicia previos. Para non facer depender o mercado dun só encontro, aplícase unha **revisión conservadora do prezo de saída**, non a fórmula automática do bróker:
+- Se participou e a VAL é positiva: subir **100.000 € por punto VAL**, máximo +300.000 €.
+- Se participou e a VAL é negativa: baixar **50.000 € por punto negativo**, máximo −150.000 €.
+- VAL = 0: manter o prezo.
+- Non convocado: manter o prezo, sen prexuízo por non xogar.
+- Manter os premios Ledicia previamente considerados; non engadir votos da X4 que non existiron.
 
-A táboa de prezos anterior xa se calculou con medias provisionais das primeiras catro xornadas. Como non se conservan aquí os datos individuais fiables de X1-X3 e os antigos rexistros da X4, **non debemos volver engadir a X4 como unha quinta xornada**. En vez de afirmar que recalculamos as medias, facemos unha **reponderación do prezo**:
+A asimetría protexe fronte a penalizacións excesivas nun partido de derrota ampla, e permítelle ao mercado recoñecer os xogadores infravalorados que rendiron mellor. **Estes coeficientes son unha decisión de calibración inicial, non a fórmula oficial do bróker.**
 
-- Cotización X4 = 500.000 € + 40.000 €/minuto oficial + 80.000 €/punto da foto + 100.000 € por premio Ledicia anterior.
-- Prezo proposto = arredondar a 50.000 € máis próximos o **75% do prezo anterior + 25% da cotización X4**.
-- Ausentes/non convocados: conservar o prezo, sen sanción. A valoración VAL da foto queda identificada como dato útil para futuras calibracións, pero non se mestura coa fórmula actual baseada en minutos e puntos.
-- Non crear resultados, fichaxes, equipos nin votos de X4 no Fantasy. A primeira xornada puntuable continúa sendo X5.
+## Prezos revisados
 
-| Xogador | Antes | Proposta X5 |
+| Xogador | Antes | Novo prezo |
 |---|---:|---:|
-| Juan | 2.300.000 | 2.300.000 |
-| Yoel | 2.150.000 | 2.000.000 |
-| Adri | 1.800.000 | 1.700.000 |
-| Mario | 1.650.000 | 1.550.000 |
-| Edu | 1.350.000 | 1.400.000 |
-| Diego (non convocado) | 1.300.000 | 1.300.000 |
-| Brais | 1.200.000 | 1.100.000 |
-| Luca (non convocado) | 1.200.000 | 1.200.000 |
-| Álvaro | 1.200.000 | 1.200.000 |
-| Adán | 1.100.000 | 1.050.000 |
-| Manuel (non convocado) | 1.100.000 | 1.100.000 |
-| Gil | 1.050.000 | 1.200.000 |
-| Mateo | 1.000.000 | 1.150.000 |
-| Sergio (non convocado) | 900.000 | 900.000 |
-| Iván (non convocado) | 850.000 | 850.000 |
-| Yosue | 850.000 | 1.000.000 |
-| Álex (non convocado) | 800.000 | 800.000 |
-| Iago | 800.000 | 800.000 |
+| Juan | 2,30 M | 2,25 M |
+| Yoel | 2,15 M | 2,05 M |
+| Adri | 1,80 M | 1,70 M |
+| Mario | 1,65 M | 1,50 M |
+| Edu | 1,35 M | 1,20 M |
+| Diego | 1,30 M | 1,30 M |
+| Álvaro | 1,20 M | 1,05 M |
+| Brais | 1,20 M | 1,10 M |
+| Luca | 1,20 M | 1,20 M |
+| Adán | 1,10 M | 1,30 M |
+| Manuel | 1,10 M | 1,10 M |
+| Gil | 1,05 M | 1,35 M |
+| Mateo | 1,00 M | 0,90 M |
+| Sergio | 0,90 M | 0,90 M |
+| Iván | 0,85 M | 0,85 M |
+| Yosue | 0,85 M | 1,15 M |
+| Álex | 0,80 M | 0,80 M |
+| Iago | 0,80 M | 0,70 M |
 
-**Aplicación á base de datos:** só se a tempada segue inactiva, non hai equipos nin transaccións e os prezos coinciden co punto de partida. Sincronizar `market_prices` e a referencia inicial da `price_history` (rolda 0) de forma atómica e verificar os 18 prezos. Non publicar os documentos brutos nin fotos de menores no repositorio.
+## Execución responsable
+
+Esta táboa é unha proposta de prezos previos á primeira xornada puntuable. Actualizar unicamente a referencia de apertura do mercado (`market_prices`, `price_history` da rolda 0) e a listaxe de apoio `data/jugadores.json`, sen alterar as valoracións históricas, resultados nin votos. Antes de cambiar Supabase comprobar tempada inactiva, ausencia de equipos, fichaxes e puntuacións, e coincidencia cos prezos anteriores; operación atómica e verificable.
+
+A documentación pública **non inclúe nin publica** a folla de estatísticas ou o PDF da federación, nin desagrega estatísticas individuais de menores. Fontes da revisión: foto subministrada polo club para a VAL; PDF FEGABA exclusivamente para minutos.
