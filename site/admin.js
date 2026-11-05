@@ -117,7 +117,14 @@ export async function adminAction(action){
   case 'send-invite':{
     const email=val('invite-email').trim(),role=val('invite-role'),linkedPlayer=val('invite-player')||null;const privacyVerified=!!document.getElementById('invite-privacy')?.checked; if(!privacyVerified)throw Error('Confirma a verificación de privacidade antes de invitar');
     const {data,error}=await state.client.functions.invoke('invite-user',{body:{clubId:state.data.club.id,email,role,linkedPlayer,privacyVerified}});
-    if(error)throw Error('A función de invitación non está lista ou devolveu un erro: '+error.message);
+    if(error){
+      // Supabase FunctionsHttpError wraps a non-2xx JSON body. Surface the
+      // server's actionable message rather than a generic HTTP error.
+      let details=null;
+      try{details=await error.context?.clone?.().json();}catch{}
+      const message=typeof details?.error==='string'?details.error:null;
+      throw Error(message||'Non se puido enviar a invitación: '+error.message);
+    }
     if(data?.error)throw Error(data.error);
     break;
   }
