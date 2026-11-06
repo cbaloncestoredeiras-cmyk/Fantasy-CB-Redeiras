@@ -123,3 +123,12 @@ test('the public site stays invitation-only',()=>{
  assert.match(root.innerHTML,/auth-password/);
  assert.match(root.innerHTML,/Acceso gratuíto e por invitación/);
 });
+
+test('marine home and guide links coexist with existing Fantasy navigation',()=>{
+ assert.match(views.home(),/O Fantasy tamén é Redeiras/);
+ assert.match(views.home(),/data-page="guide"/);
+ views.state.guideStep=0;
+ assert.match(views.guidePage(views.state),/PASO 01 \/ 04/);
+ views.shell(views.home());
+ assert.match(root.innerHTML,/data-page="guide"/);
+});

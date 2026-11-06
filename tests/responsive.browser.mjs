@@ -40,6 +40,9 @@ try{
   page.on('pageerror',e=>errors.push(e.message));
   await page.goto(url,{waitUntil:'load'});
   await page.locator('.layout').waitFor({timeout:9000});
+  const manifest=await page.evaluate(async()=>await(await fetch('/manifest.webmanifest')).json());
+  assert.equal(manifest.display,'standalone',size.label+' PWA manifest');
+  assert.ok(manifest.icons.some(i=>i.sizes==='512x512'),size.label+' icon');
   const mobile=size.width<640;
   assert.equal(await page.locator('.mobilebar').isVisible(),mobile,size.label+' mobile nav');
   assert.equal(await page.locator('.sidebar').isVisible(),!mobile,size.label+' sidebar');
@@ -55,7 +58,7 @@ try{
    await page.locator('.mobilebar [data-action="mobile-more"]').click();
    const drawer=page.locator('.mobile-more-sheet');
    assert.ok(await drawer.isVisible(),size.label+' more sheet');
-   for(const route of ['vote','admin','calendar'])
+   for(const route of ['vote','admin','calendar','guide'])
     assert.ok(await drawer.locator('[data-page="'+route+'"]').isVisible(),size.label+' missing '+route);
    await drawer.locator('[data-action="close-more"]').click();
   }
@@ -93,7 +96,7 @@ try{
 
   // Every application route must remain usable and avoid viewport-level horizontal scrolling.
   const navigateAll=async route=>{
-   if(mobile&&['calendar','vote','admin'].includes(route)){
+   if(mobile&&['calendar','vote','admin','guide'].includes(route)){
     await page.locator('.mobilebar [data-action="mobile-more"]').click();
     await page.locator('.mobile-more-sheet [data-page="'+route+'"]').click();
    }else await navigate(route);
@@ -102,11 +105,15 @@ try{
    assert.ok(widths.html<=widths.viewport+2,JSON.stringify({case:size.label,route,...widths}));
    assert.ok(await page.locator('.topbar').isVisible(),size.label+' '+route+' topbar');
   };
-  for(const route of ['home','team','ranking','calendar','vote','market','admin']){
+  for(const route of ['home','team','ranking','calendar','vote','market','guide','admin']){
    await navigateAll(route);
    if(['mobile-390','tablet-820','desktop-1440'].includes(size.label)&&['team','ranking'].includes(route))
     await page.screenshot({path:'responsive-artifacts/'+size.label+'-'+route+'.png',fullPage:true});
   }
+  await navigateAll('guide');
+  assert.ok(await page.locator('.sea-guide').isVisible(),size.label+' guide');
+  await page.locator('[data-action="guide-next"]').click();
+  assert.match(await page.locator('.sea-step-number').innerText(),/02 \/ 04/);
   await navigateAll('market');
   const details=page.locator('.market-results [data-player]:visible').first();
   await details.click();
