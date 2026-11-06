@@ -1,15 +1,17 @@
-import {state,renderAuth,renderForbidden,securityPage,shell,home,market,marketTable,team,ranking,calendar,voting,toast,rpc,current,player,prices,h,dateText,panel,pageHeader,admin,euroShort,playerAvatar} from './pages.js';
+import {guidePage,state,renderAuth,renderForbidden,securityPage,shell,home,market,marketTable,team,ranking,calendar,voting,toast,rpc,current,player,prices,h,dateText,panel,pageHeader,admin,euroShort,playerAvatar} from './pages.js';
 import {adminView,adminAction,handleStatsFile} from './admin.js';
 import {validateLineup,transferPlan,brokerEstimate,pts} from './logic.js';
 import {formSection,priceHistorySection} from './insights-view.js';
+import {initExperience,installAppPrompt,toggleDeviceAlerts,refreshClock} from './experience.js';
 
 const root=document.querySelector('#root');
 function present(){
  if(!state.session){renderAuth();return;}
  if(!state.data){renderForbidden();return;}
- const pages={home,market,team,ranking,calendar,vote:voting,admin:adminView,security:securityPage};
+ const pages={home,market,team,ranking,calendar,vote:voting,guide:()=>guidePage(state),admin:adminView,security:securityPage};
  const content=(pages[state.page]||home)();
  shell(content);
+ refreshClock(state);
 }
 function missingDb(error){
  root.innerHTML='<div class="auth-page"><div class="auth-art"><h1>Acceso temporalmente non dispoñible.</h1><p>A aplicación está a configurarse. Non se modificou ningunha aliñación.</p></div><div class="auth-form"><div class="panel"><h2>Erro de conexión</h2><p>'+h(error.message||String(error))+'</p><button class="btn secondary" data-action="retry">Reintentar</button><button class="btn outline" data-action="logout" style="margin-top:10px">Pechar sesión</button></div></div></div>';
@@ -143,6 +145,24 @@ async function interact(action,element){
    toast('Alias gardado');await refresh();return;
  }
  if(action==='close-modal'){state.modal?.remove();state.modal=null;return;}
+ if(action==='guide-step'){
+  const step=Number(element.dataset.step);
+  if(Number.isInteger(step)&&step>=0&&step<=3){state.guideStep=step;present();}
+  return;
+ }
+ if(action==='guide-next'||action==='guide-prev'){
+  state.guideStep=Math.max(0,Math.min(3,state.guideStep+(action==='guide-next'?1:-1)));
+  present();return;
+ }
+ if(action==='install-app'){
+  const result=await installAppPrompt();
+  if(result.status==='manual')state.installHelp=true;
+  if(result.status==='accepted'||result.status==='installed')toast('Fantasy instalado ou preparado para instalar neste dispositivo.');
+  present();return;
+ }
+ if(action==='toggle-device-alerts'){
+  toast(await toggleDeviceAlerts());present();return;
+ }
  if(action==='compare-player'){
   const id=element.dataset.id;if(!player(id))return;
   const selected=state.compareIds||[];
@@ -301,4 +321,5 @@ window.addEventListener('keydown',e=>{
  if(state.modal){state.modal.remove();state.modal=null;}
  else if(state.mobileMenuOpen){toggleMobileMore(false);}
 });
+initExperience(state);
 init().catch(err=>missingDb(err));

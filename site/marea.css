@@ -1,0 +1,98 @@
+/* MAREA · Identidade visual do CB Redeiras: mar, redes e baloncesto.
+   Existing spacing, navigation and interactive semantics remain in place. */
+:root{
+ --sea-midnight:#011d33;
+ --sea-deep:#071d33;
+ --sea-sky:#33a9db;
+ --sea-blue:#63afe0;
+ --sea-spray:#b2eafe;
+ --sea-surface:#f5fafd;
+ --sea-line:#d6eaf2;
+ --sea-text:#102f46;
+ font-family:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif;
+}
+body{background:var(--sea-surface);color:var(--sea-text)}
+h1,h2,h3{font-feature-settings:"kern";text-wrap:balance}
+.container{position:relative}
+.topbar{background:#ffffffed;border-bottom-color:#d8eaf2;box-shadow:0 4px 30px #0829450a}
+.topbar .pill:not(.negative){background:#ddf4fe;border-color:#bde6f8;color:#145c80}
+.sidebar{background-color:var(--sea-midnight);background-image:url("assets/marine-net.svg"),linear-gradient(165deg,#011d33 5%,#10415f 92%);background-repeat:repeat,no-repeat;background-size:210px 210px,cover;isolation:isolate}
+.sidebar:before{content:"";position:absolute;inset:auto 4px 90px 4px;height:130px;background:url("assets/marine-fish.svg") center/contain no-repeat;opacity:.37;pointer-events:none;z-index:-1}
+.sidebar .brand{padding:11px 9px;margin:-8px 4px 28px;border-bottom:1px solid #9ae4ff2b}
+.sidebar .brand b{letter-spacing:-.45px}
+.sidebar .navgroup{color:#94c9df}
+.sidebar .nav.active{background:#2a708f52;color:#e5faff;box-shadow:inset 3px 0 #80d9f6}
+.sidebar .nav:hover{background:#22709252;color:#fff}
+.nav{transition:background-color .17s ease,color .17s ease}
+.panel{border-color:#d9eaf2;box-shadow:0 7px 27px #0b41580b;border-radius:18px}
+.panel h2{color:#0a3b58}
+.panel.dark h2{color:white}
+.eyebrow{color:#3483a7}
+.heading{border-bottom:1px solid #daebf3;padding-bottom:11px}
+.heading h1{color:#052e49;letter-spacing:-1.1px}
+.btn.primary{background:#33a9db;color:#052a42;border-color:#33a9db}
+.btn.primary:hover:not(:disabled){background:#70c9ec}
+.btn.secondary{background:#e9f6fc;color:#125775;border-color:#c9e6f4}
+.btn:focus-visible,.nav:focus-visible,button:focus-visible,a:focus-visible{outline:3px solid #33a9db;outline-offset:3px}
+.table th{background:#eef8fd;color:#35728f;border-bottom-color:#d6eaf3}
+.table tbody tr:hover{background:#f4fbff}
+.playerlogo{background:linear-gradient(140deg,#d3f4ff,#a2d6ec);color:#0c5879}
+.tag{background:#eaf6fc;color:#376d86}
+.hero{position:relative;isolation:isolate;background:#052942;background-image:url("assets/marine-waves.svg"),radial-gradient(circle at 86% 18%,#37b2e057,transparent 34%),linear-gradient(125deg,#011d33,#0d5275);background-position:center bottom,right center,center;background-size:cover,cover,cover;background-repeat:no-repeat;box-shadow:0 15px 38px #06334c2b;border:1px solid #439ecc4d}
+.hero:after{content:"";position:absolute;inset:0;pointer-events:none;background:url("assets/marine-net.svg") right -60px top -30px/320px auto no-repeat;opacity:.56;z-index:-1}
+.hero h2{color:#fff}
+.hero .eyebrow{color:#b1e9ff}
+.hero-graphic{filter:drop-shadow(0 12px 20px #04152554)}
+.hero .btn.primary{background:#a4e3fa;border-color:#a4e3fa}
+.auth-art{position:relative;overflow:hidden;isolation:isolate;background-color:#011d33;background-image:url("assets/marine-net.svg"),radial-gradient(circle at 85% 20%,#319ed44a,transparent 48%),linear-gradient(132deg,#011d33,#14587b);background-size:240px 240px,cover,cover}
+.auth-art:after{content:"";position:absolute;inset:auto -8% -40px -8%;height:260px;background:url("assets/marine-waves.svg") center bottom/cover no-repeat;opacity:.6;pointer-events:none;z-index:-1}
+.auth-art .brand{padding-bottom:20px;border-bottom:1px solid #bceaff29}
+.auth-art h1{max-width:680px;font-weight:850}
+.auth-art p{color:#c5e5f5}
+.auth-form{background:linear-gradient(150deg,#f5fbfd,#eaf6fb)}
+.auth-form .panel{box-shadow:0 24px 60px #0c375017;border:1px solid #d7eaf2}
+.splash{background:#011d33 url("assets/marine-waves.svg") center bottom/cover no-repeat}
+.mobilebar{background:#fbfeff}
+.mobilebar button.active{color:#0b6a8e;box-shadow:inset 0 3px #33a9db}
+.foot{color:#67899c;border-top:1px solid #dcebf3}
+
+/* Home: functional tidal banner, not a decorative takeover. */
+.sea-home-strip{display:grid;grid-template-columns:minmax(0,1.7fr) minmax(220px,.82fr);gap:16px;margin:18px 0 0;min-width:0}
+.sea-home-message{background:#071d33 url("assets/marine-waves.svg") center bottom/cover no-repeat;color:white;border-radius:19px;padding:26px 28px;position:relative;overflow:hidden;min-width:0}
+.sea-home-message:after{content:"";position:absolute;right:-30px;top:-40px;width:185px;height:170px;background:url("assets/marine-fish.svg") center/contain no-repeat;opacity:.44;pointer-events:none}
+.sea-home-message>*{position:relative;z-index:1}
+.sea-salt{color:#90dbf4;font-size:10px;letter-spacing:2px;font-weight:900}
+.sea-home-message h2{font-size:clamp(20px,2vw,26px);line-height:1.16;color:white;margin:12px 0 9px}
+.sea-home-message p{font-size:12px;color:#c7e4f0;line-height:1.65;max-width:450px;margin:0 0 16px}
+.sea-home-message .sea-light{background:#ffffff1a;color:white;border:1px solid #bdeaff8c}
+.sea-home-alert{display:flex;flex-direction:column;align-items:flex-start;justify-content:center;border:1px solid #bde5f3;border-radius:19px;background:linear-gradient(140deg,#e5f7fd,#fff);padding:25px;min-width:0}
+.sea-eyebrow{font-size:10px;letter-spacing:1.3px;color:#387d9e;font-weight:850}
+.sea-live-countdown{display:block;font-size:clamp(17px,2vw,26px);line-height:1.2;font-weight:900;letter-spacing:-.6px;color:#083a5b;margin:13px 0}
+.sea-home-alert small{color:#688496;font-size:11px;line-height:1.55}
+.sea-text-link{background:none;border:0;padding:12px 0 0;color:#0a719f;font-weight:850;font-size:12px;text-align:left}
+
+/* Four-step tutorial: responsive, no overlays, can reopen anytime. */
+.sea-guide{padding:0;overflow:hidden}
+.sea-guide-head{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:19px 24px;border-bottom:1px solid #ddecf2;background:#f5fbfe}
+.sea-step-number{font-size:11px;letter-spacing:1.2px;color:#267b9f;font-weight:900}
+.sea-guide-progress{display:flex;gap:8px}
+.sea-guide-progress button{width:34px;height:34px;border:1px solid #c7e3f0;background:white;border-radius:10px;color:#3a7895;font-weight:850}
+.sea-guide-progress button.selected,.sea-guide-progress button[aria-current="step"]{background:#104f72;border-color:#104f72;color:white}
+.sea-guide-body{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(165px,.65fr);gap:10px;min-height:285px}
+.sea-guide-body>div:first-child{padding:30px clamp(19px,3.1vw,34px)}
+.sea-guide-giant{font-size:12px;font-weight:950;color:#48a8d0;letter-spacing:2px}
+.sea-guide-body h2{font-size:clamp(25px,3vw,36px);margin:11px 0 14px;line-height:1.14}
+.sea-guide-body p{max-width:500px;font-size:14px;line-height:1.8;color:#496d80;margin:0 0 24px}
+.sea-guide-art{background:#0d4767 url("assets/marine-fish.svg") center 42%/cover no-repeat;position:relative;overflow:hidden}
+.sea-guide-art:after{content:"";position:absolute;inset:0;background:url("assets/marine-waves.svg") bottom center/cover no-repeat;opacity:.8}
+.sea-tools{margin-top:18px}
+.sea-tools>.panel{min-width:0}
+.sea-tool-icon{display:grid;place-items:center;width:42px;height:42px;border-radius:12px;background:#e3f5fd;color:#126b94;font-size:24px;margin-bottom:13px}
+.sea-tools .panel p{font-size:12px;line-height:1.7}
+.sea-tools .panel h2{margin-bottom:8px}
+.sea-install-help{margin-top:15px;background:#eaf7fc;border:1px solid #c6e9f7;padding:16px;border-radius:12px;color:#1c526f}
+.sea-install-help strong{display:block;font-size:13px}
+.sea-install-help p{margin:8px 0;font-size:12px;line-height:1.65}
+@media(max-width:1000px){.sea-home-strip{grid-template-columns:minmax(0,1fr)}.sea-home-alert{padding:18px 22px}.sea-home-alert .sea-live-countdown{margin:8px 0}}
+@media(max-width:639px){.sea-guide-body{grid-template-columns:minmax(0,1fr)}.sea-guide-art{display:none}.sea-guide-head{padding:15px}.sea-guide-body>div:first-child{padding:20px 16px}.sea-guide-body .actions>.btn{flex:1 1 120px}.sea-guide-progress button{min-width:31px;width:31px;min-height:36px}.sea-home-message{padding:22px}.sea-home-message:after{opacity:.25}.sea-home-strip{margin-top:14px}.sea-home-alert{padding:20px}.sea-tools{grid-template-columns:minmax(0,1fr)}.mobile-more-sheet{max-height:90dvh;overflow-y:auto}}
+@media(prefers-reduced-motion:reduce){.nav{transition:none}}

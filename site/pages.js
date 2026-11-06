@@ -1,12 +1,13 @@
 import {euro,pts,escapeHtml as h,byId,validateLineup,transferPlan,brokerEstimate,pickUpcoming,parseDelimited,rowsFromTable} from './logic.js';
 import {formBadge,compareButton,comparisonPanel} from './insights-view.js';
 import {simulatorPanel,idealTeamPanel} from './strategy-view.js';
+import {homeExperience,guidePage} from './experience.js';
 
 const cfg=window.FANTASY_CONFIG||{};
 const root=document.querySelector('#root');
-const state={client:null,session:null,page:'home',data:null,draft:[],search:'',filter:'all',compareIds:[],rankRound:'general',modal:null,rawPdf:'',importRows:null,loading:false,authMode:'password',recoveringPassword:false,mobileMenuOpen:false};
+const state={client:null,session:null,page:'home',data:null,draft:[],search:'',filter:'all',compareIds:[],rankRound:'general',guideStep:0,installHelp:false,modal:null,rawPdf:'',importRows:null,loading:false,authMode:'password',recoveringPassword:false,mobileMenuOpen:false};
 const LOGO='<img class="brand-emblem" src="assets/redeiras-logo.webp" alt="Escudo do CB Redeiras">';
-const NAV=[['home','⌂','Inicio'],['market','◫','Mercado'],['team','▣','O meu equipo'],['ranking','♛','Clasificación'],['calendar','▦','Calendario'],['vote','✦','Votación'],['admin','⚙','Administración']];
+const NAV=[['home','⌂','Inicio'],['market','◫','Mercado'],['team','▣','O meu equipo'],['ranking','♛','Clasificación'],['calendar','▦','Calendario'],['vote','✦','Votación'],['guide','?','Guía'],['admin','⚙','Administración']];
 function toast(message,error=false){document.querySelector('.toast')?.remove();const div=document.createElement('div');div.className='toast'+(error?' error':'');div.textContent=message;document.body.append(div);setTimeout(()=>div.remove(),6000);}
 const dateText=(v,opts={day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'})=>v?new Intl.DateTimeFormat('gl-ES',{timeZone:'Europe/Madrid',...opts}).format(new Date(v)):'Horario por confirmar';
 const euroShort=n=>new Intl.NumberFormat('es-ES',{maximumFractionDigits:2}).format((n||0)/1000000)+' M€';
@@ -54,8 +55,8 @@ function shell(body){
  const status=open?'Mercado aberto':'Mercado pechado';
  const nav=NAV.filter(n=>n[0]!=='admin'||admin());
  const mobilePrimary=nav.filter(n=>['home','market','team','ranking'].includes(n[0]));
- const mobileSecondary=nav.filter(n=>['calendar','vote','admin'].includes(n[0]));
- const moreActive=['calendar','vote','admin','security'].includes(state.page);
+ const mobileSecondary=nav.filter(n=>['calendar','vote','guide','admin'].includes(n[0]));
+ const moreActive=['calendar','vote','guide','admin','security'].includes(state.page);
  const navButton=n=>'<button type="button" class="nav '+(state.page===n[0]?'active':'')+'" data-page="'+n[0]+'" aria-label="'+h(n[2])+'" title="'+h(n[2])+'" '+(state.page===n[0]?'aria-current="page"':'')+'><span class="sym" aria-hidden="true">'+n[1]+'</span><span class="nav-label">'+n[2]+'</span>'+(n[0]==='team'&&!hasTeam?'<span class="smallmark">NOVO</span>':'')+'</button>';
  const bottomButton=n=>'<button type="button" class="'+(state.page===n[0]?'active':'')+'" data-page="'+n[0]+'" '+(state.page===n[0]?'aria-current="page"':'')+'><span aria-hidden="true">'+n[1]+'</span>'+n[2]+'</button>';
  const moreMenu=
@@ -74,7 +75,7 @@ function home(){
  ['Orzamento inicial','6 M€','Por equipo'],['O teu efectivo',euroShort(budget),'Dispoñible para fichar'],['Puntuación total',pts(total),'Puntos Fantasy'],['Xogadores no mercado',String(d.players.length),'Inclúe juniors']
  ].map(k=>panel('<div class="kpi-label">'+k[0]+'</div><div class="kpi">'+k[1]+'</div><div class="kpi-caption">'+k[2]+'</div>')).join('')+'</div>'+
  '<div class="grid two">'+panel('<h2>Próximo partido</h2>'+(pending?'<div class="row"><div><span class="tag">'+(pending.is_home?'NA CASA':'FÓRA')+'</span><h2 style="margin:12px 0 6px">CB Redeiras · '+h(pending.opponent)+'</h2><p>'+dateText(pending.starts_at)+'</p></div><span class="pill '+(open?'':'negative')+'">'+(open?'Fichaxes dispoñibles':'Agarda aos resultados')+'</span></div>':empty('Non hai xornadas pendentes')))+
- panel('<h2>Clasificación · Top 5</h2>'+(d.leaderboard.length?d.leaderboard.slice(0,5).map(x=>'<div class="row" style="padding:9px 0;border-bottom:1px solid #edf2f5"><b>'+x.position+'. '+h(x.team_name)+'</b><span>'+pts(x.total_points)+' pts</span></div>').join(''):empty('Aínda non hai equipos inscritos','♙'))+'<button class="btn secondary" data-page="ranking" style="margin-top:14px">Ver toda a clasificación</button>')+'</div>';
+ panel('<h2>Clasificación · Top 5</h2>'+(d.leaderboard.length?d.leaderboard.slice(0,5).map(x=>'<div class="row" style="padding:9px 0;border-bottom:1px solid #edf2f5"><b>'+x.position+'. '+h(x.team_name)+'</b><span>'+pts(x.total_points)+' pts</span></div>').join(''):empty('Aínda non hai equipos inscritos','♙'))+'<button class="btn secondary" data-page="ranking" style="margin-top:14px">Ver toda a clasificación</button>')+'</div>'+homeExperience(state);
 }
 function marketTable(){
  const d=state.data,round=current().pending?.round_number||5;
@@ -164,4 +165,4 @@ function voting(){
  (usable.length?usable.map(f=>panel('<h2>Votación · Xornada '+f.round_number+'</h2><p>Prazo ata '+dateText(new Date(new Date(f.ended_at).getTime()+72*3600e3).toISOString())+'. Os votos permanecen privados ata pechar.</p><div class="vote-grid">'+[3,2,1].map(w=>'<div class="field"><label>'+w+' puntos</label><select id="vote-'+w+'">'+option('','Escoller xogador')+d.callups.filter(c=>c.fixture_id===f.id&&c.player_id!==d.linkedPlayer).map(c=>option(c.player_id,player(c.player_id)?.name||'?')).join('')+'</select></div>').join('')+'</div><button class="btn primary" data-action="vote" data-fixture="'+f.id+'" style="margin-top:18px">Enviar votación</button>') ).join(''):panel(empty('Non tes votacións abertas. Só os xogadores convocados poden votar durante as 72 h posteriores ao partido.','✦')));
 }
 
-export {state,renderAuth,renderForbidden,securityPage,shell,home,market,marketTable,team,ranking,calendar,voting,toast,rpc,query,admin,current,player,prices,h,dateText,panel,pageHeader,person,playerAvatar,option,euroShort};
+export {guidePage,state,renderAuth,renderForbidden,securityPage,shell,home,market,marketTable,team,ranking,calendar,voting,toast,rpc,query,admin,current,player,prices,h,dateText,panel,pageHeader,person,playerAvatar,option,euroShort};
