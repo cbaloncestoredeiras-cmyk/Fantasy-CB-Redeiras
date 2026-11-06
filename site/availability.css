@@ -1,0 +1,8 @@
+.availability-badge{display:inline-flex;vertical-align:middle;margin-top:5px;padding:4px 7px;line-height:1.3;font-size:10px;white-space:normal;overflow-wrap:anywhere}
+.availability-badge.injured{color:#974840;background:#fcecea;border:1px solid #f0d9d4}
+.availability-badge.doubtful{color:#855f19;background:#fff4e0;border:1px solid #f0e0bf}
+.availability-warning{margin:12px 0;border-color:#f0dfc2;background:#fff6eb;color:#77551f}
+.roster-card .availability-badge{margin:7px auto 2px}
+.availability-admin .field{min-width:0}
+.availability-admin input[type="number"]{max-width:200px}
+@media(max-width:430px){.availability-admin input[type="number"]{max-width:100%}.availability-badge{font-size:9px}}
