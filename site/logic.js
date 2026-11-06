@@ -45,8 +45,8 @@ export function brokerEstimate(price,points,played=true,previousPoints=[]){
   const games=history.length+1;
   const average=(pastTotal+(Number(points)||0))/games;
   const {base,perPoint,pacing,floor,maxChange,roundTo}=BROKER_MODEL;
-  const high=Math.floor(price*(1+maxChange)/roundTo)*roundTo;
-  const low=Math.ceil(price*(1-maxChange)/roundTo)*roundTo;
+  const high=Math.floor(price*115/(100*roundTo))*roundTo;
+  const low=Math.ceil(price*85/(100*roundTo))*roundTo;
   const target=Math.max(floor,base+perPoint*average);
   const suggested=Math.round((price+pacing*(target-price))/roundTo)*roundTo;
   const after=played?Math.max(floor,Math.min(high,Math.max(low,suggested))):price;

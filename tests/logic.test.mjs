@@ -79,7 +79,7 @@ test('cumulative average excludes missed matches and zero-score appearances do c
 test('opening game negative score can decrease price; average drives future changes',()=>{
   const current=1_000_000;
   const first=brokerEstimate(current,-5,true);
-  assert.equal(first.after,850_000);
+  assert.equal(first.after,890_000); // pacing tempers the 1st-round loss
   const second=brokerEstimate(first.after,30,true,[-5]);
   assert.ok(second.after>first.after);
 });
