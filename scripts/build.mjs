@@ -16,6 +16,8 @@ const key=(process.env.PUBLIC_SUPABASE_PUBLISHABLE_KEY||"sb_publishable_yOC2_6nC
 if(url&&!/^https:\/\/[a-z0-9-]+\.supabase\.co$/.test(url))throw Error('PUBLIC_SUPABASE_URL must be a Supabase HTTPS project URL');
 if(key && !(key.startsWith('sb_publishable_') || key.startsWith('eyJ')))throw Error('Only Supabase publishable / legacy anon key is permitted in frontend.');
 if(/^sb_secret_|service_role/i.test(key))throw Error('A secret key cannot be embedded in a static build.');
-writeFileSync(resolve(dist,'config.js'), 'window.FANTASY_CONFIG='+JSON.stringify({url,key})+';\n');
+const pushPublicKey=(process.env.PUBLIC_VAPID_PUBLIC_KEY||'').trim();
+if(pushPublicKey && !/^[A-Za-z0-9_-]{80,120}$/.test(pushPublicKey))throw Error('PUBLIC_VAPID_PUBLIC_KEY must be a base64url VAPID public key');
+writeFileSync(resolve(dist,'config.js'), 'window.FANTASY_CONFIG='+JSON.stringify({url,key,pushPublicKey})+';\n');
 copyFileSync(resolve(root,'site/index.html'),resolve(dist,'index.html'));
 console.log('Built Fantasy CB Redeiras in dist/. Config:',url?'project configured':'awaiting public project key');

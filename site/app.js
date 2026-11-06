@@ -3,6 +3,7 @@ import {adminView,adminAction,handleStatsFile} from './admin.js';
 import {validateLineup,transferPlan,brokerEstimate,pts} from './logic.js';
 import {formSection,priceHistorySection} from './insights-view.js';
 import {playerAdvancedPanel} from './analytics-view.js';
+import {enableRemotePush,disableRemotePush,remotePushEnabled} from './push.js';
 import {initExperience,installAppPrompt,toggleDeviceAlerts,refreshClock} from './experience.js';
 
 const root=document.querySelector('#root');
@@ -137,7 +138,9 @@ async function interact(action,element){
    state.page='security';present();return;
  }
 
- if(action==='logout'){await state.client?.auth.signOut();state.session=null;state.data=null;state.mobileMenuOpen=false;renderAuth();return;}
+ if(action==='logout'){
+   if(remotePushEnabled(state)){try{await disableRemotePush(state);}catch(e){console.warn('Non foi posible revogar o aviso ao saír',e.message);}}
+   await state.client?.auth.signOut();state.session=null;state.data=null;state.mobileMenuOpen=false;renderAuth();return;}
  if(action==='retry'){await refresh();return;}
  if(action==='set-alias'){
    state.mobileMenuOpen=false;
@@ -165,6 +168,10 @@ async function interact(action,element){
  }
  if(action==='toggle-device-alerts'){
   toast(await toggleDeviceAlerts());present();return;
+ }
+ if(action==='remote-push-enable'||action==='remote-push-disable'){
+  toast(action==='remote-push-enable'?await enableRemotePush(state):await disableRemotePush(state));
+  present();return;
  }
  if(action==='compare-player'){
   const id=element.dataset.id;if(!player(id))return;
