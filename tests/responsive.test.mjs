@@ -129,6 +129,7 @@ test('marine home and guide links coexist with existing Fantasy navigation',()=>
  assert.match(views.home(),/data-page="guide"/);
  views.state.guideStep=0;
  assert.match(views.guidePage(views.state),/PASO 01 \/ 04/);
+ views.state.session={user:{id:'test-user',email:'demo@redeiras.test'}};
  views.shell(views.home());
  assert.match(root.innerHTML,/data-page="guide"/);
 });
