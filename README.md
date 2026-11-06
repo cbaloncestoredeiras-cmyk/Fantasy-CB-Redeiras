@@ -21,7 +21,7 @@ Aplicación Fantasy de baloncesto para el Club Baloncesto Redeiras, diseñada en
 - Desde J5, **sábado 7 de noviembre de 2026, 20:00** (Europe/Madrid); horario de próximas jornadas editable por administración según confirmación semanal.
 - Valoración ACB/PIR + bonus victoria del 20% solo si PIR positiva + bonus voto 3/2/1 del vestuario.
 - Votan todos los convocados, hayan jugado o no, durante las 72 horas después del final real.
-- Bróker basado en **media acumulada de puntos Fantasy en partidos disputados**: objetivo virtual = 450.000 € + 100.000 € × media; variación máxima ±15 % por jornada jugada, redondeo a 5.000 €, precio mínimo 450.000 €. Ausentes mantienen precio y no cuentan en la media. Un jugador puede subir incluso con valoración negativa si la media acumulada mantiene un objetivo superior al precio actual. Fórmula inspirada en el comportamiento de SuperManager, no idéntica ni oficial. Requiere calibración con datos reales.
+- Bróker basado en **media acumulada de puntos Fantasy en partidos disputados**: objetivo virtual = 1.000.000 € + 250.000 € × media; el precio avanza un 20 % de la distancia hacia ese objetivo por jornada, con límite ±15 %, redondeo de 5.000 € y suelo de 450.000 €. Ausentes no varían ni cuentan en la media. La recalibración previa a J5 conserva los 18 precios iniciales y ralentiza la convergencia de los dos niveles de precios del plantel; permite pequeñas subidas con valoración negativa en algunos jugadores baratos. Adaptación inspirada en SuperManager ACB, no una reproducción exacta. Véase `docs/BROKER_REDEIRAS_V2.md`.
 - Mercado bloqueado al inicio y hasta publicación de estadísticas y precios de la jornada anterior.
 - Un equipo por persona y temporada; acceso gratuito por invitación.
 
