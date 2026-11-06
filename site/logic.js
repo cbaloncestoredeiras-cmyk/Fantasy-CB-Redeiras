@@ -32,25 +32,35 @@ export function transferPlan(oldIds,newIds,cash,prices){
 }
 
 // Browser-only preview; Supabase's private.next_price is authoritative.
-// ACB-like accumulated-average model tailored to Redeiras (not an exact ACB formula).
-// Every played match contributes equally; missed matches do not contribute.
+// Redeiras v2: same ACB-inspired cumulative average and +/-15% cap, calibrated for
+// the club's low Fantasy scores. The 20% pacing preserves the initial price tiers.
+// Played matches (including 0-point games) count; absences do not.
+export const BROKER_MODEL=Object.freeze({
+  base:1_000_000,perPoint:250_000,pacing:0.20,
+  floor:450_000,maxChange:0.15,roundTo:5_000
+});
 export function brokerEstimate(price,points,played=true,previousPoints=[]){
   const history=(Array.isArray(previousPoints)?previousPoints:[]).map(Number).filter(Number.isFinite);
   const pastTotal=history.reduce((sum,score)=>sum+score,0);
   const games=history.length+1;
   const average=(pastTotal+(Number(points)||0))/games;
-  const high=Math.floor(price*115/(100*5000))*5000;
-  const low=Math.ceil(price*85/(100*5000))*5000;
-  const target=Math.round(Math.max(450000,450000+100000*average)/5000)*5000;
-  const after=played?Math.max(450000,Math.min(high,Math.max(low,target))):price;
-  const requiredScore=targetPrice=>((targetPrice-450000)/100000)*games-pastTotal;
+  const {base,perPoint,pacing,floor,maxChange,roundTo}=BROKER_MODEL;
+  const high=Math.floor(price*115/(100*roundTo))*roundTo;
+  const low=Math.ceil(price*85/(100*roundTo))*roundTo;
+  const target=Math.max(floor,base+perPoint*average);
+  const suggested=Math.round((price+pacing*(target-price))/roundTo)*roundTo;
+  const after=played?Math.max(floor,Math.min(high,Math.max(low,suggested))):price;
+  const requiredScore=theoreticalPrice=>((theoreticalPrice-base)/perPoint)*games-pastTotal;
+  const targetForChange=bound=>price+(bound-price)/pacing;
+  const minTarget=targetForChange(low);
   return {
     before:price,after,delta:after-price,
     average:played?average:(history.length?pastTotal/history.length:null),
     playedGames:history.length+(played?1:0),
     target,expected:requiredScore(price),
-    thresholdPlus15:requiredScore(high),
-    thresholdMinus15:requiredScore(low)
+    thresholdPlus15:requiredScore(targetForChange(high)),
+    // Null means the theoretical floor prevents a full -15% in one match.
+    thresholdMinus15:minTarget<floor?null:requiredScore(minTarget)
   };
 }
 

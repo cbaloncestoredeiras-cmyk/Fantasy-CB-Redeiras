@@ -48,6 +48,28 @@ test('cumulative-average broker can RISE despite a negative second match',()=>{
   assert.equal(second.after,1_055_000); // rises ~14.7% even after -5
   assert.ok(second.thresholdPlus15<0); // sufficiently strong opening performance
 });
+test('Redeiras broker: negative cheap score can rise, top-priced player needs positive',()=>{
+ const iago=700_000,juan=2_250_000;
+ assert.equal(brokerEstimate(iago,-1,true).after,710_000);
+ assert.equal(brokerEstimate(iago,-2,true).after,660_000);
+ assert.equal(brokerEstimate(iago,1,true).after,805_000);
+ assert.equal(brokerEstimate(1_200_000,2,true).after,1_260_000);
+ assert.equal(brokerEstimate(1_500_000,3,true).after,1_550_000);
+ assert.equal(brokerEstimate(juan,3,true).after,2_150_000);
+ assert.equal(brokerEstimate(juan,5,true).after,juan);
+ assert.ok(brokerEstimate(juan,-1,true).after<juan);
+ assert.equal(brokerEstimate(iago,0,false).after,iago);
+ assert.equal(brokerEstimate(iago,-1,true).thresholdMinus15,null);
+ assert.equal(brokerEstimate(juan,5,true).expected,5);
+});
+test('broker pacing slows premium price declines and cumulative averages still matter',()=>{
+ const high=brokerEstimate(2_250_000,3,true);
+ assert.ok(high.after>=2_100_000);
+ const first=brokerEstimate(700_000,8,true);
+ const second=brokerEstimate(first.after,-2,true,[8]);
+ assert.ok(second.after>first.after);
+ assert.equal(second.playedGames,2);
+});
 test('cumulative average excludes missed matches and zero-score appearances do count',()=>{
   const current=920_000, prior=[30];
   assert.equal(brokerEstimate(current,-50,false,prior).after,current);
@@ -57,7 +79,7 @@ test('cumulative average excludes missed matches and zero-score appearances do c
 test('opening game negative score can decrease price; average drives future changes',()=>{
   const current=1_000_000;
   const first=brokerEstimate(current,-5,true);
-  assert.equal(first.after,850_000);
+  assert.equal(first.after,890_000); // pacing tempers the 1st-round loss
   const second=brokerEstimate(first.after,30,true,[-5]);
   assert.ok(second.after>first.after);
 });
