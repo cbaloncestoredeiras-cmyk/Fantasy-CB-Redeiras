@@ -1,0 +1,26 @@
+{
+  "name": "Fantasy CB Redeiras",
+  "short_name": "Redeiras Fantasy",
+  "description": "O Fantasy do Club Baloncesto Redeiras. Acceso privado por invitación.",
+  "lang": "gl",
+  "id": "/",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#071d33",
+  "theme_color": "#071d33",
+  "icons": [
+    {
+      "src": "/assets/fantasy-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/assets/fantasy-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
