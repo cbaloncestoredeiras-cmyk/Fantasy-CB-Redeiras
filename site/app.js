@@ -1,6 +1,7 @@
 import {guidePage,state,renderAuth,renderForbidden,securityPage,shell,home,market,marketTable,team,ranking,analytics,calendar,voting,toast,rpc,current,player,prices,h,dateText,panel,pageHeader,admin,euroShort,playerAvatar} from './pages.js';
 import {adminView,adminAction,handleStatsFile} from './admin.js';
 import {validateLineup,transferPlan,brokerEstimate,pts} from './logic.js';
+import {availabilityWarning,unavailablePlayers} from './availability.js';
 import {formSection,priceHistorySection} from './insights-view.js';
 import {playerAdvancedPanel} from './analytics-view.js';
 import {enableRemotePush,disableRemotePush,remotePushEnabled} from './push.js';
@@ -30,7 +31,7 @@ async function load(){
  const season=seasonR.data;
  const toPromise=(q)=>q.then(r=>{if(r.error)throw r.error;return r.data||[]});
  const [players,positions,priceRows,fixtures,teams,alias,callups,eligible,voterAccount,stats,history]=await Promise.all([
- toPromise(c.from('players').select('id,name,category,active,jersey_number,available_from_round,photo_path').eq('club_id',clubId).eq('active',true).order('name')),
+ toPromise(c.from('players').select('id,name,category,active,jersey_number,available_from_round,photo_path,availability_status,availability_weeks,availability_updated_at').eq('club_id',clubId).eq('active',true).order('name')),
  toPromise(c.from('player_positions').select('player_id,position')),
  toPromise(c.from('market_prices').select('player_id,price').eq('season_id',season.id)),
  toPromise(c.from('fixtures').select('*').eq('season_id',season.id).order('round_number')),
@@ -117,7 +118,7 @@ function showPlayer(id){
   .map(s=>Number(s.fantasy_points));
  const estimate=brokerEstimate(cost,0,true,pastScores);
  const el=document.createElement('div');el.className='modalcover';
- el.innerHTML='<div class="modal" role="dialog" aria-modal="true" aria-label="Perfil do xogador"><div class="row"><div class="person">'+playerAvatar(p,'profile-photo')+'<div><h2 style="margin:0">'+h(p.name)+'</h2><p class="mini">'+h(p.positions.join(' / '))+(p.category==='junior'?' · JÚNIOR':'')+'</p></div></div><button class="btn secondary" data-action="close-modal">Pechar</button></div><hr class="separator"><div class="grid three"><div><div class="kpi-label">Prezo actual</div><div class="kpi">'+euroShort(cost)+'</div></div><div><div class="kpi-label">Puntos para manter o prezo</div><div class="kpi">'+pts(estimate.expected)+'</div></div><div><div class="kpi-label">Máxima variación</div><div class="kpi">±15 %</div></div></div><div class="notice info" style="margin:15px 0">Bróker por media acumulada · '+pastScores.length+' partidos puntuados. Para subir ata +15 % precisa arredor de '+pts(estimate.thresholdPlus15)+' puntos Fantasy no próximo partido; '+(estimate.thresholdMinus15===null?'non pode baixar o 15 % completo nunha soa xornada con este prezo':'para baixar ata −15 %, arredor de '+pts(estimate.thresholdMinus15)+' puntos Fantasy')+'. O bróker usa a media acumulada e achégase un 20 % ao prezo teórico por xornada, respectando un máximo do 15 % de variación. Un xogador barato pode subir incluso con negativo. Son puntos Fantasy, que inclúen as bonificacións; as cifras son aproximadas por redondeo. Sen xogar, o prezo non cambia.</div>'+formSection(state.data,id)+playerAdvancedPanel(state.data,id)+priceHistorySection(state.data,id)+'</div>';
+ el.innerHTML='<div class="modal" role="dialog" aria-modal="true" aria-label="Perfil do xogador"><div class="row"><div class="person">'+playerAvatar(p,'profile-photo')+'<div><h2 style="margin:0">'+h(p.name)+'</h2><p class="mini">'+h(p.positions.join(' / '))+(p.category==='junior'?' · JÚNIOR':'')+'</p></div></div><button class="btn secondary" data-action="close-modal">Pechar</button></div><hr class="separator"><div class="grid three"><div><div class="kpi-label">Prezo actual</div><div class="kpi">'+euroShort(cost)+'</div></div><div><div class="kpi-label">Puntos para manter o prezo</div><div class="kpi">'+pts(estimate.expected)+'</div></div><div><div class="kpi-label">Máxima variación</div><div class="kpi">±15 %</div></div></div><div class="notice info" style="margin:15px 0">Bróker por media acumulada · '+pastScores.length+' partidos puntuados. Para subir ata +15 % precisa arredor de '+pts(estimate.thresholdPlus15)+' puntos Fantasy no próximo partido; '+(estimate.thresholdMinus15===null?'non pode baixar o 15 % completo nunha soa xornada con este prezo':'para baixar ata −15 %, arredor de '+pts(estimate.thresholdMinus15)+' puntos Fantasy')+'. O bróker usa a media acumulada e achégase un 20 % ao prezo teórico por xornada, respectando un máximo do 15 % de variación. Un xogador barato pode subir incluso con negativo. Son puntos Fantasy, que inclúen as bonificacións; as cifras son aproximadas por redondeo. Sen xogar, o prezo non cambia.</div>'+availabilityWarning([id],state.data.playerMap)+formSection(state.data,id)+playerAdvancedPanel(state.data,id)+priceHistorySection(state.data,id)+'</div>';
  document.body.append(el);state.modal=el;
 }
 function toggleMobileMore(open){
@@ -196,6 +197,8 @@ async function interact(action,element){
  if(action==='save-lineup'){
   const d=state.data,check=validateLineup(state.draft,d.playerMap,d.prices),{open}=current();
   if(!check.valid||!open)throw Error('Quinteto incorrecto ou mercado pechado');
+  const risky=unavailablePlayers(state.draft.filter(id=>!d.roster.includes(id)),d.playerMap);
+  if(risky.length&&!confirm('Estás fichando xogadores lesionados ou dubidosos: '+risky.map(p=>p.name).join(', ')+'. Seguen ocupando praza e non dan cambios extra. Continuar?'))return;
   if(d.team){
     const x=transferPlan(d.roster,state.draft,d.team.cash,d.prices);
     const n=d.transfers.filter(t=>t.round_number===current().pending?.round_number).length;
@@ -217,7 +220,7 @@ async function interact(action,element){
   await rpc('fantasy_vote',{p_fixture:fixture,p_first:picks[0],p_second:picks[1],p_third:picks[2]});
   return toast('Voto rexistrado. Podes modificalo durante o prazo.');
  }
- if(['activate-season','set-launch-check','update-kickoff','update-end','save-callups','save-stats','preview-round','publish-round','correct-round','load-participants','update-member','revoke-member','export-snapshot','add-junior','send-invite','upload-player-photo','remove-player-photo'].includes(action)){
+ if(['set-player-availability','activate-season','set-launch-check','update-kickoff','update-end','save-callups','save-stats','preview-round','publish-round','correct-round','load-participants','update-member','revoke-member','export-snapshot','add-junior','send-invite','upload-player-photo','remove-player-photo'].includes(action)){
   if(!admin())throw Error('Non tes permisos de administración');
   if(action==='activate-season'&&!confirm('Activar a tempada abre o mercado aos participantes. Antes comproba as probas, a privacidade e as copias de seguridade. Queres activala?'))return;
   const changed=await adminAction(action,element);
@@ -301,6 +304,8 @@ root.addEventListener('change',async e=>{
  if(e.target.id==='ranking-round'){state.rankRound=e.target.value;present();}
   if(e.target.id==='analytics-sort'){state.analyticsSort=e.target.value;present();}
  if(e.target.id==='admin-photo-player'){state.adminPlayer=e.target.value;present();}
+ if(e.target.id==='availability-player'){state.adminAvailabilityPlayer=e.target.value;present();}
+ if(e.target.id==='availability-status'){const weeks=document.getElementById('availability-weeks');if(weeks){weeks.disabled=e.target.value!=='injured';if(weeks.disabled)weeks.value='';}}
  if(e.target.id==='admin-photo-file'){
    const file=e.target.files?.[0];
    const holder=document.getElementById('admin-photo-preview');
