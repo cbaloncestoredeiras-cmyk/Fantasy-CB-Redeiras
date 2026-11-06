@@ -41,7 +41,7 @@ Deno.serve(async request=>{
    });
    sent=true;success++;
   }catch(error){
-   failed++;const code=Number(error?.statusCode||0);
+   failed++;const code=Number((error as {statusCode?:number}|null)?.statusCode||0);
    if(code===404||code===410){dead=true;invalid++;}
    // Do not log endpoint, auth keys or response bodies.
    console.warn('Push service rejected a notification',code||'unknown');
