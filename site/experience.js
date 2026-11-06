@@ -1,6 +1,7 @@
 // Lightweight, privacy-preserving onboarding and in-app market reminders.
 // This version does not provide remote push when the browser/app is closed.
 import {escapeHtml as h,pickUpcoming} from './logic.js';
+import {publicPushKey,remotePushSupported,remotePushEnabled} from './push.js';
 const STEPS=[
  {title:'Crea o teu quinteto',symbol:'01',description:'Escolle cinco xogadores. Debes incluír un base (BA) e outro xogador interior (AP ou P). Non poden ser a mesma persoa.',target:'market',action:'Ir ao mercado'},
  {title:'Xestiona o orzamento',symbol:'02',description:'Comezas con 6 millóns virtuais. Antes de confirmar podes comparar xogadores, simular saídas e entradas e revisar o efectivo restante.',target:'market',action:'Probar o simulador'},
@@ -44,6 +45,9 @@ export function guidePage(state){
  const unsupported=typeof Notification==='undefined'||typeof navigator==='undefined'||!('serviceWorker' in navigator);
  const perm=unsupported?'unsupported':Notification.permission;
  const optIn=safeStorage()?.getItem(ALERT_PREF)==='on';
+ const remoteSupported=remotePushSupported();
+ const remoteReady=!!publicPushKey();
+ const remoteOn=remotePushEnabled(state);
  const button=perm==='denied'
   ?'<p class="mini muted">Bloqueaches as notificacións no navegador. Podes cambialo na configuración do dispositivo.</p>'
   :unsupported?'<p class="mini muted">O teu navegador non admite este tipo de aviso.</p>'
@@ -61,8 +65,13 @@ export function guidePage(state){
   (installed()?'<p class="tag good">Estás usando a versión instalada</p>':'<button type="button" class="btn primary" data-action="install-app">Instalar Fantasy</button>')+
   (state.installHelp?'<div class="sea-install-help" role="status"><strong>Como instalala</strong><p><b>iPhone / iPad:</b> abre a web en Safari → Compartir → Engadir á pantalla de inicio.</p><p><b>Android:</b> no menú do navegador, «Instalar app» ou «Engadir á pantalla de inicio».</p><p><b>Ordenador:</b> usa a opción «Instalar aplicación» do navegador compatible.</p></div>':'')+
   '</section><section class="panel"><span class="sea-tool-icon" aria-hidden="true">◷</span><h2>Avisos do mercado</h2>'+
-  '<p>Avisa cando quede menos dunha hora para o peche, só <b>mentres a app está aberta</b>. Non enviamos notificacións push en segundo plano.</p>'+
-  button+'<p class="mini muted">Activación voluntaria e reversible neste dispositivo. Sen datos persoais nas notificacións.</p></section></div>';
+  '<p>Avisa cando quede menos dunha hora para o peche, só <b>mentres a app está aberta</b>. Tamén podes activar as notificacións remotas unha vez configuradas.</p>'+
+  button+'<p class="mini muted">Activación voluntaria e reversible neste dispositivo. Sen datos persoais nas notificacións.</p>'+
+  '<div class="push-settings"><h3>Avisos coa app pechada</h3><p class="mini">Notificacións Web Push voluntarias, cun aviso de peche do mercado aínda que non teñas a app aberta. En iPhone necesitas a app instalada desde Safari.</p>'+
+  (!remoteSupported?'<p class="mini muted">Este dispositivo non admite Web Push (ou a web non está instalada).</p>':
+   !remoteReady?'<p class="mini muted">Funcionalidade preparada. Falta configurar o envío seguro no servidor.</p>':
+   '<button type="button" class="btn '+(remoteOn?'secondary':'primary')+'" data-action="'+(remoteOn?'remote-push-disable':'remote-push-enable')+'">'+(remoteOn?'Desactivar no dispositivo':'Activar coa app pechada')+'</button>')+
+  '<p class="mini muted">Nunca se solicita permiso sen premer o botón. Revogable en calquera momento.</p></div></section></div>';
 }
 let deferredInstall=null,initialized=false;
 export function installAppPrompt(){
@@ -101,6 +110,7 @@ async function checkOneHour(state){
  if(info.status!=='open'||info.ms>3600000||!info.pending)return;
  const store=safeStorage();if(!store||store.getItem(ALERT_PREF)!=='on')return;
  if(typeof Notification==='undefined'||Notification.permission!=='granted')return;
+ if(remotePushEnabled(state))return; // Avoid double alerts if the remote subscription is active.
  const key=alertKey(info.pending.id);
  if(store.getItem(key)==='sent')return;
  if(typeof navigator==='undefined'||!('serviceWorker' in navigator))return;
