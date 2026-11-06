@@ -1,4 +1,5 @@
 import {euro,pts,escapeHtml as h,byId,validateLineup,transferPlan,brokerEstimate,pickUpcoming,parseDelimited,rowsFromTable} from './logic.js';
+import {availabilityBadge,availabilityWarning} from './availability.js';
 import {formBadge,compareButton,comparisonPanel} from './insights-view.js';
 import {simulatorPanel,idealTeamPanel} from './strategy-view.js';
 import {homeExperience,guidePage} from './experience.js';
@@ -24,7 +25,7 @@ const playerAvatar=(p,extra='')=>{
  const url=state.data?.photoUrls?.[p.id];
  return '<span class="playerlogo '+h(extra)+'">'+(url?'<img class="playerphoto" loading="lazy" alt="Foto de '+h(p.name)+'" src="'+h(url)+'">':h(p.name.slice(0,2).toUpperCase()))+'</span>';
 };
-const person=(p)=>'<div class="person">'+playerAvatar(p)+'<div><b>'+h(p.name)+'</b><div class="mini muted">'+h(p.positions.join(' · '))+'</div></div></div>';
+const person=(p)=>'<div class="person">'+playerAvatar(p)+'<div><b>'+h(p.name)+'</b><div class="mini muted">'+h(p.positions.join(' · '))+'</div>'+availabilityBadge(p)+'</div></div>';
 const friendlyError=(error)=>error?.message||String(error||'Erro descoñecido');
 async function rpc(name,args){const {data,error}=await state.client.rpc(name,args);if(error)throw error;return data;}
 async function query(table,columns='*',filter=()=>{}){const r=await filter(state.client.from(table).select(columns));if(r.error)throw r.error;return r.data||[];}
@@ -113,23 +114,24 @@ function market(){
  '<aside id="draft-summary" class="panel draft-panel" tabindex="-1"><h2>O teu quinteto</h2><div class="stack">'+state.draft.map(id=>{const p=player(id);return p?'<div class="playeritem">'+person(p)+'<div class="actions"><b>'+euroShort(prices()[id])+'</b><button class="btn small secondary" data-action="toggle" data-id="'+id+'">×</button></div></div>':''}).join('')+Array.from({length:Math.max(0,5-state.draft.length)},()=>'<div class="playeritem" style="color:#a0b1ba;border-style:dashed">＋ Praza libre</div>').join('')+'</div><hr class="separator">'+
  '<div class="row"><span class="muted mini">Custo de selección</span><b>'+euroShort(summary.cost)+'</b></div><div class="row" style="margin-top:10px"><span class="muted mini">Efectivo tras confirmar</span><b style="color:'+(plan.cashAfter<0?'var(--bad)':'var(--good)')+'">'+euroShort(plan.cashAfter)+'</b></div>'+
  '<div class="metricbar" style="margin-top:12px"><span style="width:'+Math.min(100,summary.cost/(isFirst?6000000:(d.team.cash+ d.roster.reduce((n,id)=>n+(prices()[id]||0),0)))*100)+'%"></span></div>'+
- '<p class="help">Un BA e un interior AP/P en dous xogadores diferentes. Máximo 3 fichaxes por xornada.</p>'+
+ '<p class="help">Quinteto obrigatorio de 5 xogadores confirmado antes do partido. Sen equipo gardado non participas. Un BA e un interior AP/P diferentes; máximo 3 fichaxes por xornada.</p>'+
  (summary.errors.length?'<div class="notice">'+summary.errors.map(h).join(' · ')+'</div>':'')+
  (plan.cashAfter<0?'<div class="notice error">Fáltanche '+euro(-plan.cashAfter)+'</div>':'')+
- (!open?'<div class="notice">Mercado pechado. Podes simular o quinteto, pero non confirmar fichaxes ata que se publiquen as estatísticas e os prezos.</div>':'')+
+ availabilityWarning(state.draft,d.playerMap)+
+  (!open?'<div class="notice">Mercado pechado. Podes simular o quinteto, pero non confirmar fichaxes ata que se publiquen as estatísticas e os prezos.</div>':'')+
  (isFirst?'<div class="field" style="margin:17px 0"><label>Nome do teu equipo</label><input id="team-name" maxlength="40" placeholder="Ex.: Redeiras de Ouro" autocomplete="off"></div>':'<p class="mini muted">Cambios novos nesta simulación: '+plan.changes+' · Xa gastados: '+used+'</p>')+
  '<button class="btn primary full" data-action="save-lineup" '+(!legal||!open?'disabled':'')+'>'+ (isFirst?'Crear equipo':'Confirmar fichaxes')+' →</button></aside></div>';
 }
 function team(){
- const d=state.data;if(!d.team)return pageHeader('O meu equipo','Prepara o teu primeiro quinteto.')+panel(empty('Aínda non creaches un equipo. Vai ao mercado para escoller os teus cinco xogadores.','♙')+'<button class="btn primary" data-page="market">Abrir mercado</button>');
+ const d=state.data;if(!d.team)return pageHeader('O meu equipo','Prepara o teu primeiro quinteto.')+panel(empty('Sen un quinteto gardado de cinco xogadores non participarás nesta xornada. Confírmao no mercado antes do partido.','♙')+'<button class="btn primary" data-page="market">Abrir mercado</button>');
  const roster=d.roster.map(x=>player(x)).filter(Boolean),sum=roster.reduce((n,p)=>n+(prices()[p.id]||0),0);
  return pageHeader(d.team.name,'O teu cinco inicial, o efectivo e a evolución do equipo.','<button class="btn primary" data-page="market">Facer cambios →</button>')+
  '<div class="grid three" style="margin-bottom:17px">'+[
  ['Valor de mercado',euroShort(sum),'Valor actual do teu quinteto'],['Efectivo',euroShort(d.team.cash),'Dispoñible para fichaxes'],['Patrimonio total',euroShort(sum+d.team.cash),'Valor do equipo + saldo']
  ].map(k=>panel('<div class="kpi-label">'+k[0]+'</div><div class="kpi">'+k[1]+'</div><div class="kpi-caption">'+k[2]+'</div>')).join('')+'</div>'+
- panel('<h2>O meu quinteto na pista</h2>'+courtLineup(d,d.roster,playerAvatar))+
- panel('<h2>O meu quinteto</h2><div class="roster-list">'+roster.map(p=>'<div class="roster-card">'+playerAvatar(p)+'<b>'+h(p.name)+'</b><div class="small">'+h(p.positions.join(' / '))+'</div><div class="small" style="color:#146f94;font-weight:800">'+euroShort(prices()[p.id])+'</div><button class="btn small secondary" data-player="'+p.id+'" style="margin-top:12px">Perfil</button></div>').join('')+'</div>')+
- '<div class="grid two" style="margin-top:17px">'+panel('<h2>Normas</h2><p>Cinco xogadores · Mínimo un base e un interior · Tres transferencias por xornada. Os cambios confírmanse só co mercado aberto.</p>')+
+ availabilityWarning(d.roster,d.playerMap)+panel('<h2>O meu quinteto na pista</h2>'+courtLineup(d,d.roster,playerAvatar))+
+ panel('<h2>O meu quinteto</h2><div class="roster-list">'+roster.map(p=>'<div class="roster-card">'+playerAvatar(p)+'<b>'+h(p.name)+'</b><div class="small">'+h(p.positions.join(' / '))+'</div><div class="small" style="color:#146f94;font-weight:800">'+euroShort(prices()[p.id])+'</div>'+availabilityBadge(p)+'<button class="btn small secondary" data-player="'+p.id+'" style="margin-top:12px">Perfil</button></div>').join('')+'</div>')+
+ '<div class="grid two" style="margin-top:17px">'+panel('<h2>Normas</h2><p>Obrigatorio confirmar exactamente cinco xogadores antes do partido, cun BA e un AP/P distintos. Máximo tres transferencias por xornada, acumuladas entre operacións. Os lesionados ocupan praza e non dan cambios gratuítos.</p>')+
  panel('<h2>Historial de fichaxes</h2>'+(d.transfers.length?d.transfers.slice().reverse().slice(0,8).map(t=>'<div class="mini" style="margin:8px 0">X'+t.round_number+': '+h(player(t.sold_player_id)?.name||'?')+' → '+h(player(t.bought_player_id)?.name||'?')+'</div>').join(''):empty('Aínda non fixeches transferencias','⇄')))+'</div>';
 }
 function ranking(){
