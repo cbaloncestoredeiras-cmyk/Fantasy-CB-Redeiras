@@ -1,10 +1,14 @@
 import {cpSync,copyFileSync,existsSync,mkdirSync,readFileSync,writeFileSync} from 'node:fs';
 import {resolve} from 'node:path';
+import {writeInstallIcons} from './install-icons.mjs';
 
 const root=resolve(import.meta.dirname,'..');
 const dist=resolve(root,'dist');
 if(!existsSync(dist))mkdirSync(dist,{recursive:true});
 cpSync(resolve(root,'site'),dist,{recursive:true});
+// True 180/192/512-pixel PNGs are generated using only Node built-ins.
+writeInstallIcons(resolve(dist,'assets'));
+
 // These values are public browser configuration, not privileged credentials.
 // Build-time environment variables can override them when rotating the publishable key.
 const url=(process.env.PUBLIC_SUPABASE_URL||'https://vfxazecrdxrtoqzdhclh.supabase.co').trim();
