@@ -1,14 +1,15 @@
-import {guidePage,state,renderAuth,renderForbidden,securityPage,shell,home,market,marketTable,team,ranking,calendar,voting,toast,rpc,current,player,prices,h,dateText,panel,pageHeader,admin,euroShort,playerAvatar} from './pages.js';
+import {guidePage,state,renderAuth,renderForbidden,securityPage,shell,home,market,marketTable,team,ranking,analytics,calendar,voting,toast,rpc,current,player,prices,h,dateText,panel,pageHeader,admin,euroShort,playerAvatar} from './pages.js';
 import {adminView,adminAction,handleStatsFile} from './admin.js';
 import {validateLineup,transferPlan,brokerEstimate,pts} from './logic.js';
 import {formSection,priceHistorySection} from './insights-view.js';
+import {playerAdvancedPanel} from './analytics-view.js';
 import {initExperience,installAppPrompt,toggleDeviceAlerts,refreshClock} from './experience.js';
 
 const root=document.querySelector('#root');
 function present(){
  if(!state.session){renderAuth();return;}
  if(!state.data){renderForbidden();return;}
- const pages={home,market,team,ranking,calendar,vote:voting,guide:()=>guidePage(state),admin:adminView,security:securityPage};
+ const pages={home,market,team,ranking,analytics,calendar,vote:voting,guide:()=>guidePage(state),admin:adminView,security:securityPage};
  const content=(pages[state.page]||home)();
  shell(content);
  refreshClock(state);
@@ -42,12 +43,14 @@ async function load(){
  ]);
  const roster=teams.length?await toPromise(c.from('team_rosters').select('player_id').eq('team_id',teams[0].id)):[];
  const transfers=teams.length?await toPromise(c.from('transfers').select('*').eq('team_id',teams[0].id).order('executed_at',{ascending:true})):[];
- const [rankR,weeklyR]=await Promise.all([
+ const [rankR,weeklyR,popularityR]=await Promise.all([
   c.rpc('fantasy_leaderboard',{p_season:season.id}),
-  c.rpc('fantasy_round_leaderboard',{p_season:season.id})
+  c.rpc('fantasy_round_leaderboard',{p_season:season.id}),
+  c.rpc('fantasy_player_popularity',{p_season:season.id})
  ]);
  if(rankR.error)throw rankR.error;
  if(weeklyR.error)console.warn('Clasificación semanal non dispoñible:',weeklyR.error.message);
+ if(popularityR.error)console.warn('Popularidade non dispoñible:',popularityR.error.message);
  const metricsR=role==='admin'?await c.rpc('fantasy_admin_metrics',{p_club:clubId}):{data:null,error:null};
  if(metricsR.error)throw metricsR.error;
  const launchR=role==='admin'?await c.rpc('fantasy_launch_status',{p_season:season.id}):{data:null,error:null};
@@ -66,7 +69,7 @@ async function load(){
  const fullPlayers=players.map(p=>({...p,positions:positionMap[p.id]||[]}));
  const playerMap=Object.fromEntries(fullPlayers.map(p=>[p.id,p]));
  state.data={role,club:clubR.data,season,players:fullPlayers,playerMap,prices:priceMap,photoUrls,fixtures,
- team:teams[0]||null,roster:roster.map(r=>r.player_id),transfers,leaderboard:rankR.data||[],weeklyRanking:weeklyR.data||[],weeklyRankingError:weeklyR.error?.message||null,
+ team:teams[0]||null,roster:roster.map(r=>r.player_id),transfers,leaderboard:rankR.data||[],weeklyRanking:weeklyR.data||[],weeklyRankingError:weeklyR.error?.message||null,popularity:popularityR.data||[],
  alias:alias[0]?.display_name||'Redeirista',callups,eligibleFixtures:eligible.map(x=>x.fixture_id),
  linkedPlayer:voterAccount[0]?.player_id||null,stats,history,metrics:metricsR.data,launchStatus:launchR.data};
  state.draft=[...state.data.roster];
@@ -113,7 +116,7 @@ function showPlayer(id){
   .map(s=>Number(s.fantasy_points));
  const estimate=brokerEstimate(cost,0,true,pastScores);
  const el=document.createElement('div');el.className='modalcover';
- el.innerHTML='<div class="modal" role="dialog" aria-modal="true" aria-label="Perfil do xogador"><div class="row"><div class="person">'+playerAvatar(p,'profile-photo')+'<div><h2 style="margin:0">'+h(p.name)+'</h2><p class="mini">'+h(p.positions.join(' / '))+(p.category==='junior'?' · JÚNIOR':'')+'</p></div></div><button class="btn secondary" data-action="close-modal">Pechar</button></div><hr class="separator"><div class="grid three"><div><div class="kpi-label">Prezo actual</div><div class="kpi">'+euroShort(cost)+'</div></div><div><div class="kpi-label">Puntos para manter o prezo</div><div class="kpi">'+pts(estimate.expected)+'</div></div><div><div class="kpi-label">Máxima variación</div><div class="kpi">±15 %</div></div></div><div class="notice info" style="margin:15px 0">Bróker por media acumulada · '+pastScores.length+' partidos puntuados. Para subir ata +15 % precisa arredor de '+pts(estimate.thresholdPlus15)+' puntos Fantasy no próximo partido; para baixar ata −15 %, arredor de '+pts(estimate.thresholdMinus15)+'. Pode subir incluso cunha valoración negativa se a media acumulada segue sendo alta. Os límites e os arredondamentos poden modificar o resultado; sen xogar, o prezo non cambia.</div>'+formSection(state.data,id)+priceHistorySection(state.data,id)+'</div>';
+ el.innerHTML='<div class="modal" role="dialog" aria-modal="true" aria-label="Perfil do xogador"><div class="row"><div class="person">'+playerAvatar(p,'profile-photo')+'<div><h2 style="margin:0">'+h(p.name)+'</h2><p class="mini">'+h(p.positions.join(' / '))+(p.category==='junior'?' · JÚNIOR':'')+'</p></div></div><button class="btn secondary" data-action="close-modal">Pechar</button></div><hr class="separator"><div class="grid three"><div><div class="kpi-label">Prezo actual</div><div class="kpi">'+euroShort(cost)+'</div></div><div><div class="kpi-label">Puntos para manter o prezo</div><div class="kpi">'+pts(estimate.expected)+'</div></div><div><div class="kpi-label">Máxima variación</div><div class="kpi">±15 %</div></div></div><div class="notice info" style="margin:15px 0">Bróker por media acumulada · '+pastScores.length+' partidos puntuados. Para subir ata +15 % precisa arredor de '+pts(estimate.thresholdPlus15)+' puntos Fantasy no próximo partido; para baixar ata −15 %, arredor de '+pts(estimate.thresholdMinus15)+'. Pode subir incluso cunha valoración negativa se a media acumulada segue sendo alta. Os límites e os arredondamentos poden modificar o resultado; sen xogar, o prezo non cambia.</div>'+formSection(state.data,id)+playerAdvancedPanel(state.data,id)+priceHistorySection(state.data,id)+'</div>';
  document.body.append(el);state.modal=el;
 }
 function toggleMobileMore(open){
@@ -289,6 +292,7 @@ root.addEventListener('input',e=>{
 root.addEventListener('change',async e=>{
  if(e.target.id==='pos-filter'){state.filter=e.target.value;const box=document.getElementById('market-table');if(box)box.innerHTML=marketTable();}
  if(e.target.id==='ranking-round'){state.rankRound=e.target.value;present();}
+  if(e.target.id==='analytics-sort'){state.analyticsSort=e.target.value;present();}
  if(e.target.id==='admin-photo-player'){state.adminPlayer=e.target.value;present();}
  if(e.target.id==='admin-photo-file'){
    const file=e.target.files?.[0];
