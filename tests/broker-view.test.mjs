@@ -12,8 +12,8 @@ test('profile has only 3 visible numeric broker thresholds and collapsed explana
  assert.match(html,/<details class="broker-explainer"><summary>/);
  assert.doesNotMatch(html,/<details[^>]* open/);
  assert.match(html,/>9,36</);
- assert.match(html,/≥ 12,04/);
- assert.match(html,/≤ 6,63/);
+ assert.match(html,/≥ 12,02/);
+ assert.match(html,/≤ 6,69/);
 });
 test('floor-limited players show the numerical threshold with a truthful footnote',()=>{
  const estimate=brokerEstimate(450_000,0,true);

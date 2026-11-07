@@ -49,7 +49,8 @@ export function brokerEstimate(price,points,played=true,previousPoints=[]){
   const high=Math.floor(price*115/(100*roundTo))*roundTo;
   const low=Math.ceil(price*85/(100*roundTo))*roundTo;
   const target=Math.max(floor,base+perPoint*average);
-  const suggested=Math.round(target/roundTo)*roundTo;
+  // Stabilize binary floating point at exact 2,500 € rounding ties (SQL uses exact numeric).
+  const suggested=Math.round((target+1e-6)/roundTo)*roundTo;
   const after=played?Math.max(floor,Math.min(high,Math.max(low,suggested))):price;
   const requiredScore=theoreticalPrice=>((theoreticalPrice-base)/perPoint)*games-pastTotal;
   // Published fantasy points use 2 decimal places. These are *attainable*
