@@ -59,8 +59,12 @@ export function brokerEstimate(price,points,played=true,previousPoints=[]){
     playedGames:history.length+(played?1:0),
     target,expected:requiredScore(price),
     thresholdPlus15:requiredScore(targetForChange(high)),
-    // Null means the theoretical floor prevents a full -15% in one match.
-    thresholdMinus15:minTarget<floor?null:requiredScore(minTarget)
+    // Always display the mathematical threshold, even when the price floor makes
+    // a full -15% drop impossible. The UI explicitly flags that theoretical case.
+    thresholdMinus15:requiredScore(minTarget),
+    canReachMinus15:minTarget>=floor,
+    maxDropPercent:(Math.max(floor,Math.min(high,Math.max(low,
+      Math.round((price+pacing*(floor-price))/roundTo)*roundTo)))-price)/price*100
   };
 }
 
