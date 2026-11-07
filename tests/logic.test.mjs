@@ -59,7 +59,8 @@ test('Redeiras broker: negative cheap score can rise, top-priced player needs po
  assert.equal(brokerEstimate(juan,5,true).after,juan);
  assert.ok(brokerEstimate(juan,-1,true).after<juan);
  assert.equal(brokerEstimate(iago,0,false).after,iago);
- assert.equal(brokerEstimate(iago,-1,true).thresholdMinus15,null);
+ assert.ok(Number.isFinite(brokerEstimate(iago,-1,true).thresholdMinus15));
+ assert.equal(brokerEstimate(iago,-1,true).canReachMinus15,false);
  assert.equal(brokerEstimate(juan,5,true).expected,5);
 });
 test('broker pacing slows premium price declines and cumulative averages still matter',()=>{
