@@ -1,0 +1,20 @@
+/* Compact broker profile, mobile first. */
+.broker-overview{margin:4px 0 20px}
+.broker-price{margin-bottom:14px}
+.broker-price strong{display:block;margin-top:7px;font-size:clamp(27px,5vw,35px);font-weight:900;color:#0d324b}
+.broker-targets{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.broker-target{border:1px solid #d7e9f2;background:#f5fbfe;padding:13px 10px;border-radius:12px;min-width:0;display:flex;flex-direction:column;justify-content:center}
+.broker-target span{font-size:11px;font-weight:700;color:#56798d;min-height:29px;line-height:1.3}
+.broker-target strong{font-size:clamp(17px,3.2vw,26px);line-height:1.2;margin:8px 0 6px;font-weight:900;color:#103b54;overflow-wrap:anywhere}
+.broker-target small{font-size:10px;line-height:1.3;color:#7792a0}
+.broker-rounding{font-size:11px;color:#708d9b;margin:10px 0 13px;line-height:1.45}
+.broker-explainer{background:#f3f8fb;border:1px solid #dceaf2;border-radius:12px;overflow:hidden}
+.broker-explainer summary{cursor:pointer;list-style:none;padding:13px 15px;color:#176b92;font-weight:800;font-size:12px;display:flex;align-items:center;justify-content:space-between;min-height:44px}
+.broker-explainer summary::-webkit-details-marker{display:none}
+.broker-explainer summary::after{content:'⌄';font-size:18px;line-height:1;margin-left:10px;transform-origin:center}
+.broker-explainer[open] summary::after{transform:rotate(180deg)}
+.broker-explainer summary:focus-visible{outline:2px solid #158cc0;outline-offset:-3px}
+.broker-explainer-content{border-top:1px solid #dceaf2;padding:4px 15px 12px;color:#38637a;font-size:12px;line-height:1.65}
+.broker-explainer-content p{margin:10px 0}
+@media(max-width:390px){.broker-targets{gap:6px}.broker-target{padding:10px 7px}.broker-target span{font-size:10px}.broker-target strong{font-size:18px}}
+@media(prefers-reduced-motion:reduce){.broker-explainer summary::after{transition:none}}
