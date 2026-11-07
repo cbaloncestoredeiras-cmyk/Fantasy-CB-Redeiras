@@ -40,49 +40,62 @@ test('broker is capped to +/- 15 percent with 450k floor',()=>{
  assert.ok(high*100<=current*115);assert.ok(low*100>=current*85);
  assert.ok(brokerEstimate(450000,-100,true).after>=450000);
 });
-test('cumulative-average broker can RISE despite a negative second match',()=>{
-  const first=brokerEstimate(800_000,30,true);
-  assert.equal(first.after,920_000); // +15% maximum
-  const second=brokerEstimate(first.after,-5,true,[30]);
-  assert.equal(second.average,12.5);
-  assert.equal(second.after,1_055_000); // rises ~14.7% even after -5
-  assert.ok(second.thresholdPlus15<0); // sufficiently strong opening performance
-});
-test('Redeiras broker: negative cheap score can rise, top-priced player needs positive',()=>{
- const iago=700_000,juan=2_250_000;
- assert.equal(brokerEstimate(iago,-1,true).after,710_000);
- assert.equal(brokerEstimate(iago,-2,true).after,660_000);
- assert.equal(brokerEstimate(iago,1,true).after,805_000);
- assert.equal(brokerEstimate(1_200_000,2,true).after,1_260_000);
- assert.equal(brokerEstimate(1_500_000,3,true).after,1_550_000);
- assert.equal(brokerEstimate(juan,3,true).after,2_150_000);
- assert.equal(brokerEstimate(juan,5,true).after,juan);
- assert.ok(brokerEstimate(juan,-1,true).after<juan);
+test('V3: all players use one formula with direct ±15% moves',()=>{
+ const iago=700_000,brais=1_100_000,juan=2_250_000;
+ assert.equal(brokerEstimate(iago,-1,true).after,805_000);
+ assert.equal(brokerEstimate(iago,-5,true).after,595_000);
+ assert.equal(brokerEstimate(brais,-1,true).after,955_000);
+ assert.equal(brokerEstimate(juan,3,true).after,1_915_000);
+ assert.equal(brokerEstimate(juan,13,true).after,2_585_000);
+ assert.equal(brokerEstimate(1_200_000,1,true).after,1_205_000);
+ assert.equal(brokerEstimate(1_500_000,3,true).after,1_455_000);
+ assert.equal(brokerEstimate(juan,5,true).after,1_915_000);
  assert.equal(brokerEstimate(iago,0,false).after,iago);
- assert.ok(Number.isFinite(brokerEstimate(iago,-1,true).thresholdMinus15));
- assert.equal(brokerEstimate(iago,-1,true).canReachMinus15,false);
- assert.equal(brokerEstimate(juan,5,true).expected,5);
 });
-test('broker pacing slows premium price declines and cumulative averages still matter',()=>{
- const high=brokerEstimate(2_250_000,3,true);
- assert.ok(high.after>=2_100_000);
- const first=brokerEstimate(700_000,8,true);
- const second=brokerEstimate(first.after,-2,true,[8]);
- assert.ok(second.after>first.after);
+test('V3: attainable thresholds match actual price changes at 0.01 Fantasy points',()=>{
+ for(const price of [700_000,850_000,900_000,1_100_000,1_350_000,2_250_000]){
+   for(const prior of [[],[12],[-2,4,8]]){
+     const e=brokerEstimate(price,0,true,prior);
+     const maxUp=Math.floor(price*115/(100*5_000))*5_000;
+     const maxDown=Math.ceil(price*85/(100*5_000))*5_000;
+     assert.equal(brokerEstimate(price,e.thresholdPlus15,true,prior).after,maxUp,
+       'up threshold '+price+' history '+prior);
+     assert.ok(brokerEstimate(price,Number((e.thresholdPlus15-.01).toFixed(2)),true,prior).after<maxUp);
+     if(e.canReachMinus15){
+       assert.equal(brokerEstimate(price,Number(e.thresholdMinus15.toFixed(2)),true,prior).after,maxDown);
+       assert.ok(brokerEstimate(price,Number((e.thresholdMinus15+.01).toFixed(2)),true,prior).after>maxDown);
+     }
+   }
+ }
+});
+test('V3: past big scores allow +15% growth even on a poor next game',()=>{
+ const first=brokerEstimate(700_000,20,true);
+ assert.equal(first.after,805_000);
+ const second=brokerEstimate(first.after,-12,true,[20]);
+ assert.equal(second.average,4);
+ assert.equal(second.after,925_000);
+ assert.ok(second.thresholdPlus15<0);
  assert.equal(second.playedGames,2);
 });
-test('cumulative average excludes missed matches and zero-score appearances do count',()=>{
-  const current=920_000, prior=[30];
-  assert.equal(brokerEstimate(current,-50,false,prior).after,current);
-  assert.equal(brokerEstimate(current,0,true,prior).average,15);
-  assert.equal(brokerEstimate(current,0,true,prior).playedGames,2);
+test('V3: skipped matches do not move prices or affect the average',()=>{
+ const prior=[20];
+ const original=805_000;
+ assert.equal(brokerEstimate(original,-50,false,prior).after,original);
+ assert.equal(brokerEstimate(original,-50,false,prior).playedGames,1);
+ assert.equal(brokerEstimate(original,0,true,prior).average,10);
+ assert.equal(brokerEstimate(original,0,true,prior).playedGames,2);
 });
-test('opening game negative score can decrease price; average drives future changes',()=>{
-  const current=1_000_000;
-  const first=brokerEstimate(current,-5,true);
-  assert.equal(first.after,890_000); // pacing tempers the 1st-round loss
-  const second=brokerEstimate(first.after,30,true,[-5]);
-  assert.ok(second.after>first.after);
+test('V3: low-price floor limits loss but never allows falling below 450k',()=>{
+ const e=brokerEstimate(450_000,-100,true);
+ assert.equal(e.after,450_000);
+ assert.equal(e.canReachMinus15,false);
+ assert.equal(e.maxDropPercent,0);
+ assert.ok(Number.isFinite(e.thresholdMinus15));
+});
+test('V3: previous high averages can produce negative +15% thresholds',()=>{
+ const next=brokerEstimate(805_000,0,true,[20]);
+ assert.ok(next.thresholdPlus15<0);
+ assert.equal(brokerEstimate(805_000,-10,true,[20]).after,925_000);
 });
 
 test('CSV parser supports quoted semicolons and escaped quotes',()=>{

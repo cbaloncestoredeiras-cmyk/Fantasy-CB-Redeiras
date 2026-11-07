@@ -1,4 +1,7 @@
-# Bróker Redeiras V2 · calibración para competición 2026/27
+# Bróker Redeiras V2 · histórico (substituído pola V3)
+
+> **Versión histórica non vixente.** A regra actual aprobada o 07/11/2026 está en [BROKER_REDEIRAS_V3.md](BROKER_REDEIRAS_V3.md). Non empregar esta fórmula para novas xornadas.
+
 **Acordado 06/11/2026, antes de publicar a X5.**
 
 ## Referencia ACB
