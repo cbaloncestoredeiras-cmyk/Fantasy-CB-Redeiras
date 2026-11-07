@@ -31,12 +31,12 @@ export function transferPlan(oldIds,newIds,cash,prices){
   return {removed,added,sales,buys,cashAfter:cash+sales-buys,changes:removed.length};
 }
 
-// Browser-only preview; Supabase's private.next_price is authoritative.
-// Redeiras v2: same ACB-inspired cumulative average and +/-15% cap, calibrated for
-// the club's low Fantasy scores. The 20% pacing preserves the initial price tiers.
-// Played matches (including 0-point games) count; absences do not.
+// Browser-only preview. The SQL private.next_price function is authoritative.
+// Redeiras V3 (ACB-inspired): cumulative Fantasy average determines the theoretical
+// price directly. Only +/-15%, 450k floor and nearest 5k rounding constrain it.
+// Played zero-score matches count; absences never alter price or the mean.
 export const BROKER_MODEL=Object.freeze({
-  base:1_000_000,perPoint:250_000,pacing:0.20,
+  base:1_080_000,perPoint:125_000,pacing:1,
   floor:450_000,maxChange:0.15,roundTo:5_000
 });
 export function brokerEstimate(price,points,played=true,previousPoints=[]){
@@ -44,26 +44,29 @@ export function brokerEstimate(price,points,played=true,previousPoints=[]){
   const pastTotal=history.reduce((sum,score)=>sum+score,0);
   const games=history.length+1;
   const average=(pastTotal+(Number(points)||0))/games;
-  const {base,perPoint,pacing,floor,maxChange,roundTo}=BROKER_MODEL;
+  const {base,perPoint,floor,roundTo}=BROKER_MODEL;
+  // Exact integer percentage arithmetic avoids float rounding at price bands.
   const high=Math.floor(price*115/(100*roundTo))*roundTo;
   const low=Math.ceil(price*85/(100*roundTo))*roundTo;
   const target=Math.max(floor,base+perPoint*average);
-  const suggested=Math.round((price+pacing*(target-price))/roundTo)*roundTo;
+  const suggested=Math.round(target/roundTo)*roundTo;
   const after=played?Math.max(floor,Math.min(high,Math.max(low,suggested))):price;
   const requiredScore=theoreticalPrice=>((theoreticalPrice-base)/perPoint)*games-pastTotal;
-  const targetForChange=bound=>price+(bound-price)/pacing;
-  const minTarget=targetForChange(low);
+  // Published fantasy points use 2 decimal places. These are *attainable*
+  // limits at that precision, including the 5k price rounding boundaries.
+  const upBoundary=requiredScore(high-roundTo/2);
+  const downBoundary=requiredScore(low+roundTo/2);
+  const ceilCents=n=>Math.ceil(n*100-1e-8)/100;
+  const minimumPrice=Math.max(floor,Math.min(high,Math.max(low,Math.round(floor/roundTo)*roundTo)));
   return {
     before:price,after,delta:after-price,
     average:played?average:(history.length?pastTotal/history.length:null),
     playedGames:history.length+(played?1:0),
     target,expected:requiredScore(price),
-    thresholdPlus15:requiredScore(targetForChange(high)),
-    // Show the theoretical score even when the 450k floor makes -15% impossible.
-    thresholdMinus15:requiredScore(minTarget),
-    canReachMinus15:minTarget>=floor,
-    maxDropPercent:(Math.max(floor,Math.min(high,Math.max(low,
-      Math.round((price+pacing*(floor-price))/roundTo)*roundTo)))-price)/price*100
+    thresholdPlus15:ceilCents(upBoundary),      // >= score
+    thresholdMinus15:ceilCents(downBoundary)-0.01, // <= score
+    canReachMinus15:minimumPrice===low,
+    maxDropPercent:(minimumPrice-price)/price*100
   };
 }
 

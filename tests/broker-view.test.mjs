@@ -11,12 +11,13 @@ test('profile has only 3 visible numeric broker thresholds and collapsed explana
  assert.match(html,/Como funciona o bróker\?/);
  assert.match(html,/<details class="broker-explainer"><summary>/);
  assert.doesNotMatch(html,/<details[^>]* open/);
- assert.match(html,/>5</);
- assert.match(html,/>11,7</);
+ assert.match(html,/>9,36</);
+ assert.match(html,/≥ 12,04/);
+ assert.match(html,/≤ 6,63/);
 });
 test('floor-limited players show the numerical threshold with a truthful footnote',()=>{
- const estimate=brokerEstimate(1_350_000,0,true);
- const html=brokerProfileHtml(1_350_000,estimate,0);
+ const estimate=brokerEstimate(450_000,0,true);
+ const html=brokerProfileHtml(450_000,estimate,0);
  assert.equal(estimate.canReachMinus15,false);
  assert.ok(Number.isFinite(estimate.thresholdMinus15));
  assert.ok(estimate.thresholdMinus15<0);
@@ -37,6 +38,6 @@ test('three thresholds remain numeric for cheap and expensive players',()=>{
 test('broker explanation is stable with games counted and no extra market actions',()=>{
  const html=brokerProfileHtml(700_000,brokerEstimate(700_000,0,true),2);
  assert.match(html,/Partidos Fantasy puntuados: 2/);
- assert.match(html,/20 % da diferenza/);
+ assert.match(html,/1.080.000 € \+ 125.000 €/);
  assert.doesNotMatch(html,/data-action="toggle"|data-action="save-lineup"/);
 });
