@@ -47,14 +47,16 @@ async function load(){
  ]);
  const roster=teams.length?await toPromise(c.from('team_rosters').select('player_id').eq('team_id',teams[0].id)):[];
  const transfers=teams.length?await toPromise(c.from('transfers').select('*').eq('team_id',teams[0].id).order('executed_at',{ascending:true})):[];
- const [rankR,weeklyR,popularityR]=await Promise.all([
+ const [rankR,weeklyR,popularityR,coachAccessR]=await Promise.all([
   c.rpc('fantasy_leaderboard',{p_season:season.id}),
   c.rpc('fantasy_round_leaderboard',{p_season:season.id}),
-  c.rpc('fantasy_player_popularity',{p_season:season.id})
+  c.rpc('fantasy_player_popularity',{p_season:season.id}),
+  c.rpc('fantasy_coach_vote_access',{p_club:clubId})
  ]);
  if(rankR.error)throw rankR.error;
  if(weeklyR.error)console.warn('Clasificación semanal non dispoñible:',weeklyR.error.message);
  if(popularityR.error)console.warn('Popularidade non dispoñible:',popularityR.error.message);
+ if(coachAccessR.error)console.warn('Voto do adestrador non dispoñible:',coachAccessR.error.message);
  const metricsR=role==='admin'?await c.rpc('fantasy_admin_metrics',{p_club:clubId}):{data:null,error:null};
  if(metricsR.error)throw metricsR.error;
  const launchR=role==='admin'?await c.rpc('fantasy_launch_status',{p_season:season.id}):{data:null,error:null};
@@ -75,7 +77,8 @@ async function load(){
  state.data={role,club:clubR.data,season,players:fullPlayers,playerMap,prices:priceMap,photoUrls,fixtures,
  team:teams[0]||null,roster:roster.map(r=>r.player_id),transfers,leaderboard:rankR.data||[],weeklyRanking:weeklyR.data||[],weeklyRankingError:weeklyR.error?.message||null,popularity:popularityR.data||[],
  alias:alias[0]?.display_name||'Redeirista',callups,eligibleFixtures:eligible.map(x=>x.fixture_id),
- linkedPlayer:voterAccount[0]?.player_id||null,stats,history,metrics:metricsR.data,launchStatus:launchR.data};
+ linkedPlayer:voterAccount[0]?.player_id||null,coachVoter:coachAccessR.error?false:coachAccessR.data===true,
+ stats,history,metrics:metricsR.data,launchStatus:launchR.data};
  state.draft=[...state.data.roster];
  // Refresh vote participation on each admin data load; RPC checks admin membership.
  // A tracking error must never prevent the Fantasy itself from loading.
