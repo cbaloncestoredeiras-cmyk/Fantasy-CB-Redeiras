@@ -77,6 +77,23 @@ async function load(){
  alias:alias[0]?.display_name||'Redeirista',callups,eligibleFixtures:eligible.map(x=>x.fixture_id),
  linkedPlayer:voterAccount[0]?.player_id||null,stats,history,metrics:metricsR.data,launchStatus:launchR.data};
  state.draft=[...state.data.roster];
+ // Refresh vote participation on each admin data load; RPC checks admin membership.
+ // A tracking error must never prevent the Fantasy itself from loading.
+ state.adminVoteParticipation=null;
+ if(role==='admin'){
+   const selected=fixtures.find(f=>f.id===state.adminFixture)||
+     fixtures.find(f=>f.round_number>=season.start_round&&f.status!=='finalized'&&f.status!=='cancelled')||
+     fixtures[0];
+   if(selected){
+     try{
+       const {data,error}=await c.rpc('fantasy_admin_vote_participation',{p_fixture:selected.id});
+       state.adminVoteParticipation=error?{fixture_id:selected.id,error:true}:data;
+     }catch(error){
+       console.warn('Seguimento da votación non dispoñible:',error);
+       state.adminVoteParticipation={fixture_id:selected.id,error:true};
+     }
+   }
+ }
  present();
 }
 async function refresh(){if(state.session)await load();else present();}
@@ -225,7 +242,7 @@ async function interact(action,element){
   await rpc('fantasy_vote',{p_fixture:fixture,p_first:picks[0],p_second:picks[1],p_third:picks[2]});
   return toast('Voto rexistrado. Podes modificalo durante o prazo.');
  }
- if(['set-player-availability','activate-season','set-launch-check','update-kickoff','update-end','save-callups','save-stats','preview-round','publish-round','correct-round','load-participants','update-member','revoke-member','export-snapshot','add-junior','send-invite','upload-player-photo','remove-player-photo'].includes(action)){
+ if(['set-player-availability','activate-season','set-launch-check','update-kickoff','update-end','save-callups','refresh-vote-tracking','save-stats','preview-round','publish-round','correct-round','load-participants','update-member','revoke-member','export-snapshot','add-junior','send-invite','upload-player-photo','remove-player-photo'].includes(action)){
   if(!admin())throw Error('Non tes permisos de administración');
   if(action==='activate-season'&&!confirm('Activar a tempada abre o mercado aos participantes. Antes comproba as probas, a privacidade e as copias de seguridade. Queres activala?'))return;
   const changed=await adminAction(action,element);
@@ -322,7 +339,7 @@ root.addEventListener('change',async e=>{
      holder.innerHTML='<img class="admin-photo-avatar" alt="Vista previa da fotografía" src="'+next+'"><p>Vista previa · '+h(file.name)+'</p>';
    }
  }
- if(e.target.id==='admin-fixture'){state.adminFixture=e.target.value;state.importRows=null;state.rawPdf='';state.adminPreview=null;state.adminPreviewRows=null;present();}
+ if(e.target.id==='admin-fixture'){state.adminFixture=e.target.value;state.importRows=null;state.rawPdf='';state.adminPreview=null;state.adminPreviewRows=null;await refresh();}
  if(e.target.id==='stats-file'){
   try{const msg=await handleStatsFile(e.target.files[0]);state.adminPreview=null;state.adminPreviewRows=null;toast(msg);present();}catch(error){toast(error.message||String(error),true);}
  }

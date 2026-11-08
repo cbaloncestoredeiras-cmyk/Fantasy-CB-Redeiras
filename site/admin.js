@@ -1,6 +1,7 @@
 import {state,rpc,admin,current,player,prices,h,dateText,panel,pageHeader,option,euroShort,toast,playerAvatar} from './pages.js';
 import {parseDelimited,rowsFromTable,pts} from './logic.js';
 import {availabilityLabel} from './availability.js';
+import {voteTrackingHtml} from './vote-tracking.js';
 
 const localDateTime=value=>value?new Intl.DateTimeFormat('sv-SE',{timeZone:'Europe/Madrid',year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',hour12:false}).format(new Date(value)).replace(' ','T'):'';
 
@@ -96,6 +97,7 @@ export function adminView(){
  panel('<h2>Final do partido</h2><p>Marca o final real para iniciar a votación de 72 horas. Este cambio queda no historial de auditoría.</p><div class="field"><label>Final · hora de Moaña</label><input type="datetime-local" id="end-time" value="'+(fixture?localDateTime(fixture.ended_at):'')+'"></div><div class="field" style="margin:12px 0"><label>Resultado</label><select id="end-won"><option value="true" '+(fixture?.team_won===true?'selected':'')+'>Vitoria</option><option value="false" '+(fixture?.team_won===false?'selected':'')+'>Derrota</option></select></div><button class="btn primary" data-action="update-end">Gardar final</button>')
  ,'</div>',
  panel('<h2>Convocatoria e votación</h2><p>Marca todos os xogadores convocados, tamén quen non participou no encontro. Só poderán votar os convocados con conta vinculada.</p><div class="grid admin-callup-grid">'+d.players.map(p=>'<label class="playeritem callup-item"><input type="checkbox" class="callup-box" value="'+p.id+'" '+(d.callups.some(c=>c.fixture_id===fixture?.id && c.player_id===p.id)?'checked':'')+'><span>'+h(p.name)+'</span></label>').join('')+'</div><button class="btn primary" data-action="save-callups" style="margin-top:15px">Gardar convocatoria</button>'),
+ panel('<div id="admin-vote-participation">'+voteTrackingHtml(state.adminVoteParticipation,fixture,h,dateText)+'</div>'),
  panel('<h2>Dispoñibilidade dos xogadores</h2><p>Marca lesións e dúbidas para que se vexan no mercado e nos quintetos. Non anotes diagnósticos. As semanas son orientativas e debes revisar o estado manualmente.</p><div class="stack availability-admin"><div class="field"><label for="availability-player">Xogador</label><select id="availability-player">'+d.players.map(p=>option(p.id,p.name,availabilityPlayer?.id)).join('')+'</select></div><div class="field"><label for="availability-status">Estado deportivo</label><select id="availability-status">'+[['available','Dispoñible'],['injured','Lesionado'],['doubtful','Dúbida']].map(v=>option(v[0],v[1],availabilityPlayer?.availability_status||'available')).join('')+'</select></div><div class="field"><label for="availability-weeks">Semanas estimadas de baixa (opcional)</label><input id="availability-weeks" type="number" step="1" min="1" max="52" placeholder="Ex.: 3" value="'+h(availabilityPlayer?.availability_weeks??'')+'" '+(availabilityPlayer?.availability_status==='injured'?'':'disabled')+'></div><p class="mini muted">Estado actual: '+h(availabilityLabel(availabilityPlayer))+'</p><button type="button" class="btn primary" data-action="set-player-availability">Gardar estado</button></div>'),
   panel('<h2>Importar valoracións</h2><p>Aceptamos CSV, Excel e PDF. No caso do PDF extraemos texto como axuda, pero as cifras deben verificarse manualmente. A columna correcta é <b>PIR / Valoración</b>, non EFF.</p><div class="field"><label>Arquivo do Basketball Stats Assistant</label><input type="file" id="stats-file" accept=".csv,.tsv,.xls,.xlsx,.pdf"></div>'+(state.rawPdf?'<details open style="margin-top:12px"><summary>Texto extraído do PDF (revisar)</summary><pre class="file-preview">'+h(state.rawPdf.slice(0,11000))+'</pre></details>':'')+
  '<p class="mini muted">Rexistros preparados: '+(state.importRows?.length||'0')+'. Revisa a correspondencia dos xogadores antes de confirmar.</p>'+
@@ -187,6 +189,13 @@ export async function adminAction(action,element){
   case 'update-kickoff':await rpc('fantasy_set_kickoff',{p_fixture:f.id,p_time:await localToIso(val('kickoff-time')),p_reason:val('kickoff-reason')});break;
   case 'update-end':await rpc('fantasy_set_end',{p_fixture:f.id,p_time:await localToIso(val('end-time')),p_won:val('end-won')==='true'});break;
   case 'save-callups':await rpc('fantasy_set_callups',{p_fixture:f.id,p_players:[...document.querySelectorAll('.callup-box:checked')].map(x=>x.value)});break;
+  case 'refresh-vote-tracking':{
+    const tracking=await rpc('fantasy_admin_vote_participation',{p_fixture:f.id});
+    state.adminVoteParticipation=tracking;
+    const holder=document.getElementById('admin-vote-participation');
+    if(holder)holder.innerHTML=voteTrackingHtml(tracking,f,h,dateText);
+    toast('Participación actualizada');return false;
+  }
   case 'save-stats':{
     const rows=statsDraft();
     await rpc('fantasy_save_stats',{p_fixture:f.id,p_rows:rows});
