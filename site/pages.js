@@ -1,3 +1,4 @@
+import {canVoteFixture} from './vote-access.js';
 import {euro,pts,escapeHtml as h,byId,validateLineup,transferPlan,brokerEstimate,pickUpcoming,parseDelimited,rowsFromTable} from './logic.js';
 import {availabilityBadge,availabilityWarning} from './availability.js';
 import {callupBadge,callupSummary} from './callups.js';
@@ -169,9 +170,7 @@ function calendar(){
 }
 function voting(){
  const d=state.data,usable=d.fixtures.filter(f=>
-   f.ended_at&&new Date(f.ended_at).getTime()<Date.now()+1000
-   &&new Date(f.ended_at).getTime()+72*3600e3>Date.now()
-   &&(d.eligibleFixtures.includes(f.id)||d.coachVoter));
+   canVoteFixture(f,d.eligibleFixtures,d.coachVoter));
  const isCoach=d.coachVoter===true;
  const subtitle=isCoach
    ?'Como adestrador autorizado, podes votar 3, 2 e 1 punto a tres xogadores convocados. O teu voto pesa igual ca o de cada xogador.'
