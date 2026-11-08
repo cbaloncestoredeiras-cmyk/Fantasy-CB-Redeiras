@@ -18,6 +18,10 @@ export function voteTrackingHtml(info,fixture,escapeHtml,dateText){
  const deadlineInfo=deadline&&Number.isFinite(deadline)
    ?(Date.now()<deadline?'Prazo aberto ata o ':'Prazo rematado o ')+h(dateText(new Date(deadline).toISOString()))
    :'A votación comezará cando se rexistre o final do partido.';
+ const coach=info.coach?.enabled===true?info.coach:null;
+ const coachHtml=coach?'<div class="playeritem" style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin:12px 0">'+
+   '<b>Voto do adestrador</b><span class="tag '+(coach.voted?'':'warn')+'">'+
+   (coach.voted?'Votou':'Pendente')+'</span></div>':'';
  const rows=Array.isArray(info.voters)?info.voters:[];
  const participants=rows.map(v=>'<div class="playeritem" style="display:flex;align-items:center;justify-content:space-between;gap:10px">'+
    '<span>'+h(v.name||'Conta sen xogador asociado')+'</span>'+
@@ -31,6 +35,7 @@ export function voteTrackingHtml(info,fixture,escapeHtml,dateText){
    '<progress value="'+voted+'" max="'+Math.max(1,eligible)+'" style="width:100%" aria-label="Participación na votación"></progress>'+
    '<p class="mini muted">'+deadlineInfo+'</p>'+
    (notLinked?'<p class="mini muted">'+notLinked+' convocado'+(notLinked===1?'':'s')+' sen conta habilitada para votar (non conta'+(notLinked===1?'':'n')+' como pendente'+(notLinked===1?'':'s')+').</p>':'')+
+   coachHtml+
    (rows.length?'<div class="grid two" style="margin-top:12px">'+participants+'</div>':
     '<p class="mini muted">Aínda non hai contas habilitadas para votar nesta xornada.</p>');
 }
