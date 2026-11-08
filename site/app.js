@@ -76,7 +76,7 @@ async function load(){
  const playerMap=Object.fromEntries(fullPlayers.map(p=>[p.id,p]));
  state.data={role,club:clubR.data,season,players:fullPlayers,playerMap,prices:priceMap,photoUrls,fixtures,
  team:teams[0]||null,roster:roster.map(r=>r.player_id),transfers,leaderboard:rankR.data||[],weeklyRanking:weeklyR.data||[],weeklyRankingError:weeklyR.error?.message||null,popularity:popularityR.data||[],
- alias:alias[0]?.display_name||'Redeirista',callups,eligibleFixtures:eligible.map(x=>x.fixture_id),
+ alias:alias[0]?.display_name||'Redeirista',callups,eligibleFixtures:voterAccount[0]?.player_id?eligible.map(x=>x.fixture_id):[],
  linkedPlayer:voterAccount[0]?.player_id||null,coachVoter:coachAccessR.error?false:coachAccessR.data===true,
  stats,history,metrics:metricsR.data,launchStatus:launchR.data};
  state.draft=[...state.data.roster];
