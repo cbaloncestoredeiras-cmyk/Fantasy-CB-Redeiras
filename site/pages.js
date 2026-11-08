@@ -1,3 +1,4 @@
+import {canVoteFixture} from './vote-access.js';
 import {euro,pts,escapeHtml as h,byId,validateLineup,transferPlan,brokerEstimate,pickUpcoming,parseDelimited,rowsFromTable} from './logic.js';
 import {availabilityBadge,availabilityWarning} from './availability.js';
 import {callupBadge,callupSummary} from './callups.js';
@@ -168,9 +169,23 @@ function calendar(){
  panel('<h2>Primeira fase · 2026/27</h2><div class="schedule">'+d.fixtures.map(f=>'<div class="match"><div class="date">X'+f.round_number+'</div><div style="flex:1"><strong>CB Redeiras · '+h(f.opponent)+'</strong><small>'+(f.is_home?'Na casa':'Fóra')+' · '+h(f.status.replaceAll('_',' '))+'</small></div><div><b class="mini">'+dateText(f.starts_at)+'</b>'+(f.id===pending?.id?' <span class="tag">PRÓXIMA</span>':'')+'</div></div>').join('')+'</div>');
 }
 function voting(){
- const d=state.data,usable=d.fixtures.filter(f=>f.ended_at&&new Date(f.ended_at).getTime()<Date.now()+1000&&new Date(f.ended_at).getTime()+72*3600e3>Date.now()&&d.eligibleFixtures.includes(f.id));
- return pageHeader('Votación do vestiario','Os convocados poden dar 3, 2 e 1 punto a tres compañeiros. Non se permite o autovoto.')+
- (usable.length?usable.map(f=>panel('<h2>Votación · Xornada '+f.round_number+'</h2><p>Prazo ata '+dateText(new Date(new Date(f.ended_at).getTime()+72*3600e3).toISOString())+'. Os votos permanecen privados ata pechar.</p><div class="vote-grid">'+[3,2,1].map(w=>'<div class="field"><label>'+w+' puntos</label><select id="vote-'+w+'">'+option('','Escoller xogador')+d.callups.filter(c=>c.fixture_id===f.id&&c.player_id!==d.linkedPlayer).map(c=>option(c.player_id,player(c.player_id)?.name||'?')).join('')+'</select></div>').join('')+'</div><button class="btn primary" data-action="vote" data-fixture="'+f.id+'" style="margin-top:18px">Enviar votación</button>') ).join(''):panel(empty('Non tes votacións abertas. Só os xogadores convocados poden votar durante as 72 h posteriores ao partido.','✦')));
+ const d=state.data,usable=d.fixtures.filter(f=>
+   canVoteFixture(f,d.eligibleFixtures,d.coachVoter));
+ const isCoach=d.coachVoter===true;
+ const subtitle=isCoach
+   ?'Como adestrador autorizado, podes votar 3, 2 e 1 punto a tres xogadores convocados. O teu voto pesa igual ca o de cada xogador.'
+   :'Os convocados poden dar 3, 2 e 1 punto a tres compañeiros. Non se permite o autovoto.';
+ return pageHeader('Votación do vestiario',subtitle)+
+ (usable.length?usable.map(f=>panel('<h2>'+(isCoach?'Voto do adestrador':'Votación')+' · Xornada '+f.round_number+
+   '</h2><p>Prazo ata '+dateText(new Date(new Date(f.ended_at).getTime()+72*3600e3).toISOString())+
+   '. Os votos permanecen privados ata pechar.</p><div class="vote-grid">'+
+   [3,2,1].map(w=>'<div class="field"><label>'+w+' puntos</label><select id="vote-'+w+'">'+
+     option('','Escoller xogador')+
+     d.callups.filter(c=>c.fixture_id===f.id&&c.player_id!==d.linkedPlayer)
+       .map(c=>option(c.player_id,player(c.player_id)?.name||'?')).join('')+
+   '</select></div>').join('')+'</div><button class="btn primary" data-action="vote" data-fixture="'+f.id+
+   '" style="margin-top:18px">Enviar votación</button>') ).join(''):
+   panel(empty('Non tes votacións abertas. Só os xogadores convocados e o adestrador autorizado poden votar durante as 72 h posteriores ao partido.','✦')));
 }
 
 export {guidePage,state,renderAuth,renderForbidden,securityPage,shell,home,market,marketTable,team,ranking,analytics,calendar,voting,toast,rpc,query,admin,current,player,prices,h,dateText,panel,pageHeader,person,playerAvatar,option,euroShort};

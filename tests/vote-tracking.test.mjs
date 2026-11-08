@@ -46,3 +46,15 @@ test('empty eligible voters is explicit and does not divide by zero',()=>{
  assert.match(out,/0 %/);
  assert.match(out,/Aínda non hai contas habilitadas/);
 });
+
+test('coach vote is tracked separately and not counted among player ballots',()=>{
+ const out=voteTrackingHtml({...tracking,coach:{enabled:true,voted:false}},fixture,h,d);
+ assert.match(out,/Voto do adestrador/);
+ assert.match(out,/Pendente/);
+ assert.match(out,/20 %/);
+ const voted=voteTrackingHtml({...tracking,coach:{enabled:true,voted:true}},fixture,h,d);
+ assert.match(voted,/Voto do adestrador/);
+ assert.match(voted,/Votou/);
+ assert.match(voted,/20 %/);
+ assert.doesNotMatch(voted,/emiliocarballo02|@/);
+});
