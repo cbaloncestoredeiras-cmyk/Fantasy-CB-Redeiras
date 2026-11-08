@@ -66,7 +66,7 @@ begin
  values(p_fixture,auth.uid(),p_first,3),(p_fixture,auth.uid(),p_second,2),(p_fixture,auth.uid(),p_third,1);
  insert into public.fantasy_audit(club_id,actor_id,event_type,details)
  values(v_club,auth.uid(),'cast_ballot',jsonb_build_object('fixture',p_fixture));
-end; $function$
+end; $function$;
 
 CREATE OR REPLACE FUNCTION public.fantasy_admin_vote_participation(p_fixture uuid)
  RETURNS jsonb
@@ -142,7 +142,7 @@ begin
     'voters', v_voters
   );
 end;
-$function$
+$function$;
 
 -- Manteñen as mesmas concesións que xa tiñan e validación no servidor.
 revoke all on function public.fantasy_vote(uuid,uuid,uuid,uuid) from public,anon;
