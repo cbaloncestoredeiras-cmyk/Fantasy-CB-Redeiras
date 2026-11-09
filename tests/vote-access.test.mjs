@@ -21,3 +21,10 @@ test('existing called players continue to vote normally',()=>{
 test('a fixture without a valid end has no active vote',()=>{
  assert.equal(canVoteFixture({id:'round6',ended_at:null},[],true,start+1),false);
 });
+
+test('early close disables voting for both coach and players within 72 hours',()=>{
+ const closed={...fixture,votes_finalized_at:'2026-11-09T11:00:00Z'};
+ assert.equal(canVoteFixture(closed,['round5'],false,start+36*3600e3),false);
+ assert.equal(canVoteFixture(closed,[],true,start+36*3600e3),false);
+ assert.equal(canVoteFixture({...fixture,status:'finalized'},['round5'],false,start+36*3600e3),false);
+});

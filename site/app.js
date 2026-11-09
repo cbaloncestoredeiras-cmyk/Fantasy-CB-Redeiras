@@ -245,7 +245,7 @@ async function interact(action,element){
   await rpc('fantasy_vote',{p_fixture:fixture,p_first:picks[0],p_second:picks[1],p_third:picks[2]});
   return toast('Voto rexistrado. Podes modificalo durante o prazo.');
  }
- if(['set-player-availability','activate-season','set-launch-check','update-kickoff','update-end','save-callups','refresh-vote-tracking','save-stats','preview-round','publish-round','correct-round','load-participants','update-member','revoke-member','export-snapshot','add-junior','send-invite','upload-player-photo','remove-player-photo'].includes(action)){
+ if(['set-player-availability','activate-season','set-launch-check','update-kickoff','update-end','save-callups','refresh-vote-tracking','close-votes-early','save-stats','preview-round','publish-round','correct-round','load-participants','update-member','revoke-member','export-snapshot','add-junior','send-invite','upload-player-photo','remove-player-photo'].includes(action)){
   if(!admin())throw Error('Non tes permisos de administración');
   if(action==='activate-season'&&!confirm('Activar a tempada abre o mercado aos participantes. Antes comproba as probas, a privacidade e as copias de seguridade. Queres activala?'))return;
   const changed=await adminAction(action,element);
