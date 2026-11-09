@@ -58,3 +58,25 @@ test('coach vote is tracked separately and not counted among player ballots',()=
  assert.match(voted,/20 %/);
  assert.doesNotMatch(voted,/emiliocarballo02|@/);
 });
+
+test('shows early closure only at 100% with finished stats and coach voted',()=>{
+ const f={...fixture,stats_finalized_at:'2026-11-09T11:32:51Z',team_won:false};
+ const fixedNow=Date.now;
+ try{
+   Date.now=()=>Date.parse('2026-11-09T12:00:00Z');
+   let html=voteTrackingHtml({...tracking,eligible:10,voted:10,coach:{enabled:true,voted:true}},f,h,d);
+   assert.match(html,/close-votes-early/);
+   html=voteTrackingHtml({...tracking,eligible:10,voted:10,coach:{enabled:true,voted:false}},f,h,d);
+   assert.doesNotMatch(html,/close-votes-early/);
+   html=voteTrackingHtml({...tracking,eligible:10,voted:9,coach:{enabled:true,voted:true}},f,h,d);
+   assert.doesNotMatch(html,/close-votes-early/);
+   html=voteTrackingHtml({...tracking,eligible:10,voted:10,coach:{enabled:true,voted:true}},{...f,stats_finalized_at:null},h,d);
+   assert.doesNotMatch(html,/close-votes-early/);
+ }finally{Date.now=fixedNow;}
+});
+test('closed votes show closed status and no closure button',()=>{
+ const f={...fixture,votes_finalized_at:'2026-11-09T12:00:00Z',stats_finalized_at:'2026-11-09T11:32:00Z',team_won:false};
+ const html=voteTrackingHtml({...tracking,eligible:10,voted:10,coach:{enabled:true,voted:true}},f,h,d);
+ assert.match(html,/Votación pechada/);
+ assert.doesNotMatch(html,/close-votes-early/);
+});
