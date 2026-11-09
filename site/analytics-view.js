@@ -37,8 +37,14 @@ export function courtLineup(data,ids,avatar){
 export function popularityPanel(data){
  const rows=popularityRows(data);
  if(!rows.length)return '<section class="panel popularity-panel"><h2>Popularidade no mercado</h2><p class="mini muted">As porcentaxes aparecerán cando haxa unha xornada publicada e un mínimo de participantes. Non se mostran quintetos individuais nin escollas antes do peche.</p></section>';
- return '<section class="panel popularity-panel"><h2>Popularidade do mercado</h2><p class="mini muted">Seleccións agregadas do último partido publicado. Os valores con menos de tres seleccións ocúltanse para protexer a privacidade.</p>'+
- '<div class="popularity-list">'+rows.slice(0,10).map((v,i)=>'<div class="popularity-item"><div><span>'+h(v.player.name)+'</span><small>'+(v.pct==null?'Poucas eleccións':pts(v.pct)+' % · '+v.picks+' equipos')+'</small></div>'+
+ const last=(data.fixtures||[]).filter(f=>f.status==='finalized').sort((a,b)=>Number(b.round_number)-Number(a.round_number))[0];
+ const uncalled=rows.filter(v=>v.called===false);
+ return '<section class="panel popularity-panel"><h2>Popularidade do mercado · X'+h(last?.round_number||'')+'</h2>'+
+ '<p class="mini muted">Todos os xogadores, incluídos os non convocados. Baseado nos quintetos pechados da última xornada publicada, non nas fichaxes posteriores. Os valores inferiores a tres seleccións agrúpanse para protexer a privacidade.</p>'+
+ (uncalled.length?'<p class="mini muted">Non convocados: '+uncalled.length+'. A selección dun non convocado non demostra por si soa un despiste nin unha decisión táctica.</p>':'')+
+ '<div class="popularity-list">'+rows.map(v=>'<div class="popularity-item"><div><span>'+h(v.player.name)+'</span>'+
+ (v.called===false?' <span class="tag warn">Non convocado</span>':'')+
+ '<small>'+(v.pct==null?'Menos de 3 equipos':pts(v.pct)+' % · '+v.picks+' equipos')+'</small></div>'+
  (v.pct==null?'': '<div class="popularity-track" aria-hidden="true"><span style="width:'+Math.max(0,Math.min(100,v.pct))+'%"></span></div>')+'</div>').join('')+'</div></section>';
 }
 export function analyticsPage(data,sort='fantasy_points',person){
