@@ -81,7 +81,7 @@ test('popularity masks values under 3 and contains no other manager identities',
  assert.equal(rows.length,2);assert.equal(rows[0].picks,5);
  const html=popularityPanel(d);
  assert.match(html,/71,4/);
- assert.match(html,/Poucas eleccións/);
+ assert.match(html,/Menos de 3 equipos/);
  assert.doesNotMatch(html,/Redeiras 1|Redeiras 2/);
  assert.match(popularityPanel(data),/non se mostran quintetos individuais/i);
 });
