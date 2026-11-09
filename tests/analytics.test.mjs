@@ -78,10 +78,10 @@ test('popularity masks values under 3 and contains no other manager identities',
   {player_id:'b',pick_count:null,total_teams:7,pick_percent:null}
  ]};
  const rows=popularityRows(d);
- assert.equal(rows.length,2);assert.equal(rows[0].picks,5);
+ assert.equal(rows.length,d.players.length);assert.equal(rows[0].picks,5);
  const html=popularityPanel(d);
  assert.match(html,/71,4/);
- assert.match(html,/Poucas eleccións/);
+ assert.match(html,/Menos de 3 equipos/);
  assert.doesNotMatch(html,/Redeiras 1|Redeiras 2/);
  assert.match(popularityPanel(data),/non se mostran quintetos individuais/i);
 });
@@ -105,4 +105,35 @@ test('migration keeps subscriptions owner-only and claims service-role only',()=
  assert.match(sender,/FANTASY_PUSH_CRON_SECRET/);
  assert.match(sender,/sendNotification/);
  assert.doesNotMatch(sender,/console\.log\([^)]*endpoint/);
+});
+
+test('market popularity lists EVERY player including non-called, never exposes private low counts',()=>{
+ const d={...data,fixtures:[fixture(5),fixture(6,'scheduled')],callups:[{fixture_id:'f5',player_id:'a'},{fixture_id:'f5',player_id:'b'}],
+   popularity:[
+    {player_id:'a',pick_count:4,total_teams:7,pick_percent:57.1},
+    {player_id:'b',pick_count:null,total_teams:7,pick_percent:null},
+    {player_id:'e',pick_count:3,total_teams:7,pick_percent:42.9},
+    {player_id:'c',pick_count:null,total_teams:7,pick_percent:null},
+    {player_id:'d',pick_count:null,total_teams:7,pick_percent:null}
+   ]};
+ const rows=popularityRows(d);
+ assert.equal(rows.length,5);
+ assert.equal(rows.find(r=>r.player.id==='e').called,false);
+ assert.equal(rows.find(r=>r.player.id==='a').called,true);
+ assert.equal(rows.find(r=>r.player.id==='b').picks,null);
+ const html=popularityPanel(d);
+ for(const p of d.players)assert.ok(html.includes(p.name));
+ assert.equal((html.match(/class="popularity-item"/g)||[]).length,5);
+ assert.match(html,/Non convocado/);
+ assert.match(html,/Menos de 3 equipos/);
+ assert.doesNotMatch(html,/Redeiras 1|Redeiras 2/);
+ assert.doesNotMatch(html,/Top 10/);
+});
+test('unpublished future fixture does not change callup labels from last published fixture',()=>{
+ const d={...data,fixtures:[fixture(5),fixture(6,'scheduled')],
+ callups:[{fixture_id:'f5',player_id:'a'},{fixture_id:'f6',player_id:'b'}],
+ popularity:[{player_id:'a',pick_count:3,total_teams:7,pick_percent:42.9}]};
+ const rows=popularityRows(d);
+ assert.equal(rows.find(x=>x.player.id==='a').called,true);
+ assert.equal(rows.find(x=>x.player.id==='b').called,false);
 });
