@@ -2,6 +2,7 @@ import {state,rpc,admin,current,player,prices,h,dateText,panel,pageHeader,option
 import {parseDelimited,rowsFromTable,pts} from './logic.js';
 import {availabilityLabel} from './availability.js';
 import {voteTrackingHtml} from './vote-tracking.js';
+import {uncalledAuditHtml} from './uncalled-audit.js';
 
 const localDateTime=value=>value?new Intl.DateTimeFormat('sv-SE',{timeZone:'Europe/Madrid',year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',hour12:false}).format(new Date(value)).replace(' ','T'):'';
 
@@ -109,6 +110,7 @@ export function adminView(){
  (fixture?.status==='finalized'?'<div class="field" style="margin-top:14px"><label>Motivo da rectificación (obrigatorio, mínimo 10 caracteres)</label><textarea id="correction-reason" rows="2" placeholder="Explica que valoración foi corrixida e por que"></textarea></div>'+
  '<p class="mini muted">As rectificacións non poden modificar fichaxes nin xornadas posteriores xa pechadas.</p><button class="btn danger" data-action="correct-round">Rectificar xornada publicada</button>':
  '<div class="notice">Revisa todo antes de publicar. Esta operación será definitiva e auditada.</div><button class="btn primary" data-action="publish-round">Publicar xornada '+(fixture?.round_number||'')+'</button>')),
+ panel('<div id="admin-uncalled-audit">'+uncalledAuditHtml(state.adminUncalledAudit,d.fixtures,state.adminUncalledFixture,h,option)+'</div>'),
  '<div class="grid two">',
  panel('<h2>Engadir un junior</h2><div class="stack"><div class="field"><label>Nome</label><input id="junior-name" placeholder="Nome deportivo"></div><div class="field"><label>Posicións (separadas por coma)</label><input id="junior-positions" placeholder="BA, ES"></div><div class="field"><label>Prezo inicial virtual (€)</label><input id="junior-price" type="number" min="450000" max="5000000" step="50000" value="800000"></div><div class="field"><label>Dispoñible desde a xornada</label><input id="junior-round" type="number" min="5" value="'+(current().pending?.round_number||5)+'"></div><button class="btn primary" data-action="add-junior">Engadir ao mercado</button></div>'),
  panel('<h2>Invitar participantes</h2><p>Podes invitar usuarios desde o panel de autenticación de Supabase. A función automática de invitación require ter despregada a Edge Function correspondente.</p><div class="stack"><div class="field"><label>Correo</label><input id="invite-email" type="email" placeholder="correo@exemplo.com"></div><div class="field"><label>Rol</label><select id="invite-role"><option value="participant">Participante</option><option value="admin">Administrador</option></select></div><div class="field"><label>Vincular xogador para votar (opcional)</label><select id="invite-player">'+option('','Non vincular')+d.players.map(p=>option(p.id,p.name)).join('')+'</select></div><label class="mini"><input type="checkbox" id="invite-privacy"> Confirmo que o club verificou a autorización e información de privacidade necesarias para esta persoa (especialmente se é menor).</label><button class="btn primary" data-action="send-invite">Enviar invitación</button></div>')
@@ -129,7 +131,7 @@ export function adminView(){
   .replace('<h2>Importar valoracións</h2>','<h2 id="admin-stats">Importar valoracións</h2>')
   .replace('<h2>Invitar participantes</h2>','<h2 id="admin-invites">Invitar participantes</h2>')
   .replace('<h2>Fotografías dos xogadores</h2>','<h2 id="admin-photos">Fotografías dos xogadores</h2>');
- const jumps='<nav class="admin-jumps" aria-label="Ir á sección de administración"><a href="#admin-launch">Lanzamento</a><a href="#admin-callups">Convocatoria</a><a href="#admin-availability">Lesións</a><a href="#admin-stats">Estatísticas</a><a href="#admin-invites">Invitacións</a><a href="#admin-members">Contas</a><a href="#admin-publication">Publicación</a><a href="#admin-backups">Exportación</a><a href="#admin-photos">Fotos</a></nav>';
+ const jumps='<nav class="admin-jumps" aria-label="Ir á sección de administración"><a href="#admin-launch">Lanzamento</a><a href="#admin-callups">Convocatoria</a><a href="#admin-availability">Lesións</a><a href="#admin-stats">Estatísticas</a><a href="#admin-invites">Invitacións</a><a href="#admin-members">Contas</a><a href="#admin-publication">Publicación</a><a href="#admin-uncalled">Non convocados</a><a href="#admin-backups">Exportación</a><a href="#admin-photos">Fotos</a></nav>';
  return pageHeader('Panel de administración','Só persoas autorizadas. Todos os cambios sensibles rexístranse.')+jumps+sections;
 }
 function val(id,selector){return document.getElementById(id)?.value??selector??''}
@@ -231,6 +233,14 @@ export async function adminAction(action,element){
     if(!confirm('Rectificar definitivamente a xornada '+f.round_number+' e rexistrar os cambios?'))return false;
     await rpc('fantasy_correct_fixture',{p_fixture:f.id,p_rows:rows,p_reason:reason});
     state.adminPreview=null;state.adminPreviewRows=null;break;
+  }
+  case 'refresh-uncalled-audit':{
+   const fid=state.adminUncalledFixture;
+   if(!fid)throw Error('Non hai xornada publicada para revisar');
+   state.adminUncalledAudit=await rpc('fantasy_admin_uncalled_selections',{p_fixture:fid});
+   const holder=document.getElementById('admin-uncalled-audit');
+   if(holder)holder.innerHTML=uncalledAuditHtml(state.adminUncalledAudit,state.data.fixtures,fid,h,option);
+   toast('Seleccións de non convocados actualizadas');return false;
   }
   case 'load-participants':{
     state.adminMembers=await rpc('fantasy_admin_participants',{p_club:state.data.club.id});
