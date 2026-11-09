@@ -69,12 +69,13 @@ export function popularityRows(data){
    .sort((a,b)=>Number(b.round_number)-Number(a.round_number))[0];
  const called=latest?new Set((data.callups||[]).filter(c=>c.fixture_id===latest.id).map(c=>c.player_id)):null;
  const fromApi=new Map(rows.map(row=>[row.player_id,row]));
+ const denominator=Number(rows.find(row=>Number(row.total_teams)>0)?.total_teams||0);
  // Show every market player, including 0–2 choices. Preserve privacy:
  // if the RPC masks a count, never recover or infer it by accessing team rosters.
  return (data.players||[]).map(player=>{
    const row=fromApi.get(player.id);
    return {player,picks:row?.pick_count==null?null:Number(row.pick_count),
-     total:Number(row?.total_teams||0),
+     total:Number(row?.total_teams||denominator),
      pct:row?.pick_percent==null?null:Number(row.pick_percent),
      called:called?called.has(player.id):null};
  }).filter(x=>x.total>0)
