@@ -103,7 +103,7 @@ export function adminView(){
  '<p class="mini muted">Rexistros preparados: '+(state.importRows?.length||'0')+'. Revisa a correspondencia dos xogadores antes de confirmar.</p>'+
  '<div class="tablewrap admin-stats-wrap"><table class="table admin-stats-table"><thead><tr><th scope="col">Xogador</th><th scope="col">Xogou?</th><th scope="col">Minutos</th><th scope="col">PIR (non EFF)</th><th scope="col">Puntos</th></tr></thead><tbody>'+
  d.players.map(p=>{const v=getStat(p.id),played=Boolean(v.played);return '<tr><th scope="row">'+h(p.name)+'</th><td><label class="stat-input stat-check"><span class="stat-mobile-label">Xogou?</span><input type="checkbox" data-stat-played="'+p.id+'" '+(played?'checked':'')+' aria-label="Xogou '+h(p.name)+'"></label></td><td><label class="stat-input"><span class="stat-mobile-label">Minutos</span><input data-stat-min="'+p.id+'" type="number" inputmode="decimal" step="0.01" min="0" max="60" value="'+h(v.minutes??0)+'" aria-label="Minutos de '+h(p.name)+'"></label></td><td><label class="stat-input"><span class="stat-mobile-label">PIR</span><input data-stat-pir="'+p.id+'" type="number" inputmode="decimal" step="0.01" min="-100" max="100" value="'+h(v.pir??0)+'" aria-label="Valoración PIR de '+h(p.name)+'"></label></td><td><label class="stat-input"><span class="stat-mobile-label">Puntos</span><input data-stat-pts="'+p.id+'" type="number" inputmode="numeric" step="1" value="'+h(v.points??0)+'" aria-label="Puntos de '+h(p.name)+'"></label></td></tr>'}).join('')+'</tbody></table></div><button class="btn primary" data-action="save-stats" style="margin-top:14px">Gardar estatísticas revisadas</button>'),
- panel('<h2 id="admin-publication">Vista previa, publicación e rectificación</h2><p>A vista previa usa o mesmo cálculo servidor que a publicación. Debe transcorrer o prazo de votación de 72 horas e existir convocatoria e estatísticas completas.</p>'+
+ panel('<h2 id="admin-publication">Vista previa, publicación e rectificación</h2><p>A vista previa usa o mesmo cálculo servidor que a publicación. Podes calcular despois de 72 horas ou pechando antes a votación desde «Seguimento da votación» cando teña o 100 % de papeletas completas. Precísanse convocatoria, resultado e estatísticas completas.</p>'+
  '<div class="actions"><button class="btn secondary" data-action="preview-round">Calcular vista previa da xornada '+(fixture?.round_number||'')+'</button></div>'+
  '<div id="admin-preview-results" style="margin-top:14px">'+previewHtml(state.adminPreview?.fixture_id===fixture?.id?state.adminPreview:null)+'</div>'+
  (fixture?.status==='finalized'?'<div class="field" style="margin-top:14px"><label>Motivo da rectificación (obrigatorio, mínimo 10 caracteres)</label><textarea id="correction-reason" rows="2" placeholder="Explica que valoración foi corrixida e por que"></textarea></div>'+
@@ -196,7 +196,14 @@ export async function adminAction(action,element){
     if(holder)holder.innerHTML=voteTrackingHtml(tracking,f,h,dateText);
     toast('Participación actualizada');return false;
   }
-  case 'save-stats':{
+  case 'close-votes-early':{
+     if(!confirm('Pechar definitivamente as votacións desta xornada? Co 100 % das papeletas completas poderás calcular a vista previa sen agardar 72 horas. Ninguén poderá modificar xa o seu voto.'))return false;
+     await rpc('fantasy_close_votes_early',{p_fixture:f.id});
+     state.adminPreview=null;state.adminPreviewRows=null;
+     toast('Votación pechada. Xa podes calcular a vista previa.');
+     break;
+   }
+   case 'save-stats':{
     const rows=statsDraft();
     await rpc('fantasy_save_stats',{p_fixture:f.id,p_rows:rows});
     state.importRows=null;state.rawPdf='';state.adminPreview=null;state.adminPreviewRows=null;break;
