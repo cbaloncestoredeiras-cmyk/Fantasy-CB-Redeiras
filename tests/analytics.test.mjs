@@ -78,7 +78,7 @@ test('popularity masks values under 3 and contains no other manager identities',
   {player_id:'b',pick_count:null,total_teams:7,pick_percent:null}
  ]};
  const rows=popularityRows(d);
- assert.equal(rows.length,2);assert.equal(rows[0].picks,5);
+ assert.equal(rows.length,d.players.length);assert.equal(rows[0].picks,5);
  const html=popularityPanel(d);
  assert.match(html,/71,4/);
  assert.match(html,/Menos de 3 equipos/);
