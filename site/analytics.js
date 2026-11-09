@@ -64,8 +64,20 @@ export function seasonRecords(data){
 }
 export function popularityRows(data){
  const rows=Array.isArray(data.popularity)?data.popularity:[];
- return rows.map(row=>({player:data.playerMap?.[row.player_id],picks:row.pick_count==null?null:Number(row.pick_count),
-  total:Number(row.total_teams||0),pct:row.pick_percent==null?null:Number(row.pick_percent)}))
- .filter(x=>x.player).sort((a,b)=>(b.pct??-1)-(a.pct??-1)||a.player.name.localeCompare(b.player.name));
+ // Only the last published fixture has frozen lineups suitable for public popularity.
+ const latest=(data.fixtures||[]).filter(f=>f.status==='finalized')
+   .sort((a,b)=>Number(b.round_number)-Number(a.round_number))[0];
+ const called=latest?new Set((data.callups||[]).filter(c=>c.fixture_id===latest.id).map(c=>c.player_id)):null;
+ const fromApi=new Map(rows.map(row=>[row.player_id,row]));
+ // Show every market player, including 0–2 choices. Preserve privacy:
+ // if the RPC masks a count, never recover or infer it by accessing team rosters.
+ return (data.players||[]).map(player=>{
+   const row=fromApi.get(player.id);
+   return {player,picks:row?.pick_count==null?null:Number(row.pick_count),
+     total:Number(row?.total_teams||0),
+     pct:row?.pick_percent==null?null:Number(row.pick_percent),
+     called:called?called.has(player.id):null};
+ }).filter(x=>x.total>0)
+ .sort((a,b)=>(b.pct??-1)-(a.pct??-1)||a.player.name.localeCompare(b.player.name));
 }
 export {FIELDS};
