@@ -27,6 +27,9 @@ export function courtLineup(data,ids,avatar){
   ...others.map((p,i)=>({p,x:[23,77,50][i],y:[44,44,59][i]}))];
  const price=id=>data.prices?.[id]==null?'':new Intl.NumberFormat('es-ES',{maximumFractionDigits:2}).format(Number(data.prices[id])/1000000)+' M€';
  const valid=ids.length===5;
+ const lastFixture=(data.fixtures||[]).filter(f=>f.status==='finalized').sort((a,b)=>b.round_number-a.round_number)[0];
+ const scored=lastFixture?(data.stats||[]).filter(s=>s.fixture_id===lastFixture.id&&s.played===true&&s.fantasy_points!=null&&ids.includes(s.player_id)):[]; 
+ const best=scored.length?scored.slice().sort((a,b)=>Number(b.fantasy_points)-Number(a.fantasy_points))[0]?.player_id:null;
  return '<div class="court-wrapper"><div class="court-visual court-half" role="group" aria-label="Media pista de baloncesto: quinteto orientativo e perfís dos xogadores">'+
  '<svg viewBox="0 0 500 467" aria-hidden="true" focusable="false" preserveAspectRatio="xMidYMid meet" class="court-lines">'+
  // Perimeter, halfway line and the near half of the centre circle.
@@ -45,6 +48,7 @@ export function courtLineup(data,ids,avatar){
  '</svg>'+
  '<span class="court-basket-label" aria-hidden="true">CANASTRA</span>'+
  spots.map(s=>'<button type="button" class="court-player" style="--court-x:'+s.x+'%;--court-y:'+s.y+'%" data-player="'+h(s.p.id)+'" aria-label="Abrir perfil de '+h(s.p.name)+'">'+
+ (best===s.p.id?'<span class="court-player-best" title="Maior puntuación entre os teus xogadores na última xornada publicada">MELLOR X'+lastFixture.round_number+'</span>':'')+
  avatar(s.p,'court-avatar')+'<strong>'+h(s.p.name)+'</strong><small>'+h(s.p.positions.join(' / '))+'</small>'+
  (price(s.p.id)?'<span class="court-player-price">'+h(price(s.p.id))+'</span>':'')+'</button>').join('')+
  '</div><p class="mini muted court-caption">'+(valid?'Media pista FIBA a escala orientativa: as posicións dos xogadores son ilustrativas.':'Vista previa: '+selected.length+' de 5 xogadores.')+

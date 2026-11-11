@@ -1,5 +1,5 @@
 // Only client-side read-only calculations. The Supabase RPCs remain authoritative.
-import {FANTASY_BUDGET,MAX_TRANSFERS,validateLineup,transferPlan} from './logic.js';
+import {FANTASY_BUDGET,MAX_TRANSFERS,validateLineup,transferPlan,originalPlayerUsage} from './logic.js';
 import {playerForm} from './insights.js';
 
 export function simulatedLineup(data,draft,round){
@@ -9,9 +9,10 @@ export function simulatedLineup(data,draft,round){
  const selection=validateLineup(draft,data.playerMap,data.prices);
  const trade=initial?{removed:[],added:[...draft],sales:0,buys:selection.cost,cashAfter:startingBudget-selection.cost,changes:0}:
    transferPlan(data.roster,draft,Number(data.team.cash),data.prices);
- const spent=initial?0:(data.transfers||[]).filter(t=>Number(t.round_number)===Number(round)).length;
- const changesLeft=max-spent-trade.changes;
- const valid=selection.valid && trade.cashAfter>=0 && changesLeft>=0 &&
+ const usage=originalPlayerUsage(data.transferStatus,data.roster,draft,data.transfers,round);
+ const spent=initial?0:usage.used;
+ const changesLeft=initial?max:usage.remainingAfter;
+ const valid=selection.valid && trade.cashAfter>=0 && changesLeft>=0 && (initial||usage.valid) &&
    (!data.players||draft.every(id=>data.playerMap[id]&&Number(data.playerMap[id].available_from_round||0)<=Number(round)));
  const estimate=ids=>{
    if(ids.length!==5)return null;
@@ -19,7 +20,7 @@ export function simulatedLineup(data,draft,round){
    return forms.every(f=>f.recentCount>0)?
       forms.reduce((sum,f)=>sum+f.recentAverage,0):null;
  };
- return {...trade,selection,spent,max,changesLeft,valid,
+ return {...trade,selection,spent,max,changesLeft,valid,uniqueOriginalChangesAfter:usage.usedAfter,
    oldEstimate:initial?null:estimate(data.roster),newEstimate:estimate(draft),
    hasDifferences:initial?draft.length>0:trade.changes>0};
 }

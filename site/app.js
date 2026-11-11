@@ -2,9 +2,10 @@ import {brokerProfileHtml} from './broker-view.js';
 import {callupDetail} from './callups.js';
 import {guidePage,state,renderAuth,renderForbidden,securityPage,shell,home,market,marketTable,team,ranking,analytics,calendar,voting,toast,rpc,current,player,prices,h,dateText,panel,pageHeader,admin,euroShort,playerAvatar} from './pages.js';
 import {adminView,adminAction,handleStatsFile} from './admin.js';
-import {validateLineup,transferPlan,brokerEstimate,pts} from './logic.js';
+import {validateLineup,transferPlan,originalPlayerUsage,brokerEstimate,pts} from './logic.js';
 import {availabilityWarning,unavailablePlayers} from './availability.js';
 import {formSection,priceHistorySection} from './insights-view.js';
+import {playerForm} from './insights.js';
 import {playerAdvancedPanel} from './analytics-view.js';
 import {enableRemotePush,disableRemotePush,remotePushEnabled} from './push.js';
 import {initExperience,installAppPrompt,toggleDeviceAlerts,refreshClock} from './experience.js';
@@ -47,6 +48,8 @@ async function load(){
  ]);
  const roster=teams.length?await toPromise(c.from('team_rosters').select('player_id').eq('team_id',teams[0].id)):[];
  const transfers=teams.length?await toPromise(c.from('transfers').select('*').eq('team_id',teams[0].id).order('executed_at',{ascending:true})):[];
+ const transferStatusR=teams.length?await c.rpc('fantasy_transfer_status',{p_team:teams[0].id}):{data:null,error:null};
+ if(transferStatusR.error)console.warn('Contador de cambios non dispoñible:',transferStatusR.error.message);
  const [rankR,weeklyR,popularityR,coachAccessR]=await Promise.all([
   c.rpc('fantasy_leaderboard',{p_season:season.id}),
   c.rpc('fantasy_round_leaderboard',{p_season:season.id}),
@@ -75,7 +78,7 @@ async function load(){
  const fullPlayers=players.map(p=>({...p,positions:positionMap[p.id]||[]}));
  const playerMap=Object.fromEntries(fullPlayers.map(p=>[p.id,p]));
  state.data={role,club:clubR.data,season,players:fullPlayers,playerMap,prices:priceMap,photoUrls,fixtures,
- team:teams[0]||null,roster:roster.map(r=>r.player_id),transfers,leaderboard:rankR.data||[],weeklyRanking:weeklyR.data||[],weeklyRankingError:weeklyR.error?.message||null,popularity:popularityR.data||[],
+ team:teams[0]||null,roster:roster.map(r=>r.player_id),transfers,transferStatus:transferStatusR.data||null,leaderboard:rankR.data||[],weeklyRanking:weeklyR.data||[],weeklyRankingError:weeklyR.error?.message||null,popularity:popularityR.data||[],
  alias:alias[0]?.display_name||'Redeirista',callups,eligibleFixtures:voterAccount[0]?.player_id?eligible.map(x=>x.fixture_id):[],
  linkedPlayer:voterAccount[0]?.player_id||null,coachVoter:coachAccessR.error?false:coachAccessR.data===true,
  stats,history,metrics:metricsR.data,launchStatus:launchR.data};
@@ -153,10 +156,22 @@ function showPlayer(id){
   .filter(s=>s.player_id===id&&finished.has(s.fixture_id)&&s.played&&s.fantasy_points!==null)
   .map(s=>Number(s.fantasy_points));
  const estimate=brokerEstimate(cost,0,true,pastScores);
+ const form=playerForm(p.id,state.data.fixtures,state.data.stats);
+ const number=value=>new Intl.NumberFormat('es-ES',{maximumFractionDigits:2}).format(value);
  const el=document.createElement('div');el.className='modalcover';
- el.innerHTML='<div class="modal" role="dialog" aria-modal="true" aria-label="Perfil do xogador"><div class="row"><div class="person">'+playerAvatar(p,'profile-photo')+'<div><h2 style="margin:0">'+h(p.name)+'</h2><p class="mini">'+h(p.positions.join(' / '))+(p.category==='junior'?' · JÚNIOR':'')+'</p></div></div><button class="btn secondary" data-action="close-modal">Pechar</button></div><hr class="separator">'+
+ el.innerHTML='<div class="modal player-profile-modal" role="dialog" aria-modal="true" aria-label="Perfil do xogador">'+
+ '<div class="player-profile-hero"><div class="player-profile-photo">'+playerAvatar(p,'profile-portrait')+'</div>'+
+ '<div class="player-profile-heading"><span class="player-profile-eyebrow">FANTASY REDEIRAS · FICHA DO XOGADOR</span>'+
+ '<h2>'+h(p.name)+'</h2><p>'+h(p.positions.join(' · '))+(p.category==='junior'?' · JÚNIOR':'')+
+ (p.jersey_number?' · #'+h(p.jersey_number):'')+'</p>'+
+ '<div class="player-profile-stats">'+
+ '<div><small>PREZO ACTUAL</small><strong>'+euroShort(cost)+'</strong></div>'+
+ '<div><small>MEDIA ÚLT. 3</small><strong>'+(form.recentCount?number(form.recentAverage)+' pts':'—')+'</strong></div>'+
+ '<div><small>PARTIDOS</small><strong>'+form.games+'</strong></div>'+
+ '</div></div><button type="button" class="btn outline profile-close" data-action="close-modal" aria-label="Pechar perfil">×</button></div>'+
+ '<div class="player-profile-body">'+
   brokerProfileHtml(cost,estimate,pastScores.length)+
-  callupDetail(state.data,current().pending,id)+availabilityWarning([id],state.data.playerMap)+formSection(state.data,id)+playerAdvancedPanel(state.data,id)+priceHistorySection(state.data,id)+'</div>';
+  callupDetail(state.data,current().pending,id)+availabilityWarning([id],state.data.playerMap)+formSection(state.data,id)+playerAdvancedPanel(state.data,id)+priceHistorySection(state.data,id)+'</div></div>';
  document.body.append(el);state.modal=el;
 }
 function toggleMobileMore(open){
@@ -241,8 +256,8 @@ async function interact(action,element){
   if(risky.length&&!confirm('Estás fichando xogadores lesionados ou dubidosos: '+risky.map(p=>p.name).join(', ')+'. Seguen ocupando praza e non dan cambios extra. Continuar?'))return;
   if(d.team){
     const x=transferPlan(d.roster,state.draft,d.team.cash,d.prices);
-    const n=d.transfers.filter(t=>t.round_number===current().pending?.round_number).length;
-    if(x.cashAfter<0||x.changes+n>3)throw Error('Saldo insuficiente ou esgotaches os tres cambios');
+    const usage=originalPlayerUsage(d.transferStatus,d.roster,state.draft,d.transfers,current().pending?.round_number);
+    if(x.cashAfter<0||!usage.valid)throw Error('Saldo insuficiente ou superaches o límite de 3 xogadores orixinais substituídos');
     if(x.changes===0)return toast('Non hai fichaxes novos.');
     await rpc('fantasy_change_lineup',{p_team:d.team.id,p_player_ids:state.draft});
   }else{
@@ -275,6 +290,19 @@ root.addEventListener('click',async e=>{
    renderAuth();return;
  }
  // Switch between tool panels without replacing form fields or draft selections.
+ const marketFilter=e.target.closest('[data-market-filter]');
+ if(marketFilter){
+   state.filter=marketFilter.dataset.marketFilter;
+   root.querySelectorAll('[data-market-filter]').forEach(btn=>{
+     const on=btn.dataset.marketFilter===state.filter;
+     btn.setAttribute('aria-pressed',String(on));btn.classList.toggle('active',on);
+   });
+   const select=root.querySelector('#pos-filter');
+   if(select)select.value=state.filter;
+   const holder=root.querySelector('#market-table');
+   if(holder)holder.innerHTML=marketTable();
+   return;
+ }
  const marketTab=e.target.closest('[data-market-tool]');
  if(marketTab){
    const key=marketTab.dataset.marketTool;
@@ -309,8 +337,8 @@ root.addEventListener('click',async e=>{
  if(element.dataset.page){state.page=element.dataset.page;state.mobileMenuOpen=false;state.search='';state.filter='all';window.scrollTo({top:0,behavior:'instant'});present();root.querySelector('#main-content')?.focus({preventScroll:true});return;}
  if(element.dataset.player){showPlayer(element.dataset.player);return;}
  const action=element.dataset.action;if(!action)return;
- element.disabled=true;
- try{await interact(action,element);}catch(error){toast(error.message||String(error),true);}finally{if(element.isConnected)element.disabled=false;}
+ element.disabled=true;element.classList.add('is-working');
+ try{await interact(action,element);}catch(error){toast(error.message||String(error),true);}finally{if(element.isConnected){element.disabled=false;element.classList.remove('is-working');}}
 });
 function authRecoveryError(error){
  if(error?.status===429||['over_email_send_rate_limit','over_request_rate_limit'].includes(error?.code))
@@ -370,7 +398,14 @@ root.addEventListener('input',e=>{
  if(e.target.id==='search'){state.search=e.target.value;const box=document.getElementById('market-table');if(box)box.innerHTML=marketTable();}
 });
 root.addEventListener('change',async e=>{
- if(e.target.id==='pos-filter'){state.filter=e.target.value;const box=document.getElementById('market-table');if(box)box.innerHTML=marketTable();}
+ if(e.target.id==='pos-filter'){
+   state.filter=e.target.value;const box=document.getElementById('market-table');if(box)box.innerHTML=marketTable();
+   root.querySelectorAll('[data-market-filter]').forEach(btn=>{
+     const on=btn.dataset.marketFilter===state.filter;
+     btn.setAttribute('aria-pressed',String(on));btn.classList.toggle('active',on);
+   });
+ }
+ if(e.target.id==='market-sort'){state.marketSort=e.target.value;const box=document.getElementById('market-table');if(box)box.innerHTML=marketTable();}
  if(e.target.id==='ranking-round'){state.rankRound=e.target.value;present();}
   if(e.target.id==='analytics-sort'){state.analyticsSort=e.target.value;present();}
  if(e.target.id==='admin-photo-player'){state.adminPlayer=e.target.value;present();}

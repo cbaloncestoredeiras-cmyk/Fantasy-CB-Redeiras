@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
- FANTASY_BUDGET,validateLineup,transferPlan,brokerEstimate,pickUpcoming,parseDelimited,rowsFromTable
+ FANTASY_BUDGET,validateLineup,transferPlan,originalPlayerUsage,brokerEstimate,pickUpcoming,parseDelimited,rowsFromTable
 } from '../site/logic.js';
 
 const players={
@@ -117,4 +117,20 @@ test('unfinalized previous round blocks next round',()=>{
  const season={start_round:5};
  const f=[{round_number:5,status:'awaiting_votes'}, {round_number:6,status:'scheduled',starts_at:new Date(Date.now()+3600000).toISOString()}];
  assert.equal(pickUpcoming(f,season).open,false);
+});
+
+test('multiple confirmation windows count players from the original five, not saved operations',()=>{
+ const original=['Álvaro','Edu','Luca','Adán','Brais'];
+ const status={max:3,original_player_ids:original,changed_original_ids:['Adán','Brais']};
+ const current=['Álvaro','Edu','Luca','Mateo','Gil'];
+ assert.deepEqual(
+  [originalPlayerUsage(status,current,current).used,originalPlayerUsage(status,current,current).remaining],[2,1]);
+ // Replacing a newly acquired player can be done in another window.
+ assert.equal(originalPlayerUsage(status,current,['Álvaro','Edu','Luca','Yosue','Gil']).usedAfter,2);
+ // The third original player can leave in any later confirmation.
+ assert.equal(originalPlayerUsage(status,current,['Álvaro','Edu','Manuel','Mateo','Gil']).usedAfter,3);
+ // A fourth original player is rejected, regardless of previous confirmations.
+ assert.equal(originalPlayerUsage(status,current,['Álvaro','Yosue','Manuel','Mateo','Gil']).valid,false);
+ // Returning an original player does not erase a past change (round allowance).
+ assert.equal(originalPlayerUsage(status,current,['Álvaro','Edu','Luca','Adán','Gil']).used,2);
 });

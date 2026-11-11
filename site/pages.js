@@ -1,8 +1,9 @@
 import {canVoteFixture} from './vote-access.js';
-import {euro,pts,escapeHtml as h,byId,validateLineup,transferPlan,brokerEstimate,pickUpcoming,parseDelimited,rowsFromTable} from './logic.js';
+import {euro,pts,escapeHtml as h,byId,validateLineup,transferPlan,originalPlayerUsage,brokerEstimate,pickUpcoming,parseDelimited,rowsFromTable} from './logic.js';
 import {availabilityBadge,availabilityWarning} from './availability.js';
 import {callupBadge,callupSummary} from './callups.js';
 import {formBadge,compareButton,comparisonPanel} from './insights-view.js';
+import {playerForm} from './insights.js';
 import {simulatorPanel,idealTeamPanel} from './strategy-view.js';
 import {homeExperience,guidePage,deadline,countdown} from './experience.js';
 import {courtLineup,popularityPanel,analyticsPage,recordsPanel} from './analytics-view.js';
@@ -11,10 +12,10 @@ import {navIcon} from './nav-icons.js';
 
 const cfg=window.FANTASY_CONFIG||{};
 const root=document.querySelector('#root');
-const state={client:null,session:null,page:'home',data:null,draft:[],search:'',filter:'all',compareIds:[],rankRound:'general',analyticsSort:'fantasy_points',guideStep:0,installHelp:false,modal:null,rawPdf:'',importRows:null,loading:false,authMode:'password',recoveringPassword:false,mobileMenuOpen:false,marketTool:'compare',adminTab:'partido'};
+const state={client:null,session:null,page:'home',data:null,draft:[],search:'',filter:'all',compareIds:[],rankRound:'general',analyticsSort:'fantasy_points',guideStep:0,installHelp:false,modal:null,rawPdf:'',importRows:null,loading:false,authMode:'password',recoveringPassword:false,mobileMenuOpen:false,marketTool:'compare',marketSort:'price-desc',adminTab:'partido'};
 const LOGO='<img class="brand-emblem" src="assets/redeiras-logo.webp" alt="Escudo do CB Redeiras">';
 const NAV=[['home','⌂','Inicio'],['market','◫','Mercado'],['team','▣','O meu equipo'],['ranking','♛','Clasificación'],['analytics','◈','Estatísticas'],['calendar','▦','Calendario'],['vote','✦','Votación'],['guide','?','Guía'],['admin','⚙','Administración']];
-function toast(message,error=false){document.querySelector('.toast')?.remove();const div=document.createElement('div');div.className='toast'+(error?' error':'');div.textContent=message;document.body.append(div);setTimeout(()=>div.remove(),6000);}
+function toast(message,error=false){document.querySelector('.toast')?.remove();const div=document.createElement('div');div.className='toast'+(error?' error':'');div.textContent=message;div.setAttribute('role',error?'alert':'status');div.setAttribute('aria-live',error?'assertive':'polite');document.body.append(div);setTimeout(()=>div.remove(),6000);}
 const dateText=(v,opts={day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'})=>v?new Intl.DateTimeFormat('gl-ES',{timeZone:'Europe/Madrid',...opts}).format(new Date(v)):'Horario por confirmar';
 const euroShort=n=>new Intl.NumberFormat('es-ES',{maximumFractionDigits:2}).format((n||0)/1000000)+' M€';
 const admin=()=>state.data?.role==='admin';
@@ -77,13 +78,15 @@ function home(){
  const rank=myRow?.position==null?'—':myRow.position+' / '+d.leaderboard.length;
  const rosterValue=d.roster.reduce((n,id)=>n+Number(d.prices[id]||0),0);
  const balance=d.team?Number(d.team.cash||0):6000000;
- const changesUsed=d.transfers.filter(t=>t.round_number===pending?.round_number).length;
+ const changesUsed=originalPlayerUsage(d.transferStatus,d.roster,d.roster,d.transfers,pending?.round_number).used;
  const changesLeft=d.team?Math.max(0,3-changesUsed):3;
  const gameLabel=pending?.opponent?'CB Redeiras · '+h(pending.opponent):'Próximo partido por confirmar';
  const closeLabel=status.status==='open'?countdown(status.ms):
    status.status==='closed'?'Mercado pechado':'Consulta o calendario';
  const cta=d.team?'Ver o meu quinteto':'Crear o meu quinteto';
  const allRows=d.leaderboard||[];
+ const lastFinalized=d.fixtures.filter(f=>f.status==='finalized').sort((a,b)=>Number(b.round_number)-Number(a.round_number))[0];
+ const lastWeek=lastFinalized&&d.team?(d.weeklyRanking||[]).find(r=>r.team_id===d.team.id&&Number(r.round_number)===Number(lastFinalized.round_number)):null;
  return pageHeader('A túa xornada','Os datos que importan para competir, nun só lugar.',
    '<div class="actions"><button class="btn primary" data-page="market">Abrir mercado</button></div>')+
  '<section class="dashboard-match-hero" aria-label="Estado da xornada e acceso ao quinteto">'+
@@ -93,7 +96,11 @@ function home(){
  '<div class="dashboard-match-meta"><span class="tag '+(open?'good':'warn')+'">'+(open?'Mercado aberto':'Mercado pechado')+'</span>'+
  '<span class="dashboard-deadline">'+h(closeLabel)+'</span></div>'+
  '<button class="btn primary" data-page="'+(d.team?'team':'market')+'">'+cta+'</button></div>'+
- '<img class="dashboard-match-emblem" src="assets/redeiras-logo.webp" alt="" loading="lazy"></section>'+
+ '<aside class="dashboard-performance">'+
+ '<img class="dashboard-match-emblem" src="assets/redeiras-logo.webp" alt="" loading="lazy">'+
+ '<div class="dashboard-performance-score"><span>'+(lastWeek?'ÚLTIMA XORNADA · X'+lastFinalized.round_number:'PUNTOS TOTAIS')+'</span>'+
+ '<strong>'+(lastWeek?pts(lastWeek.round_points):pts(points))+'</strong><small>puntos Fantasy</small>'+
+ (myRow?.position?'<em>'+h(myRow.position)+'º posto xeral</em>':'')+'</div></aside></section>'+
  '<div class="grid four dashboard-kpis" aria-label="Resumo do equipo">'+[
    ['A túa posición',rank,'Clasificación xeral'],
    ['Puntos Fantasy',pts(points),'Xornadas publicadas'],
@@ -110,7 +117,24 @@ function home(){
 }
 function marketTable(){
  const d=state.data,round=current().pending?.round_number||5;
- const list=d.players.filter(p=>(state.filter==='all'||p.positions.includes(state.filter)||(state.filter==='junior'&&p.category==='junior'))&&p.name.toLowerCase().includes(state.search.toLowerCase())).sort((a,b)=>(prices()[b.id]||0)-(prices()[a.id]||0));
+ const called=new Set(d.callups.filter(c=>c.fixture_id===current().pending?.id).map(c=>c.player_id));
+ const pPopularity=new Map((d.popularity||[]).map(x=>[x.player_id,Number(x.pick_percent)||0]));
+ const form=new Map(d.players.map(p=>[p.id,playerForm(p.id,d.fixtures,d.stats).recentAverage]));
+ const sorted=(a,b)=>{
+   const priceA=Number(prices()[a.id]||0),priceB=Number(prices()[b.id]||0);
+   if(state.marketSort==='price-asc')return priceA-priceB||a.name.localeCompare(b.name);
+   if(state.marketSort==='form-desc')return (form.get(b.id)??-999)-(form.get(a.id)??-999)||a.name.localeCompare(b.name);
+   if(state.marketSort==='popularity-desc')return (pPopularity.get(b.id)||0)-(pPopularity.get(a.id)||0)||a.name.localeCompare(b.name);
+   return priceB-priceA||a.name.localeCompare(b.name);
+ };
+ const list=d.players.filter(p=>{
+   const matches=state.filter==='all'||p.positions.includes(state.filter)||
+    (state.filter==='junior'&&p.category==='junior')||
+    (state.filter==='outside'&&p.positions.some(x=>['BA','ES','AL'].includes(x)))||
+    (state.filter==='inside'&&p.positions.some(x=>['AP','P'].includes(x)))||
+    (state.filter==='called'&&called.size>=3&&called.has(p.id));
+   return matches&&p.name.toLowerCase().includes(state.search.toLowerCase());
+ }).sort(sorted);
  const draft=state.draft;
  const controls=(p)=>p.available_from_round>round
   ?'<span class="tag warn">Desde X'+p.available_from_round+'</span>'
@@ -129,9 +153,10 @@ function market(){
  const d=state.data,{pending,open}=current();
  const isFirst=!d.team,summary=validateLineup(state.draft,d.playerMap,prices());
  const plan=d.team?transferPlan(d.roster,state.draft,d.team.cash,prices()):{cashAfter:6000000-summary.cost,changes:0};
- const used=d.transfers.filter(t=>t.round_number===pending?.round_number).length;
- const remaining=3-used-plan.changes;
- const legal=summary.valid&&plan.cashAfter>=0&&(!d.team||remaining>=0);
+ const usage=originalPlayerUsage(d.transferStatus,d.roster,state.draft,d.transfers,pending?.round_number);
+ const used=usage.used;
+ const remaining=usage.remainingAfter;
+ const legal=summary.valid&&plan.cashAfter>=0&&(!d.team||usage.valid);
  const active=['compare','simulate','popularity'].includes(state.marketTool)?state.marketTool:'compare';
  const marketTools=[
   ['compare','Comparador',comparisonPanel(d,state.compareIds,person)],
@@ -146,25 +171,32 @@ function market(){
  return pageHeader('Mercado de fichaxes','Busca xogadores, compara valoracións e prepara os cinco que competirán.')+
  '<div class="market-status-strip"><span><b>Saldo:</b> '+euroShort(isFirst?6000000:d.team.cash)+'</span>'+
  '<span><b>Quinteto:</b> '+state.draft.length+' / 5</span>'+
- '<span><b>Cambios:</b> '+(isFirst?'3':Math.max(0,3-used))+' / 3</span>'+
+ '<span><b>Cambios:</b> '+(isFirst?'0':used)+' / '+usage.max+' xogadores orixinais</span>'+
  '<span class="tag '+(open?'good':'warn')+'">'+(open?'Mercado aberto':'Mercado pechado')+'</span></div>'+
  '<a class="mobile-draft-link" href="#draft-summary"><span>Ver o teu quinteto</span><strong>'+state.draft.length+' / 5 · '+euroShort(summary.cost)+'</strong></a>'+
  '<div class="grid two market-layout"><section class="panel market-panel"><div class="row"><h2>Buscar e fichar xogadores</h2><span class="tag">'+d.players.length+' xogadores</span></div>'+
  '<div class="toolbar"><input id="search" aria-label="Buscar xogador" placeholder="Buscar xogador…" value="'+h(state.search)+'"/>'+
- '<select id="pos-filter" aria-label="Filtrar xogadores por posición">'+[['all','Todas as posicións'],['BA','Bases'],['ES','Escoltas'],['AL','Aleros'],['AP','Ala-pivotes'],['P','Pivotes'],['junior','Juniors']].map(v=>option(...v,state.filter)).join('')+'</select></div>'+
+ '<select id="pos-filter" aria-label="Filtrar xogadores por posición">'+
+ [['all','Todas as posicións'],['BA','Bases'],['outside','Exteriores'],['inside','Interiores'],['called','Convocados'],['junior','Júniors'],['ES','Escoltas'],['AL','Aleros'],['AP','Ala-pivotes'],['P','Pivotes']].map(v=>option(...v,state.filter)).join('')+
+ '</select><select id="market-sort" aria-label="Ordenar xogadores">'+
+ [['price-desc','Prezo: maior a menor'],['price-asc','Prezo: menor a maior'],['form-desc','Mellor forma'],['popularity-desc','Máis populares']].map(v=>option(...v,state.marketSort)).join('')+'</select></div>'+
+ '<div class="market-filter-chips" role="group" aria-label="Filtros rápidos">'+
+ [['all','Todos'],['BA','Bases'],['outside','Exteriores'],['inside','Interiores'],['junior','Júniors'],['called','Convocados']].map(v=>
+ '<button type="button" class="market-filter-chip '+(state.filter===v[0]?'active':'')+'" data-market-filter="'+v[0]+'" aria-pressed="'+(state.filter===v[0])+'">'+v[1]+'</button>').join('')+
+ '</div>'+
  callupSummary(d,pending)+'<div id="market-table">'+marketTable()+'</div></section>'+
  '<aside id="draft-summary" class="panel draft-panel" tabindex="-1"><h2>O teu quinteto</h2><div class="stack">'+state.draft.map(id=>{const p=player(id);return p?'<div class="playeritem">'+person(p)+'<div class="actions"><b>'+euroShort(prices()[id])+'</b><button class="btn small secondary" data-action="toggle" data-id="'+id+'" aria-label="Retirar '+h(p.name)+'">×</button></div></div>':''}).join('')+
  Array.from({length:Math.max(0,5-state.draft.length)},()=>'<div class="playeritem" style="color:#a0b1ba;border-style:dashed">＋ Praza libre</div>').join('')+'</div><hr class="separator">'+
  '<div class="row"><span class="muted mini">Custo de selección</span><b>'+euroShort(summary.cost)+'</b></div>'+
  '<div class="row" style="margin-top:10px"><span class="muted mini">Efectivo tras confirmar</span><b style="color:'+(plan.cashAfter<0?'var(--bad)':'var(--good)')+'">'+euroShort(plan.cashAfter)+'</b></div>'+
  '<div class="metricbar" style="margin-top:12px"><span style="width:'+Math.min(100,summary.cost/(isFirst?6000000:(d.team.cash+d.roster.reduce((n,id)=>n+(prices()[id]||0),0)))*100)+'%"></span></div>'+
- '<p class="help">Quinteto de 5 xogadores, mínimo un BA e un interior AP/P distintos. Máximo 3 fichaxes por xornada.</p>'+
+ '<p class="help">Quinteto de 5 xogadores: mínimo un BA e un AP/P distintos. Podes confirmar fichaxes en tantas ocasións como queiras, pero só podes substituír tres xogadores distintos do teu quinteto inicial da xornada.</p>'+
  (summary.errors.length?'<div class="notice">'+summary.errors.map(h).join(' · ')+'</div>':'')+
  (plan.cashAfter<0?'<div class="notice error">Fáltanche '+euro(-plan.cashAfter)+'</div>':'')+
  availabilityWarning(state.draft,d.playerMap)+
  (!open?'<div class="notice">Mercado pechado: podes preparar cambios, pero non gardalos ata a reapertura.</div>':'')+
  (isFirst?'<div class="field" style="margin:17px 0"><label>Nome do teu equipo</label><input id="team-name" maxlength="40" placeholder="Ex.: Redeiras de Ouro" autocomplete="off"></div>':
- '<p class="mini muted">Cambios nesta simulación: '+plan.changes+' · Xa utilizados: '+used+'</p>')+
+ '<p class="mini muted">Xogadores substituídos nesta operación: '+plan.changes+' · Orixinais usados: '+used+' / '+usage.max+' · Tras confirmar: '+usage.usedAfter+' / '+usage.max+'. Podes confirmar tantas veces como precises.</p>')+
  '<button class="btn primary full" data-action="save-lineup" '+(!legal||!open?'disabled':'')+'>'+
  (isFirst?'Crear equipo':'Confirmar fichaxes')+' →</button></aside></div>'+
  '<section class="market-tools" id="market-tools" aria-label="Análise e ferramentas do mercado">'+

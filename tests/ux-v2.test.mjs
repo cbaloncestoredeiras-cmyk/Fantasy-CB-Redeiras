@@ -46,7 +46,7 @@ test('app screens are structured around available data, not cosmetic-only placeh
 test('mobile UX CSS loads last, with a single basket visual system and compact tabs',()=>{
  const html=read('site/index.html'),css=read('site/ux-v2.css');
  const sheets=[...html.matchAll(/href="([^"]+\.css)"/g)].map(m=>m[1]);
- assert.equal(sheets.at(-1),'ux-v2.css');
+ assert.deepEqual(sheets.slice(-3),['workspace.css','ux-v2.css','polish.css']);
  assert.match(css,/aspect-ratio:15\/14/);
  assert.match(css,/\.court-half \.court-rim/);
  assert.match(css,/\.admin-tab-panel\[hidden\]/);
