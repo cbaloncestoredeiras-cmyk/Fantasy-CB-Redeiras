@@ -85,6 +85,8 @@ function home(){
    status.status==='closed'?'Mercado pechado':'Consulta o calendario';
  const cta=d.team?'Ver o meu quinteto':'Crear o meu quinteto';
  const allRows=d.leaderboard||[];
+ const lastFinalized=d.fixtures.filter(f=>f.status==='finalized').sort((a,b)=>Number(b.round_number)-Number(a.round_number))[0];
+ const lastWeek=lastFinalized&&d.team?(d.weeklyRanking||[]).find(r=>r.team_id===d.team.id&&Number(r.round_number)===Number(lastFinalized.round_number)):null;
  return pageHeader('A túa xornada','Os datos que importan para competir, nun só lugar.',
    '<div class="actions"><button class="btn primary" data-page="market">Abrir mercado</button></div>')+
  '<section class="dashboard-match-hero" aria-label="Estado da xornada e acceso ao quinteto">'+
@@ -94,7 +96,11 @@ function home(){
  '<div class="dashboard-match-meta"><span class="tag '+(open?'good':'warn')+'">'+(open?'Mercado aberto':'Mercado pechado')+'</span>'+
  '<span class="dashboard-deadline">'+h(closeLabel)+'</span></div>'+
  '<button class="btn primary" data-page="'+(d.team?'team':'market')+'">'+cta+'</button></div>'+
- '<img class="dashboard-match-emblem" src="assets/redeiras-logo.webp" alt="" loading="lazy"></section>'+
+ '<aside class="dashboard-performance">'+
+ '<img class="dashboard-match-emblem" src="assets/redeiras-logo.webp" alt="" loading="lazy">'+
+ '<div class="dashboard-performance-score"><span>'+(lastWeek?'ÚLTIMA XORNADA · X'+lastFinalized.round_number:'PUNTOS TOTAIS')+'</span>'+
+ '<strong>'+(lastWeek?pts(lastWeek.round_points):pts(points))+'</strong><small>puntos Fantasy</small>'+
+ (myRow?.position?'<em>'+h(myRow.position)+'º posto xeral</em>':'')+'</div></aside></section>'+
  '<div class="grid four dashboard-kpis" aria-label="Resumo do equipo">'+[
    ['A túa posición',rank,'Clasificación xeral'],
    ['Puntos Fantasy',pts(points),'Xornadas publicadas'],
