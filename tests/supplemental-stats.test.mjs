@@ -20,7 +20,7 @@ test('Basketball Stats Assistant CSV imports REB and AST, including measured zer
  // the interface must not silently equate Pola and Edu.
  const rows=rowsFromTable([
   ['Jugador','PIR','MIN','REB','AST'],
-  ...vals.map(([name,_min,pir,reb,ast])=>[name,pir,'10',reb,ast])
+  ...vals.map(([name,min,pir,reb,ast])=>[name,pir,min,reb,ast])
  ],players);
  const matched=rows.filter(x=>x.player_id);
  assert.equal(matched.length,11);
@@ -31,6 +31,7 @@ test('Basketball Stats Assistant CSV imports REB and AST, including measured zer
  assert.equal(rows.reduce((s,x)=>s+x.rebounds,0),34);
  const zero=rows.find(x=>x.name==='Brais');
  assert.equal(zero.rebounds,0);
+ assert.equal(zero.minutes,3.35);
  assert.equal(zero.rebounds_recorded,true);
  assert.equal(zero.assists_recorded,true);
 });
