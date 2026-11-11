@@ -277,6 +277,19 @@ root.addEventListener('click',async e=>{
    renderAuth();return;
  }
  // Switch between tool panels without replacing form fields or draft selections.
+ const marketFilter=e.target.closest('[data-market-filter]');
+ if(marketFilter){
+   state.filter=marketFilter.dataset.marketFilter;
+   root.querySelectorAll('[data-market-filter]').forEach(btn=>{
+     const on=btn.dataset.marketFilter===state.filter;
+     btn.setAttribute('aria-pressed',String(on));btn.classList.toggle('active',on);
+   });
+   const select=root.querySelector('#pos-filter');
+   if(select)select.value=state.filter;
+   const holder=root.querySelector('#market-table');
+   if(holder)holder.innerHTML=marketTable();
+   return;
+ }
  const marketTab=e.target.closest('[data-market-tool]');
  if(marketTab){
    const key=marketTab.dataset.marketTool;
@@ -311,8 +324,8 @@ root.addEventListener('click',async e=>{
  if(element.dataset.page){state.page=element.dataset.page;state.mobileMenuOpen=false;state.search='';state.filter='all';window.scrollTo({top:0,behavior:'instant'});present();root.querySelector('#main-content')?.focus({preventScroll:true});return;}
  if(element.dataset.player){showPlayer(element.dataset.player);return;}
  const action=element.dataset.action;if(!action)return;
- element.disabled=true;
- try{await interact(action,element);}catch(error){toast(error.message||String(error),true);}finally{if(element.isConnected)element.disabled=false;}
+ element.disabled=true;element.classList.add('is-working');
+ try{await interact(action,element);}catch(error){toast(error.message||String(error),true);}finally{if(element.isConnected){element.disabled=false;element.classList.remove('is-working');}}
 });
 function authRecoveryError(error){
  if(error?.status===429||['over_email_send_rate_limit','over_request_rate_limit'].includes(error?.code))
@@ -372,7 +385,14 @@ root.addEventListener('input',e=>{
  if(e.target.id==='search'){state.search=e.target.value;const box=document.getElementById('market-table');if(box)box.innerHTML=marketTable();}
 });
 root.addEventListener('change',async e=>{
- if(e.target.id==='pos-filter'){state.filter=e.target.value;const box=document.getElementById('market-table');if(box)box.innerHTML=marketTable();}
+ if(e.target.id==='pos-filter'){
+   state.filter=e.target.value;const box=document.getElementById('market-table');if(box)box.innerHTML=marketTable();
+   root.querySelectorAll('[data-market-filter]').forEach(btn=>{
+     const on=btn.dataset.marketFilter===state.filter;
+     btn.setAttribute('aria-pressed',String(on));btn.classList.toggle('active',on);
+   });
+ }
+ if(e.target.id==='market-sort'){state.marketSort=e.target.value;const box=document.getElementById('market-table');if(box)box.innerHTML=marketTable();}
  if(e.target.id==='ranking-round'){state.rankRound=e.target.value;present();}
   if(e.target.id==='analytics-sort'){state.analyticsSort=e.target.value;present();}
  if(e.target.id==='admin-photo-player'){state.adminPlayer=e.target.value;present();}
