@@ -2,7 +2,7 @@ import {brokerProfileHtml} from './broker-view.js';
 import {callupDetail} from './callups.js';
 import {guidePage,state,renderAuth,renderForbidden,securityPage,shell,home,market,marketTable,team,ranking,analytics,calendar,voting,toast,rpc,current,player,prices,h,dateText,panel,pageHeader,admin,euroShort,playerAvatar} from './pages.js';
 import {adminView,adminAction,handleStatsFile} from './admin.js';
-import {validateLineup,transferPlan,brokerEstimate,pts} from './logic.js';
+import {validateLineup,transferPlan,originalPlayerUsage,brokerEstimate,pts} from './logic.js';
 import {availabilityWarning,unavailablePlayers} from './availability.js';
 import {formSection,priceHistorySection} from './insights-view.js';
 import {playerAdvancedPanel} from './analytics-view.js';
@@ -47,6 +47,8 @@ async function load(){
  ]);
  const roster=teams.length?await toPromise(c.from('team_rosters').select('player_id').eq('team_id',teams[0].id)):[];
  const transfers=teams.length?await toPromise(c.from('transfers').select('*').eq('team_id',teams[0].id).order('executed_at',{ascending:true})):[];
+ const transferStatusR=teams.length?await c.rpc('fantasy_transfer_status',{p_team:teams[0].id}):{data:null,error:null};
+ if(transferStatusR.error)console.warn('Contador de cambios non dispoñible:',transferStatusR.error.message);
  const [rankR,weeklyR,popularityR,coachAccessR]=await Promise.all([
   c.rpc('fantasy_leaderboard',{p_season:season.id}),
   c.rpc('fantasy_round_leaderboard',{p_season:season.id}),
@@ -75,7 +77,7 @@ async function load(){
  const fullPlayers=players.map(p=>({...p,positions:positionMap[p.id]||[]}));
  const playerMap=Object.fromEntries(fullPlayers.map(p=>[p.id,p]));
  state.data={role,club:clubR.data,season,players:fullPlayers,playerMap,prices:priceMap,photoUrls,fixtures,
- team:teams[0]||null,roster:roster.map(r=>r.player_id),transfers,leaderboard:rankR.data||[],weeklyRanking:weeklyR.data||[],weeklyRankingError:weeklyR.error?.message||null,popularity:popularityR.data||[],
+ team:teams[0]||null,roster:roster.map(r=>r.player_id),transfers,transferStatus:transferStatusR.data||null,leaderboard:rankR.data||[],weeklyRanking:weeklyR.data||[],weeklyRankingError:weeklyR.error?.message||null,popularity:popularityR.data||[],
  alias:alias[0]?.display_name||'Redeirista',callups,eligibleFixtures:voterAccount[0]?.player_id?eligible.map(x=>x.fixture_id):[],
  linkedPlayer:voterAccount[0]?.player_id||null,coachVoter:coachAccessR.error?false:coachAccessR.data===true,
  stats,history,metrics:metricsR.data,launchStatus:launchR.data};
@@ -241,8 +243,8 @@ async function interact(action,element){
   if(risky.length&&!confirm('Estás fichando xogadores lesionados ou dubidosos: '+risky.map(p=>p.name).join(', ')+'. Seguen ocupando praza e non dan cambios extra. Continuar?'))return;
   if(d.team){
     const x=transferPlan(d.roster,state.draft,d.team.cash,d.prices);
-    const n=d.transfers.filter(t=>t.round_number===current().pending?.round_number).length;
-    if(x.cashAfter<0||x.changes+n>3)throw Error('Saldo insuficiente ou esgotaches os tres cambios');
+    const usage=originalPlayerUsage(d.transferStatus,d.roster,state.draft,d.transfers,current().pending?.round_number);
+    if(x.cashAfter<0||!usage.valid)throw Error('Saldo insuficiente ou superaches o límite de 3 xogadores orixinais substituídos');
     if(x.changes===0)return toast('Non hai fichaxes novos.');
     await rpc('fantasy_change_lineup',{p_team:d.team.id,p_player_ids:state.draft});
   }else{
