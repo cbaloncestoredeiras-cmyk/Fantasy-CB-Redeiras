@@ -12,7 +12,7 @@ export function simulatedLineup(data,draft,round){
  const usage=originalPlayerUsage(data.transferStatus,data.roster,draft,data.transfers,round);
  const spent=initial?0:usage.used;
  const changesLeft=initial?max:usage.remainingAfter;
- const valid=selection.valid && trade.cashAfter>=0 && changesLeft>=0 &&
+ const valid=selection.valid && trade.cashAfter>=0 && changesLeft>=0 && (initial||usage.valid) &&
    (!data.players||draft.every(id=>data.playerMap[id]&&Number(data.playerMap[id].available_from_round||0)<=Number(round)));
  const estimate=ids=>{
    if(ids.length!==5)return null;
