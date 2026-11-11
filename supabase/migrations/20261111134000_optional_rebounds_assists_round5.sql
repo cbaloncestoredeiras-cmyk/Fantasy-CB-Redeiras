@@ -118,6 +118,76 @@ begin
                            'team_count',v_after->'team_count');
 end; $function$;
 
+-- Admin-only complementary-stat import. Allows adding REB/AST after a
+-- published round without touching PIR, Fantasy points, prices or rankings.
+create or replace function public.fantasy_save_observed_stats(
+ p_fixture uuid,p_rows jsonb,p_note text default null)
+returns integer
+language plpgsql security definer
+set search_path=''
+as $function$
+declare
+ f public.fixtures%rowtype;
+ v_club uuid; v_r jsonb; v_pid uuid;
+ v_reb_ok boolean;v_ast_ok boolean;v_reb integer;v_ast integer;v_count integer:=0;
+begin
+ select * into f from public.fixtures where id=p_fixture for update;
+ if not found then raise exception 'Xornada non atopada';end if;
+ select club_id into v_club from public.seasons where id=f.season_id;
+ if auth.uid() is null or v_club is null or not private.is_admin(v_club)
+ then raise exception 'Só administración' using errcode='42501';end if;
+ if f.stats_finalized_at is null then
+   raise exception 'Primeiro garda as valoracións e o resultado; non existen estatísticas oficiais nesta xornada';
+ end if;
+ if jsonb_typeof(p_rows) is distinct from 'array'
+  or jsonb_array_length(p_rows) not between 1 and 40
+ then raise exception 'Debes enviar de 1 a 40 xogadores';end if;
+ if (select count(distinct value->>'player_id') from jsonb_array_elements(p_rows))
+   <>jsonb_array_length(p_rows)
+ then raise exception 'Hai xogadores repetidos';end if;
+ if length(coalesce(p_note,''))>500 then raise exception 'Nota demasiado longa (máximo 500 caracteres)';end if;
+ for v_r in select value from jsonb_array_elements(p_rows)
+ loop
+   v_pid:=(v_r->>'player_id')::uuid;
+   if not exists (select 1 from public.players p where p.id=v_pid and p.club_id=v_club)
+   then raise exception 'Xogador non recoñecido';end if;
+   v_reb_ok:=coalesce((v_r->>'rebounds_recorded')::boolean,false);
+   v_ast_ok:=coalesce((v_r->>'assists_recorded')::boolean,false);
+   if not v_reb_ok and not v_ast_ok then continue;end if;
+   if v_reb_ok then
+     v_reb:=(v_r->>'rebounds')::integer;
+     if v_reb is null or v_reb not between 0 and 100
+     then raise exception 'REB incorrectos para o xogador';end if;
+   end if;
+   if v_ast_ok then
+     v_ast:=(v_r->>'assists')::integer;
+     if v_ast is null or v_ast not between 0 and 100
+     then raise exception 'AST incorrectas para o xogador';end if;
+   end if;
+   update public.game_stats g set
+     rebounds=case when v_reb_ok then v_reb else g.rebounds end,
+     assists=case when v_ast_ok then v_ast else g.assists end,
+     rebounds_recorded=g.rebounds_recorded or v_reb_ok,
+     assists_recorded=g.assists_recorded or v_ast_ok,
+     revised_at=now()
+   where g.fixture_id=p_fixture and g.player_id=v_pid;
+   if not found then raise exception 'O xogador non ten estatísticas gardadas nesta xornada';end if;
+   v_count:=v_count+1;
+ end loop;
+ if v_count=0 then raise exception 'Indica polo menos un rebote ou unha asistencia observados';end if;
+ if nullif(trim(coalesce(p_note,'')),'') is not null then
+  update public.fixtures set supplemental_stats_note=trim(p_note) where id=p_fixture;
+ end if;
+ insert into public.fantasy_audit(club_id,actor_id,event_type,details)
+ values(v_club,auth.uid(),'import_supplemental_stats',
+   jsonb_build_object('fixture',p_fixture,'players',v_count,
+    'has_note',nullif(trim(coalesce(p_note,'')),'') is not null));
+ return v_count;
+end;
+$function$;
+revoke all on function public.fantasy_save_observed_stats(uuid,jsonb,text) from public,anon,authenticated;
+grant execute on function public.fantasy_save_observed_stats(uuid,jsonb,text) to authenticated;
+
 -- Partial X5 footage, stopped after Yoel's injury. Match exactly by registered
 -- Fantasy names, except the user-confirmed Dunkos = Adán alias. The separate
 -- source row "Pola" (#30, REB=3, AST=0) is NOT assigned to anyone without proof.
