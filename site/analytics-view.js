@@ -23,8 +23,8 @@ export function courtLineup(data,ids,avatar){
  const base=selected.find(p=>p.positions.includes('BA'))||selected[0];
  const inside=selected.find(p=>p.id!==base.id&&(p.positions.includes('AP')||p.positions.includes('P')))||selected.find(p=>p.id!==base.id)||base;
  const others=selected.filter(p=>p.id!==base.id&&p.id!==inside.id);
- const spots=[{p:base,x:50,y:84},{p:inside,x:50,y:22},
-  ...others.map((p,i)=>({p,x:[23,77,50][i],y:[44,44,63][i]}))];
+ const spots=[{p:base,x:50,y:86},{p:inside,x:50,y:22},
+  ...others.map((p,i)=>({p,x:[23,77,50][i],y:[44,44,59][i]}))];
  const price=id=>data.prices?.[id]==null?'':new Intl.NumberFormat('es-ES',{maximumFractionDigits:2}).format(Number(data.prices[id])/1000000)+' M€';
  const valid=ids.length===5;
  return '<div class="court-wrapper"><div class="court-visual court-half" role="group" aria-label="Media pista de baloncesto: quinteto orientativo e perfís dos xogadores">'+
