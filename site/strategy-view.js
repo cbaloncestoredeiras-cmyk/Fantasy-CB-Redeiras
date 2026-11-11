@@ -16,15 +16,15 @@ export function simulatorPanel(data,draft,round,open){
  return '<section class="panel simulator-panel" aria-label="Simulador de fichaxes">'+
  '<div class="row"><div><h2>Simulador de fichaxes</h2><p class="mini muted">Calcula o efecto dos cambios antes de confirmalos. Aquí non se garda ningunha operación.</p></div><span class="tag">SIMULACIÓN</span></div>'+
  '<div class="simulator-metrics"><div><span>Efectivo resultante</span><strong>'+balance+'</strong></div>'+
- '<div><span>Cambios simulados</span><strong>'+s.changes+(data.team?' / '+s.max:'')+'</strong></div>'+
- '<div><span>Cambios dispoñibles despois</span><strong>'+(data.team?Math.max(0,s.changesLeft):s.max)+'</strong></div></div>'+
+ '<div><span>Substitucións desta operación</span><strong>'+s.changes+'</strong></div>'+
+ '<div><span>Orixinais cambiados tras gardar</span><strong>'+(data.team?s.uniqueOriginalChangesAfter+' / '+s.max:'0 / '+s.max)+'</strong></div></div>'+
  '<div class="simulator-movements"><div><h3>'+(data.team?'Saen do quinteto':'Quinteto en preparación')+'</h3>'+
  (data.team?list(s.removed,'out','Sen saídas'):list(draft,'in','Selecciona os teus cinco xogadores'))+'</div>'+
  '<div><h3>'+(data.team?'Entran no quinteto':'Custo total')+'</h3>'+
  (data.team?list(s.added,'in','Sen entradas'):'<b>'+euro(s.selection.cost)+'</b>')+'</div></div>'+
  '<div class="simulation-status '+(s.valid?'ok':'warn')+'" role="status">'+h(status)+'</div>'+
  '<div class="simulator-forecast"><h3>Referencia de rendemento</h3>'+forecast+
- '<p class="mini muted">É unha comparación de medias pasadas, non unha predición de puntos nin unha promesa de rendemento.</p></div>'+
+ '<p class="mini muted">É unha comparación de medias pasadas, non unha predición de puntos nin unha promesa de rendemento. Non hai límite de veces para gardar cambios; só de tres xogadores distintos do quinteto inicial.</p></div>'+
  (s.hasDifferences?'<button type="button" class="btn small secondary" data-action="restore-simulation">'+
  (data.team?'Restaurar quinteto actual':'Limpar selección')+'</button>':'')+'</section>';
 }
