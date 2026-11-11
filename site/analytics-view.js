@@ -12,7 +12,7 @@ export function playerAdvancedPanel(data,id){
  const completed=m.games.slice().reverse();
  const fixtureNotes=new Map((data.fixtures||[]).filter(f=>f.supplemental_stats_note).map(f=>[f.id,f.supplemental_stats_note]));
  const rows=completed.map(g=>'<tr><th scope="row">X'+g.round+
- (fixtureNotes.has(g.fixture_id)?' <span class="tag warn" title="REB/AST parciais">parcial</span>':'')+
+ (fixtureNotes.has(g.fixture_id)&&/parcia|interrompid|incomplet/i.test(fixtureNotes.get(g.fixture_id))?' <span class="tag warn" title="Estatísticas observadas parcialmente">parcial</span>':'')+
  '</th><td>'+pts(g.fantasy_points)+'</td><td>'+pts(g.pir)+'</td><td>'+pts(g.points)+'</td>'+
  '<td>'+(g.rebounds_recorded===true?pts(g.rebounds):'—')+'</td>'+
  '<td>'+(g.assists_recorded===true?pts(g.assists):'—')+'</td>'+
