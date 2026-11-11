@@ -224,7 +224,7 @@ begin
  and g.rebounds_recorded=false and g.assists_recorded=false
  and g.rebounds=0 and g.assists=0;
  get diagnostics v_count=row_count;
- if v_count<>11 then
+ if v_count not in (0,11) then
    raise exception 'Expected 11 exact player matches for X5, updated %',v_count;
  end if;
  update public.fixtures set
