@@ -142,7 +142,18 @@ export function rowsFromTable(table,players){
   };
   return table.slice(1).filter(row=>row.some(x=>String(x??'').trim())).map((row,i)=>{
     const name=String(row[cols.player]??'').trim(), player_id=names[norm(name)]||'';
-    const minutes=cols.min>=0?number(row[cols.min]):0;
+    // Basketball Stats Assistant exports time as MM:SS (e.g. 03:21),
+    // while some federation CSVs use numeric minutes. Accept both.
+    const parseMinutes=value=>{
+      const raw=String(value??'').trim();
+      const mmss=raw.match(/^(\d{1,2}):(\d{2})$/);
+      if(mmss){
+        const m=Number(mmss[1]),sec=Number(mmss[2]);
+        return sec<60?Math.round((m+sec/60)*100)/100:NaN;
+      }
+      return number(value);
+    };
+    const minutes=cols.min>=0?parseMinutes(row[cols.min]):0;
     const pir=number(row[cols.pir]);
     if(!Number.isFinite(pir)||!Number.isFinite(minutes))throw new Error('Número incorrecto na fila '+(i+2));
     // Blank or missing REB/AST means "unknown", whereas numeric 0 is
