@@ -78,7 +78,7 @@ test('admin imports REB/AST after publishing via separate RPC; published Fantasy
  assert.match(admin,/data-stat-reb/);
  assert.match(admin,/data-stat-ast/);
  assert.match(admin,/save-observed-stats/);
- assert.match(admin,/fantasy_save_observed_stats/);
+ assert.match(admin,/fantasy_save_boxscore/);
  assert.match(admin,/data-action="save-stats"/);
  assert.match(app,/'save-observed-stats'/);
  assert.match(migration,/public\.fantasy_save_observed_stats/);
