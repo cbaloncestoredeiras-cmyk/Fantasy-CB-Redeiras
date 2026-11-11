@@ -1,0 +1,259 @@
+/* Fantasy Redeiras UX v2
+   Function-first restructuring of the ClickUp-inspired workspace.
+   Local CSS only. All scoring, security and transfer behavior lives elsewhere. */
+:root{--ux-ink:#102f46;--ux-line:#e0e9ef;--ux-cyan:#33a9db}
+[hidden],.admin-tab-panel[hidden],.market-tool-panel[hidden]{display:none!important}
+
+/* HOME: immediately useful, personalized competition overview. */
+.dashboard-match-hero{
+ display:flex;align-items:center;justify-content:space-between;gap:22px;
+ padding:28px clamp(22px,3vw,38px);border-radius:16px;
+ background:linear-gradient(113deg,#092b44,#144b69);
+ color:#fff;position:relative;overflow:hidden;
+ box-shadow:0 12px 35px #09253c1b;min-height:230px;
+}
+.dashboard-match-hero:after{content:"";position:absolute;right:0;bottom:-50px;width:270px;height:170px;
+ background:url("assets/marine-waves.svg") center/contain no-repeat;opacity:.2;pointer-events:none;}
+.dashboard-match-content{position:relative;z-index:1;min-width:0;max-width:720px}
+.dashboard-kicker{font-size:10px;font-weight:850;letter-spacing:1.3px;color:#addff3}
+.dashboard-match-hero h2{color:white;font-size:clamp(26px,2.7vw,39px);line-height:1.12;letter-spacing:-1.1px;margin:10px 0}
+.dashboard-match-rival{color:#d3e9f3;font-size:14px;line-height:1.45;margin:4px 0 16px}
+.dashboard-match-meta{display:flex;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:21px}
+.dashboard-match-meta .tag{background:#ffffff24;color:#fff;border:1px solid #ffffff32}
+.dashboard-deadline{color:#d8f1fc;font-size:12px;font-weight:750}
+.dashboard-match-hero .btn.primary{background:#b1e8fb;border-color:#b1e8fb;color:#082c46}
+.dashboard-match-hero .btn.primary:hover{background:white;border-color:white}
+.dashboard-match-emblem{position:relative;z-index:1;width:clamp(98px,13vw,156px);height:auto;max-height:185px;object-fit:contain;filter:drop-shadow(0 7px 14px #041b2a6b);flex:none}
+.dashboard-kpis{margin:17px 0}
+.dashboard-kpis>.panel{min-height:126px}
+.dashboard-kpis .kpi{overflow-wrap:anywhere}
+.dashboard-opponent{font-size:15px!important;font-weight:800!important;color:#0b354e!important;margin:10px 0!important}
+.dashboard-snapshots>.panel{min-height:185px}
+.dashboard-snapshots .row h2{margin:0}
+.dashboard-snapshots .btn{margin-top:12px}
+.dashboard-ranking-row{
+ display:flex;align-items:center;justify-content:space-between;gap:9px;
+ padding:10px 6px;border-bottom:1px solid #eef2f5;font-size:12px;
+}
+.dashboard-ranking-row:last-of-type{border-bottom:none}
+.dashboard-ranking-row b{white-space:nowrap;color:#123b52}
+.dashboard-ranking-row.mine{background:#ebf8fe;border-radius:8px;padding-inline:10px;color:#0b5e82}
+.sea-home-strip{margin-top:18px}
+.sea-home-message{padding:21px}
+.sea-home-message h2{font-size:19px}
+.sea-home-message p{max-width:none}
+.sea-home-alert{padding:19px}
+
+/* MARKET: player discovery and changes before secondary analytics. */
+.market-status-strip{
+ display:flex;flex-wrap:wrap;align-items:center;gap:8px 18px;
+ background:#fff;border:1px solid var(--ux-line);border-radius:13px;
+ padding:13px 17px;margin-bottom:17px;font-size:12px;color:#537386;
+}
+.market-status-strip b{color:#173c52}
+.market-status-strip>.tag{margin-left:auto}
+.grid.two.market-layout{grid-template-columns:minmax(0,1.72fr) minmax(275px,.88fr);align-items:start;gap:16px}
+.market-panel{min-width:0}
+.market-panel .callup-summary{margin:0 0 14px}
+.market-panel .toolbar{display:flex;gap:8px;flex-wrap:wrap}
+.market-panel .toolbar input{flex:1 1 210px}
+.market-panel .toolbar select{flex:0 1 180px;min-width:140px}
+.market-tools{margin-top:20px;scroll-margin-top:90px}
+.market-tools-heading{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+.market-tools-heading h2{color:#102d41;font-size:18px;margin:0 0 4px;letter-spacing:-.35px}
+.market-tools-heading p{font-size:12px;color:#6b8291;margin:0}
+.market-tool-tabs{
+ display:flex;gap:7px;overflow-x:auto;scrollbar-width:thin;padding:0 0 12px;
+}
+.market-tool-tab{
+ border:1px solid #dee8ef;border-radius:10px;background:white;color:#527184;
+ padding:10px 16px;min-height:43px;font-size:12px;font-weight:800;white-space:nowrap;
+}
+.market-tool-tab.active,.market-tool-tab[aria-selected=true]{
+ background:#e8f6fd;border-color:#9bd7f0;color:#095b82;
+ box-shadow:inset 0 -2px #33a9db;
+}
+.market-tool-panel>.panel{margin:0}
+.market-tool-panel .popularity-panel{margin:0}
+.market-tools .market-tool-panel{min-width:0}
+.draft-panel{scroll-margin-top:93px}
+.draft-panel>.btn.full{margin-top:10px}
+.market-results{min-width:0}
+
+/* TEAM: the board is a real half of a FIBA basketball court (15 x 14 m).
+   The center line is at bottom and only ONE hoop at top. */
+.team-court-panel{padding:20px}
+.team-court-header{display:flex;align-items:start;justify-content:space-between;gap:12px;margin-bottom:14px}
+.team-court-header h2{margin:0 0 3px}
+.team-court-header p{margin:0}
+.court-wrapper{max-width:620px;margin:0 auto}
+.court-visual.court-half{
+ width:100%;aspect-ratio:15/14;
+ border:5px solid #7dc4df;border-radius:14px;
+ background:#87cce8;
+ background-image:linear-gradient(145deg,#a7e1f3 0%,#71bdda 55%,#60adcc 100%);
+ box-shadow:inset 0 0 0 2px #ffffff55,0 10px 30px #143f5913;
+ isolation:isolate;
+}
+.court-half::before{background:none;display:none}
+.court-half .court-lines{
+ position:absolute;inset:0;width:100%;height:100%;
+ stroke:#f0fdff;stroke-width:2.8;stroke-linecap:round;stroke-linejoin:round;
+ fill:none;opacity:.93;pointer-events:none;
+}
+.court-half .court-rim{stroke:#e85c45;stroke-width:4}
+.court-half .court-backboard{stroke-width:5}
+.court-half .court-three-point{stroke-width:3.3}
+.court-basket-label{
+ position:absolute;top:3%;left:50%;transform:translateX(-50%);
+ font-size:9px;letter-spacing:1.7px;font-weight:900;color:#12597a;
+ background:#e2f8ffbc;border-radius:5px;padding:3px 8px;
+ pointer-events:none;
+}
+.court-half .court-player{
+ position:absolute;left:var(--court-x);top:var(--court-y);
+ transform:translate(-50%,-50%);
+ width:clamp(82px,21%,108px);max-width:26%;min-width:0;min-height:0;
+ display:flex;align-items:center;flex-direction:column;gap:2px;
+ background:#072a46f0;border:1px solid #d6eefd;
+ border-radius:11px;padding:8px 5px 7px;
+ box-shadow:0 6px 16px #0d3a5540;
+ color:white;
+}
+.court-half .court-player:hover,.court-half .court-player:focus-visible{background:#124663}
+.court-half .court-player .playerlogo{width:32px;height:32px;margin:0 0 3px;border-radius:50%;border:1px solid #bce1ef}
+.court-half .court-player strong{font-size:12px;font-weight:850;line-height:1.2;text-align:center;max-width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.court-half .court-player small{font-size:10px;line-height:1.1;opacity:.85}
+.court-half .court-player-price{font-size:10px;color:#a7e8ff;font-weight:800;line-height:1.2}
+.court-caption{margin:12px 2px 0;color:#658397;line-height:1.55}
+.team-finances{margin-top:17px;margin-bottom:17px}
+.team-list-view{border:1px solid var(--ux-line);border-radius:13px;background:white;margin-top:17px;overflow:hidden}
+.team-list-view summary{
+ display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:9px;
+ cursor:pointer;color:#19435a;padding:16px 20px;font-size:13px;font-weight:800;list-style:none;
+}
+.team-list-view summary::-webkit-details-marker{display:none}
+.team-list-view summary::after{content:"⌄";color:#337ca1;font-size:19px}
+.team-list-view[open] summary{border-bottom:1px solid var(--ux-line)}
+.team-list-view[open] summary::after{content:"⌃"}
+.team-list-view>.panel{border:0;box-shadow:none}
+.team-support{margin-bottom:10px}
+
+/* RANKING: top three, personal placement and movements from published results. */
+.ranking-topline{display:flex;align-items:end;justify-content:space-between;gap:16px;margin-bottom:18px;flex-wrap:wrap}
+.ranking-topline .ranking-selector{flex:0 1 310px;min-width:min(100%,220px)}
+.ranking-topline .ranking-selector label{display:block;font-size:11px;font-weight:750;margin-bottom:7px;color:#4a6678}
+.ranking-topline .ranking-selector select{width:100%}
+.ranking-me{padding:10px 16px;background:#e9f7fd;border:1px solid #cfe9f4;border-radius:12px;display:flex;gap:8px 20px;align-items:center;flex-wrap:wrap}
+.ranking-me span{font-size:12px;color:#356b84}
+.ranking-me strong{font-size:15px;color:#073b55}
+.ranking-podium{
+ display:grid;grid-template-columns:repeat(3,minmax(0,1fr));
+ gap:12px;margin-bottom:18px;
+}
+.podium-card{
+ display:flex;flex-direction:column;gap:8px;min-width:0;min-height:146px;
+ border:1px solid var(--ux-line);background:white;border-radius:14px;
+ padding:17px;box-shadow:var(--workspace-shadow);
+}
+.podium-1{background:linear-gradient(145deg,#f1fafe,#fff);border-color:#9eddf3}
+.podium-rank{display:inline-flex;align-items:center;justify-content:center;background:#e6f5fb;color:#155c7d;border-radius:9px;font-size:14px;font-weight:850;width:42px;height:33px}
+.podium-1 .podium-rank{background:#0d3b55;color:white}
+.podium-card strong{display:block;white-space:normal;overflow-wrap:anywhere;font-size:14px;color:#0b3047;line-height:1.3}
+.podium-card small{display:block;font-size:10px;color:#668094;font-weight:600;margin-top:3px}
+.podium-card>b{margin-top:auto;color:#0e4665;font-size:22px}
+.podium-card>b small{display:inline;font-size:11px}
+.podium-card.mine{box-shadow:0 0 0 2px #66bce0 inset}
+.ranking-own{background:#edf9fe!important}
+.ranking-own td{border-bottom-color:#cfe6f1}
+.rank-movement{
+ display:inline-flex;align-items:center;gap:2px;
+ margin-left:5px;font-size:10px;font-weight:900;border-radius:999px;
+ padding:2px 6px;white-space:nowrap;vertical-align:middle;
+}
+.rank-movement.up{background:#e5f7ef;color:#147250}
+.rank-movement.down{background:#fff0ea;color:#b24a38}
+.rank-movement.steady{background:#eef3f6;color:#73869a}
+.ranking-cards .rank-movement{margin:6px 0 0}
+.ranking-move-note{margin:12px 2px 18px}
+
+/* ADMIN: task-based tabs, keeping all forms mounted to preserve drafts. */
+.admin-fixture-selector>.field{margin:0!important}
+.admin-fixture-selector{padding:15px 19px;border:1px solid var(--ux-line);background:white;border-radius:12px;margin:0 0 20px}
+.admin-fixture-selector label{display:block;font-size:12px;font-weight:850;color:#1e455c;margin-bottom:8px}
+.admin-fixture-selector select{max-width:min(100%,460px)}
+.admin-section-header p{font-size:12px;color:#758a98;line-height:1.6;margin:6px 0 13px}
+.admin-tabs{
+ display:flex;align-items:stretch;gap:6px;
+ max-width:100%;overflow-x:auto;overscroll-behavior-inline:contain;
+ scrollbar-width:thin;border-bottom:1px solid var(--ux-line);
+ padding:0 0 0;margin-bottom:18px;
+}
+.admin-tab{
+ flex:0 0 auto;border:0;border-bottom:3px solid transparent;
+ background:transparent;color:#647d90;min-height:47px;
+ padding:10px 17px;font-size:12px;font-weight:800;white-space:nowrap;cursor:pointer;
+}
+.admin-tab:hover{background:#f0f8fc;color:#165e82}
+.admin-tab.active,.admin-tab[aria-selected=true]{border-bottom-color:#33a9db;color:#0c6b95;background:#eef9fd}
+.admin-tab-panel{display:grid;gap:16px;min-width:0}
+.admin-tab-panel>.grid{min-width:0}
+.admin-tab-panel>.panel{min-width:0}
+.admin-tab-panel .admin-stats-wrap{max-width:100%;overflow-x:auto}
+.admin-tab-panel .panel h2{scroll-margin-top:180px}
+
+/* Responsive screen efficiency and touch sizes. */
+@media(max-width:1050px){
+ .grid.two.market-layout{grid-template-columns:minmax(0,1fr)}
+ .draft-panel{order:2}
+}
+@media(max-width:639px){
+ .dashboard-match-hero{min-height:0;padding:23px 20px;border-radius:13px}
+ .dashboard-match-hero h2{font-size:27px}
+ .dashboard-match-rival{font-size:13px}
+ .dashboard-match-emblem{display:none}
+ .dashboard-match-meta{gap:8px;margin-bottom:16px}
+ .dashboard-deadline{font-size:11px}
+ .dashboard-kpis>.panel{min-height:104px}
+ .dashboard-snapshots>.panel{min-height:0}
+ .market-status-strip{gap:8px 14px;padding:12px 13px;font-size:11px}
+ .market-status-strip>.tag{margin-left:0}
+ .market-panel .toolbar select{flex:1 1 100%;width:100%}
+ .market-tools-heading h2{font-size:17px}
+ .market-tool-tabs{gap:5px}
+ .market-tool-tab{min-height:42px;padding:9px 13px;font-size:11px}
+ .team-court-panel{padding:15px 12px}
+ .team-court-header{padding-inline:3px}
+ .court-visual.court-half{border-width:4px;aspect-ratio:15/14}
+ .court-half .court-lines{stroke-width:3.1}
+ .court-half .court-player{width:clamp(76px,23%,91px);max-width:27%;padding:6px 4px 5px;border-radius:9px}
+ .court-half .court-player .playerlogo{width:28px;height:28px;margin:0 0 2px}
+ .court-half .court-player strong{font-size:11px}
+ .court-half .court-player small{font-size:9px}
+ .court-half .court-player-price{font-size:9px}
+ .court-caption{font-size:11px}
+ .ranking-podium{gap:9px;grid-template-columns:repeat(3,minmax(0,1fr))}
+ .podium-card{min-height:133px;padding:12px 9px;border-radius:12px;gap:6px}
+ .podium-card strong{font-size:12px}
+ .podium-card>b{font-size:17px}
+ .podium-rank{width:33px;height:28px;font-size:12px}
+ .ranking-me{width:100%;justify-content:space-between;padding:11px}
+ .admin-fixture-selector{padding:13px;margin-bottom:13px}
+ .admin-tabs{position:sticky;top:67px;background:#f6f8fb;z-index:10;overscroll-behavior:contain}
+ .admin-tab{min-height:47px;padding:10px 14px}
+ .team-finances .panel{padding:14px 12px}
+ .team-finances .kpi{font-size:22px}
+ .team-finances .kpi-label{font-size:11px}
+}
+@media(max-width:370px){
+ .court-half .court-player{width:77px;padding:5px 3px}
+ .court-half .court-player .playerlogo{width:24px;height:24px}
+ .court-half .court-player strong{font-size:10px}
+ .court-half .court-player small{font-size:8px}
+ .court-half .court-player-price{font-size:8px}
+ .dashboard-match-hero h2{font-size:25px}
+ .ranking-podium{grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}
+ .podium-card{padding:10px 7px}
+ .podium-card>b{font-size:15px}
+}
+@media(prefers-reduced-motion:reduce){.market-tool-tab,.admin-tab{transition:none}}
