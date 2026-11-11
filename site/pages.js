@@ -1,5 +1,5 @@
 import {canVoteFixture} from './vote-access.js';
-import {euro,pts,escapeHtml as h,byId,validateLineup,transferPlan,brokerEstimate,pickUpcoming,parseDelimited,rowsFromTable} from './logic.js';
+import {euro,pts,escapeHtml as h,byId,validateLineup,transferPlan,originalPlayerUsage,brokerEstimate,pickUpcoming,parseDelimited,rowsFromTable} from './logic.js';
 import {availabilityBadge,availabilityWarning} from './availability.js';
 import {callupBadge,callupSummary} from './callups.js';
 import {formBadge,compareButton,comparisonPanel} from './insights-view.js';
@@ -77,7 +77,7 @@ function home(){
  const rank=myRow?.position==null?'—':myRow.position+' / '+d.leaderboard.length;
  const rosterValue=d.roster.reduce((n,id)=>n+Number(d.prices[id]||0),0);
  const balance=d.team?Number(d.team.cash||0):6000000;
- const changesUsed=d.transfers.filter(t=>t.round_number===pending?.round_number).length;
+ const changesUsed=originalPlayerUsage(d.transferStatus,d.roster,d.roster,d.transfers,pending?.round_number).used;
  const changesLeft=d.team?Math.max(0,3-changesUsed):3;
  const gameLabel=pending?.opponent?'CB Redeiras · '+h(pending.opponent):'Próximo partido por confirmar';
  const closeLabel=status.status==='open'?countdown(status.ms):
@@ -129,9 +129,10 @@ function market(){
  const d=state.data,{pending,open}=current();
  const isFirst=!d.team,summary=validateLineup(state.draft,d.playerMap,prices());
  const plan=d.team?transferPlan(d.roster,state.draft,d.team.cash,prices()):{cashAfter:6000000-summary.cost,changes:0};
- const used=d.transfers.filter(t=>t.round_number===pending?.round_number).length;
- const remaining=3-used-plan.changes;
- const legal=summary.valid&&plan.cashAfter>=0&&(!d.team||remaining>=0);
+ const usage=originalPlayerUsage(d.transferStatus,d.roster,state.draft,d.transfers,pending?.round_number);
+ const used=usage.used;
+ const remaining=usage.remainingAfter;
+ const legal=summary.valid&&plan.cashAfter>=0&&(!d.team||usage.valid);
  const active=['compare','simulate','popularity'].includes(state.marketTool)?state.marketTool:'compare';
  const marketTools=[
   ['compare','Comparador',comparisonPanel(d,state.compareIds,person)],
@@ -146,7 +147,7 @@ function market(){
  return pageHeader('Mercado de fichaxes','Busca xogadores, compara valoracións e prepara os cinco que competirán.')+
  '<div class="market-status-strip"><span><b>Saldo:</b> '+euroShort(isFirst?6000000:d.team.cash)+'</span>'+
  '<span><b>Quinteto:</b> '+state.draft.length+' / 5</span>'+
- '<span><b>Cambios:</b> '+(isFirst?'3':Math.max(0,3-used))+' / 3</span>'+
+ '<span><b>Cambios:</b> '+(isFirst?'0':used)+' / '+usage.max+' xogadores orixinais</span>'+
  '<span class="tag '+(open?'good':'warn')+'">'+(open?'Mercado aberto':'Mercado pechado')+'</span></div>'+
  '<a class="mobile-draft-link" href="#draft-summary"><span>Ver o teu quinteto</span><strong>'+state.draft.length+' / 5 · '+euroShort(summary.cost)+'</strong></a>'+
  '<div class="grid two market-layout"><section class="panel market-panel"><div class="row"><h2>Buscar e fichar xogadores</h2><span class="tag">'+d.players.length+' xogadores</span></div>'+
@@ -158,13 +159,13 @@ function market(){
  '<div class="row"><span class="muted mini">Custo de selección</span><b>'+euroShort(summary.cost)+'</b></div>'+
  '<div class="row" style="margin-top:10px"><span class="muted mini">Efectivo tras confirmar</span><b style="color:'+(plan.cashAfter<0?'var(--bad)':'var(--good)')+'">'+euroShort(plan.cashAfter)+'</b></div>'+
  '<div class="metricbar" style="margin-top:12px"><span style="width:'+Math.min(100,summary.cost/(isFirst?6000000:(d.team.cash+d.roster.reduce((n,id)=>n+(prices()[id]||0),0)))*100)+'%"></span></div>'+
- '<p class="help">Quinteto de 5 xogadores, mínimo un BA e un interior AP/P distintos. Máximo 3 fichaxes por xornada.</p>'+
+ '<p class="help">Quinteto de 5 xogadores: mínimo un BA e un AP/P distintos. Podes confirmar fichaxes en tantas ocasións como queiras, pero só podes substituír tres xogadores distintos do teu quinteto inicial da xornada.</p>'+
  (summary.errors.length?'<div class="notice">'+summary.errors.map(h).join(' · ')+'</div>':'')+
  (plan.cashAfter<0?'<div class="notice error">Fáltanche '+euro(-plan.cashAfter)+'</div>':'')+
  availabilityWarning(state.draft,d.playerMap)+
  (!open?'<div class="notice">Mercado pechado: podes preparar cambios, pero non gardalos ata a reapertura.</div>':'')+
  (isFirst?'<div class="field" style="margin:17px 0"><label>Nome do teu equipo</label><input id="team-name" maxlength="40" placeholder="Ex.: Redeiras de Ouro" autocomplete="off"></div>':
- '<p class="mini muted">Cambios nesta simulación: '+plan.changes+' · Xa utilizados: '+used+'</p>')+
+ '<p class="mini muted">Xogadores substituídos nesta operación: '+plan.changes+' · Orixinais usados: '+used+' / '+usage.max+' · Tras confirmar: '+usage.usedAfter+' / '+usage.max+'. Podes confirmar tantas veces como precises.</p>')+
  '<button class="btn primary full" data-action="save-lineup" '+(!legal||!open?'disabled':'')+'>'+
  (isFirst?'Crear equipo':'Confirmar fichaxes')+' →</button></aside></div>'+
  '<section class="market-tools" id="market-tools" aria-label="Análise e ferramentas do mercado">'+
