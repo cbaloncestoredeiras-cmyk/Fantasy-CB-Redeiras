@@ -65,7 +65,7 @@ begin
  insert into public.fantasy_audit(club_id,actor_id,event_type,details)
  values(v_club,auth.uid(),'import_stats',jsonb_build_object('fixture',p_fixture,'rows',v_count));
  return v_count;
-end; $function$
+end; $function$;
 
 CREATE OR REPLACE FUNCTION public.fantasy_correct_fixture(p_fixture uuid, p_rows jsonb, p_reason text)
  RETURNS jsonb
@@ -116,7 +116,7 @@ begin
    jsonb_build_object('fixture',p_fixture,'reason',trim(p_reason),'players',v_count));
  return jsonb_build_object('corrected',true,'round',f.round_number,'players_updated',v_count,
                            'team_count',v_after->'team_count');
-end; $function$
+end; $function$;
 
 -- Partial X5 footage, stopped after Yoel's injury. Match exactly by registered
 -- Fantasy names, except the user-confirmed Dunkos = Adán alias. The separate
