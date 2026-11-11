@@ -38,7 +38,7 @@ export function originalPlayerUsage(status,currentRoster=[],draft=currentRoster,
  const original=Array.isArray(status?.original_player_ids)?status.original_player_ids:currentRoster;
  const changed=Array.isArray(status?.changed_original_ids)?status.changed_original_ids:
    transfers.filter(x=>Number(x.round_number)===Number(round)).map(x=>x.sold_player_id);
- const sold=new Set(changed);
+ const sold=new Set(changed.filter(Boolean));
  const next=new Set(sold);
  const selected=new Set(draft);
  for(const id of currentRoster){
