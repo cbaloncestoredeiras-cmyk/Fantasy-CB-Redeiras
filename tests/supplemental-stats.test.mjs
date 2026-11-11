@@ -87,5 +87,5 @@ test('admin imports REB/AST after publishing via separate RPC; published Fantasy
  const supplementary=migration.slice(migration.indexOf('create or replace function public.fantasy_save_observed_stats'),
   migration.indexOf('-- Partial X5 footage'));
  assert.doesNotMatch(supplementary,/fantasy_persist_fixture_preview|next_price|team_round_scores|price_history|fantasy_points\s*=/i);
- assert.match(migration,/non se vinculou/i); // preserved conflict warning in fixture note
+ assert.match(migration,/NON asignada a Edu/i); // preserved conflict warning in fixture note
 });
