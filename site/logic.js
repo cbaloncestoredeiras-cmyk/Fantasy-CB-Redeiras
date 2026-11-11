@@ -134,6 +134,8 @@ export function rowsFromTable(table,players){
   // Never silently use EFF when PIR isn't present.
   if(cols.player===-1||cols.pir===-1)throw new Error('A táboa necesita columnas Xogador e PIR/Valoración (EFF non equivale a PIR).');
   const names=Object.fromEntries(players.map(p=>[norm(p.name),p.id]));
+  // Confirmed basketball-statistics alias, not a guess.
+  if(names.adan)names.dunkos=names.adan;
   const number=value=>{
     const raw=String(value??'').trim();if(raw==='')return 0;
     const n=Number(raw.replace(',','.'));return Number.isFinite(n)?n:NaN;
@@ -143,10 +145,20 @@ export function rowsFromTable(table,players){
     const minutes=cols.min>=0?number(row[cols.min]):0;
     const pir=number(row[cols.pir]);
     if(!Number.isFinite(pir)||!Number.isFinite(minutes))throw new Error('Número incorrecto na fila '+(i+2));
+    // Blank or missing REB/AST means "unknown", whereas numeric 0 is
+    // a real observed zero. These two states must never be conflated.
+    const optionalCount=(col,label)=>{
+      if(col<0||String(row[col]??'').trim()==='')return null;
+      const value=number(row[col]);
+      if(!Number.isInteger(value)||value<0||value>100)
+        throw new Error(label+' incorrecto na fila '+(i+2));
+      return value;
+    };
+    const rebounds=optionalCount(cols.reb,'REB'),assists=optionalCount(cols.ast,'AST');
     return {player_id,name,minutes,pir,played:minutes>0||pir!==0,
       points:cols.pts>=0?number(row[cols.pts]):0,
-      rebounds:cols.reb>=0?number(row[cols.reb]):0,
-      assists:cols.ast>=0?number(row[cols.ast]):0,
+      rebounds,assists,
+      rebounds_recorded:rebounds!==null,assists_recorded:assists!==null,
       steals:cols.stl>=0?number(row[cols.stl]):0,
       blocks:cols.blk>=0?number(row[cols.blk]):0,
       turnovers:cols.tov>=0?number(row[cols.tov]):0};
