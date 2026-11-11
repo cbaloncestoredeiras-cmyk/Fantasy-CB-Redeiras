@@ -18,22 +18,39 @@ export function playerAdvancedPanel(data,id){
 export function courtLineup(data,ids,avatar){
  const selected=ids.map(id=>data.playerMap?.[id]).filter(Boolean);
  if(!selected.length)return '<p class="mini muted">Escolle os xogadores no mercado para ver o quinteto na pista.</p>';
+ // FIBA half-court proportions (15 m wide by 14 m deep); single basket at the top.
+ // Player positions are illustrative, not a tactical formation.
  const base=selected.find(p=>p.positions.includes('BA'))||selected[0];
  const inside=selected.find(p=>p.id!==base.id&&(p.positions.includes('AP')||p.positions.includes('P')))||selected.find(p=>p.id!==base.id)||base;
  const others=selected.filter(p=>p.id!==base.id&&p.id!==inside.id);
- const spots=[{p:base,position:'base',x:50,y:78},{p:inside,position:'interior',x:50,y:25},
-  ...others.map((p,i)=>({p,position:'exterior',x:[18,82,50][i],y:[47,47,56][i]}))];
+ const spots=[{p:base,x:50,y:84},{p:inside,x:50,y:22},
+  ...others.map((p,i)=>({p,x:[23,77,50][i],y:[44,44,63][i]}))];
+ const price=id=>data.prices?.[id]==null?'':new Intl.NumberFormat('es-ES',{maximumFractionDigits:2}).format(Number(data.prices[id])/1000000)+' M€';
  const valid=ids.length===5;
- return '<div class="court-wrapper"><div class="court-visual" role="group" aria-label="Quinteto distribuído nunha pista de baloncesto">'+
- '<svg viewBox="0 0 620 400" aria-hidden="true" focusable="false" preserveAspectRatio="none" class="court-lines">'+
- '<rect x="7" y="7" width="606" height="386" rx="12"/><path d="M7 200h606"/>'+
- '<circle cx="310" cy="200" r="62"/><path d="M240 7v145h140V7M240 393V248h140v145"/>'+
- '<circle cx="310" cy="106" r="18"/><circle cx="310" cy="294" r="18"/>'+
- '<path d="M165 7a145 145 0 0 0 290 0M165 393a145 145 0 0 1 290 0"/>'+
- '</svg>'+spots.map((s,i)=>'<button type="button" class="court-player" style="--court-x:'+s.x+'%;--court-y:'+s.y+'%" data-player="'+h(s.p.id)+'" aria-label="Abrir perfil de '+h(s.p.name)+'">'+
- avatar(s.p,'court-avatar')+'<strong>'+h(s.p.name)+'</strong><small>'+h(s.p.positions.join(' / '))+'</small></button>').join('')+
- '</div><p class="mini muted">'+(valid?'Representación visual orientativa, sen formación fixa.':'Vista previa: '+selected.length+' de 5 xogadores.')+' Preme un xogador para ver o perfil.</p></div>';
+ return '<div class="court-wrapper"><div class="court-visual court-half" role="group" aria-label="Media pista de baloncesto: quinteto orientativo e perfís dos xogadores">'+
+ '<svg viewBox="0 0 500 467" aria-hidden="true" focusable="false" preserveAspectRatio="xMidYMid meet" class="court-lines">'+
+ // Perimeter, halfway line and the near half of the centre circle.
+ '<rect x="5" y="5" width="490" height="457" rx="3"/>'+
+ '<path d="M5 462H495M190 462A60 60 0 0 1 310 462"/>'+
+ // Key: FIBA 4.9 m wide, 5.8 m deep, free throw circle diameter 3.6 m.
+ '<path d="M168 5V198H332V5"/>'+
+ '<path d="M190 198A60 60 0 0 0 310 198"/>'+
+ '<path d="M190 198A60 60 0 0 1 310 198" stroke-dasharray="7 8"/>'+
+ // The only basket: baseline, backboard, 45 cm rim, restricted-area semicircle.
+ '<path class="court-backboard" d="M225 38H275"/>'+
+ '<circle class="court-rim" cx="250" cy="53" r="8"/>'+
+ '<path d="M208 53A42 42 0 0 0 292 53"/>'+
+ // 6.75 m three-point arc; the two straight portions are 0.9 m from sidelines.
+ '<path class="court-three-point" d="M30 5V100A225 225 0 0 0 470 100V5"/>'+
+ '</svg>'+
+ '<span class="court-basket-label" aria-hidden="true">CANASTRA</span>'+
+ spots.map(s=>'<button type="button" class="court-player" style="--court-x:'+s.x+'%;--court-y:'+s.y+'%" data-player="'+h(s.p.id)+'" aria-label="Abrir perfil de '+h(s.p.name)+'">'+
+ avatar(s.p,'court-avatar')+'<strong>'+h(s.p.name)+'</strong><small>'+h(s.p.positions.join(' / '))+'</small>'+
+ (price(s.p.id)?'<span class="court-player-price">'+h(price(s.p.id))+'</span>':'')+'</button>').join('')+
+ '</div><p class="mini muted court-caption">'+(valid?'Media pista FIBA a escala orientativa: as posicións dos xogadores son ilustrativas.':'Vista previa: '+selected.length+' de 5 xogadores.')+
+ ' Preme calquera xogador para consultar prezo, convocatoria e historial.</p></div>';
 }
+
 export function popularityPanel(data){
  const rows=popularityRows(data);
  if(!rows.length)return '<section class="panel popularity-panel"><h2>Popularidade no mercado</h2><p class="mini muted">As porcentaxes aparecerán cando haxa unha xornada publicada e un mínimo de participantes. Non se mostran quintetos individuais nin escollas antes do peche.</p></section>';
