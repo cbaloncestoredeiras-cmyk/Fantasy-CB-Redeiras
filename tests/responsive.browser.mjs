@@ -40,6 +40,21 @@ try{
   page.on('pageerror',e=>errors.push(e.message));
   await page.goto(url,{waitUntil:'load'});
   await page.locator('.layout').waitFor({timeout:9000});
+  // Visual contract: the new light workspace must be rendered, not just linked.
+  const appearance=await page.evaluate(()=>({
+    sidebar:getComputedStyle(document.querySelector('.sidebar')).backgroundColor,
+    card:getComputedStyle(document.querySelector('.container .panel')).backgroundColor,
+    canvas:getComputedStyle(document.body).backgroundColor,
+    iconCount:document.querySelectorAll('.sidebar .nav svg,.mobilebar svg').length,
+    workspaceStylesheet:!!document.querySelector('link[href="workspace.css"]')
+  }));
+  assert.ok(appearance.workspaceStylesheet,size.label+' missing workspace CSS');
+  assert.equal(appearance.sidebar,'rgb(255, 255, 255)',size.label+' sidebar is not ClickUp-style light');
+  assert.ok(['rgb(246, 248, 251)','rgb(247, 249, 251)'].includes(appearance.canvas),
+    size.label+' workspace background: '+appearance.canvas);
+  assert.ok(appearance.iconCount>=4,size.label+' missing outline navigation icons');
+  if(['mobile-390','tablet-820','desktop-1440'].includes(size.label))
+    await page.screenshot({path:'responsive-artifacts/'+size.label+'-workspace-home.png',fullPage:true});
   const manifest=await page.evaluate(async()=>await(await fetch('/manifest.webmanifest')).json());
   assert.equal(manifest.display,'standalone',size.label+' PWA manifest');
   assert.ok(manifest.icons.some(i=>i.sizes==='512x512'),size.label+' icon');
