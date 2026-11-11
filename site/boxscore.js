@@ -30,5 +30,5 @@ export const recorded=(row,key)=>key==='rebounds'||key==='assists'||['steals','b
  ?row[key+'_recorded']===true:row[key]!==null&&row[key]!==undefined;
 export function boxPercentage(made,attempted){
  if(made===null||made===undefined||attempted===null||attempted===undefined)return null;
- const n=Number(attempted);return n>0?Math.round(Number(made)*10000/n)/100:null;
+ const n=Number(attempted);return n>0?Math.round(Number(made)*10000/n)/100:(n===0&&Number(made)===0?0:null);
 }
