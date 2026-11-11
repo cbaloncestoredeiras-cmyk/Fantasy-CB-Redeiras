@@ -5,6 +5,7 @@ import {adminView,adminAction,handleStatsFile} from './admin.js';
 import {validateLineup,transferPlan,originalPlayerUsage,brokerEstimate,pts} from './logic.js';
 import {availabilityWarning,unavailablePlayers} from './availability.js';
 import {formSection,priceHistorySection} from './insights-view.js';
+import {playerForm} from './insights.js';
 import {playerAdvancedPanel} from './analytics-view.js';
 import {enableRemotePush,disableRemotePush,remotePushEnabled} from './push.js';
 import {initExperience,installAppPrompt,toggleDeviceAlerts,refreshClock} from './experience.js';
@@ -155,10 +156,22 @@ function showPlayer(id){
   .filter(s=>s.player_id===id&&finished.has(s.fixture_id)&&s.played&&s.fantasy_points!==null)
   .map(s=>Number(s.fantasy_points));
  const estimate=brokerEstimate(cost,0,true,pastScores);
+ const form=playerForm(p.id,state.data.fixtures,state.data.stats);
+ const number=value=>new Intl.NumberFormat('es-ES',{maximumFractionDigits:2}).format(value);
  const el=document.createElement('div');el.className='modalcover';
- el.innerHTML='<div class="modal" role="dialog" aria-modal="true" aria-label="Perfil do xogador"><div class="row"><div class="person">'+playerAvatar(p,'profile-photo')+'<div><h2 style="margin:0">'+h(p.name)+'</h2><p class="mini">'+h(p.positions.join(' / '))+(p.category==='junior'?' · JÚNIOR':'')+'</p></div></div><button class="btn secondary" data-action="close-modal">Pechar</button></div><hr class="separator">'+
+ el.innerHTML='<div class="modal player-profile-modal" role="dialog" aria-modal="true" aria-label="Perfil do xogador">'+
+ '<div class="player-profile-hero"><div class="player-profile-photo">'+playerAvatar(p,'profile-portrait')+'</div>'+
+ '<div class="player-profile-heading"><span class="player-profile-eyebrow">FANTASY REDEIRAS · FICHA DO XOGADOR</span>'+
+ '<h2>'+h(p.name)+'</h2><p>'+h(p.positions.join(' · '))+(p.category==='junior'?' · JÚNIOR':'')+
+ (p.jersey_number?' · #'+h(p.jersey_number):'')+'</p>'+
+ '<div class="player-profile-stats">'+
+ '<div><small>PREZO ACTUAL</small><strong>'+euroShort(cost)+'</strong></div>'+
+ '<div><small>MEDIA ÚLT. 3</small><strong>'+(form.recentCount?number(form.recentAverage)+' pts':'—')+'</strong></div>'+
+ '<div><small>PARTIDOS</small><strong>'+form.games+'</strong></div>'+
+ '</div></div><button type="button" class="btn outline profile-close" data-action="close-modal" aria-label="Pechar perfil">×</button></div>'+
+ '<div class="player-profile-body">'+
   brokerProfileHtml(cost,estimate,pastScores.length)+
-  callupDetail(state.data,current().pending,id)+availabilityWarning([id],state.data.playerMap)+formSection(state.data,id)+playerAdvancedPanel(state.data,id)+priceHistorySection(state.data,id)+'</div>';
+  callupDetail(state.data,current().pending,id)+availabilityWarning([id],state.data.playerMap)+formSection(state.data,id)+playerAdvancedPanel(state.data,id)+priceHistorySection(state.data,id)+'</div></div>';
  document.body.append(el);state.modal=el;
 }
 function toggleMobileMore(open){
