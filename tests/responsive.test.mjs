@@ -89,7 +89,10 @@ test('ranking offers equivalent table and mobile card views',()=>{
 });
 test('admin stats fields remain available after card adaptation and admin quick links work',()=>{
  const output=adminView();
- assert.match(output,/admin-jumps/);
+ assert.match(output,/admin-tabs/);
+ assert.match(output,/data-admin-tab="estatisticas"/);
+ assert.match(output,/data-admin-tab="publicacion"/);
+ assert.match(output,/id="admin-panel-estatisticas"[^>]*hidden/);
  for(const id of ['admin-callups','admin-stats','admin-invites','admin-photos'])assert.match(output,new RegExp('id="'+id+'"'));
  for(const attr of ['data-stat-played','data-stat-min','data-stat-pir','data-stat-pts'])assert.match(output,new RegExp(attr));
  assert.match(output,/admin-stats-table/);

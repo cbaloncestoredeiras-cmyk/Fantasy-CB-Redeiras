@@ -214,6 +214,7 @@ async function interact(action,element){
   present();return;
  }
  if(action==='compare-player'){
+  state.marketTool='compare';
   const id=element.dataset.id;if(!player(id))return;
   const selected=state.compareIds||[];
   if(selected.includes(id))state.compareIds=selected.filter(x=>x!==id);
@@ -272,6 +273,36 @@ root.addEventListener('click',async e=>{
  if(authModeButton){
    state.authMode=authModeButton.dataset.authMode;
    renderAuth();return;
+ }
+ // Switch between tool panels without replacing form fields or draft selections.
+ const marketTab=e.target.closest('[data-market-tool]');
+ if(marketTab){
+   const key=marketTab.dataset.marketTool;
+   if(!['compare','simulate','popularity'].includes(key))return;
+   state.marketTool=key;
+   root.querySelectorAll('[data-market-tool]').forEach(btn=>{
+     const selected=btn.dataset.marketTool===key;
+     btn.setAttribute('aria-selected',String(selected));
+     btn.classList.toggle('active',selected);
+   });
+   root.querySelectorAll('.market-tool-panel').forEach(node=>{node.hidden=node.id!=='market-tool-'+key;});
+   return;
+ }
+ // Keep admin inputs mounted: selecting a section must not discard an unfinished boxscore.
+ const adminTab=e.target.closest('[data-admin-tab]');
+ if(adminTab){
+   const key=adminTab.dataset.adminTab;
+   if(!['resumo','partido','convocatoria','votacion','estatisticas','publicacion','participantes'].includes(key))return;
+   state.adminTab=key;
+   root.querySelectorAll('[data-admin-tab]').forEach(btn=>{
+     const selected=btn.dataset.adminTab===key;
+     btn.setAttribute('aria-selected',String(selected));
+     btn.classList.toggle('active',selected);
+   });
+   root.querySelectorAll('[data-admin-tab-panel]').forEach(node=>{
+     node.hidden=node.dataset.adminTabPanel!==key;
+   });
+   return;
  }
  const element=e.target.closest('[data-action],[data-page],[data-player]');
  if(!element)return;

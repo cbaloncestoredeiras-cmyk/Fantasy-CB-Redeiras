@@ -125,14 +125,32 @@ export function adminView(){
  '<div class="actions"><button class="btn primary" data-action="upload-player-photo">Gardar foto</button><button class="btn danger" data-action="remove-player-photo" '+(!photoPlayer?.photo_path?'disabled':'')+'>Retirar foto</button></div></div>'+
  '<div class="admin-photo-preview" id="admin-photo-preview">'+(photoPlayer?playerAvatar(photoPlayer,'admin-photo-avatar'):'')+'<p>'+h(photoPlayer?.photo_path?'Foto actual':'Sen foto cargada')+'</p></div></div>')
  ];
- const sections=lines.join('')
-  .replace('<h2>Convocatoria e votación</h2>','<h2 id="admin-callups">Convocatoria e votación</h2>')
+ const anchored=part=>part
+   .replace('<h2>Convocatoria e votación</h2>','<h2 id="admin-callups">Convocatoria e votación</h2>')
    .replace('<h2>Dispoñibilidade dos xogadores</h2>','<h2 id="admin-availability">Dispoñibilidade dos xogadores</h2>')
-  .replace('<h2>Importar valoracións</h2>','<h2 id="admin-stats">Importar valoracións</h2>')
-  .replace('<h2>Invitar participantes</h2>','<h2 id="admin-invites">Invitar participantes</h2>')
-  .replace('<h2>Fotografías dos xogadores</h2>','<h2 id="admin-photos">Fotografías dos xogadores</h2>');
- const jumps='<nav class="admin-jumps" aria-label="Ir á sección de administración"><a href="#admin-launch">Lanzamento</a><a href="#admin-callups">Convocatoria</a><a href="#admin-availability">Lesións</a><a href="#admin-stats">Estatísticas</a><a href="#admin-invites">Invitacións</a><a href="#admin-members">Contas</a><a href="#admin-publication">Publicación</a><a href="#admin-uncalled">Non convocados</a><a href="#admin-backups">Exportación</a><a href="#admin-photos">Fotos</a></nav>';
- return pageHeader('Panel de administración','Só persoas autorizadas. Todos os cambios sensibles rexístranse.')+jumps+sections;
+   .replace('<h2>Importar valoracións</h2>','<h2 id="admin-stats">Importar valoracións</h2>')
+   .replace('<h2>Invitar participantes</h2>','<h2 id="admin-invites">Invitar participantes</h2>')
+   .replace('<h2>Fotografías dos xogadores</h2>','<h2 id="admin-photos">Fotografías dos xogadores</h2>');
+ // The form inputs stay mounted in the DOM while changing tabs, preserving
+ // unsaved statistics, checkbox selection and invitation drafts.
+ const tabs=[
+   ['resumo','Resumo',lines.slice(0,4).join('')],
+   ['partido','Partido',lines.slice(5,9).join('')],
+   ['convocatoria','Convocatoria',lines[9]+lines[11]],
+   ['votacion','Votación',lines[10]],
+   ['estatisticas','Estatísticas',lines[12]],
+   ['publicacion','Publicación',lines[13]+lines[14]],
+   ['participantes','Participantes',lines.slice(15).join('')]
+ ];
+ const active=tabs.some(t=>t[0]===state.adminTab)?state.adminTab:'partido';
+ const navigation='<div class="admin-section-header"><span class="eyebrow">XESTIÓN DO CLUB</span><p>As ferramentas están separadas por tarefas. Os datos que aínda non gardaches mantéñense ao cambiar de pestana.</p></div>'+
+ '<div class="admin-tabs" role="tablist" aria-label="Seccións de administración">'+
+ tabs.map(([key,title])=>'<button type="button" role="tab" id="admin-tab-'+key+'" data-admin-tab="'+key+
+ '" aria-selected="'+(key===active)+'" aria-controls="admin-panel-'+key+'" class="admin-tab '+(key===active?'active':'')+'">'+title+'</button>').join('')+'</div>';
+ const panels=tabs.map(([key,,content])=>'<section class="admin-tab-panel" role="tabpanel" id="admin-panel-'+key+
+ '" aria-labelledby="admin-tab-'+key+'" data-admin-tab-panel="'+key+'" '+(key===active?'':'hidden')+'>'+anchored(content)+'</section>').join('');
+ return pageHeader('Panel de administración','Xestiona os partidos, votacións, estatísticas e participantes sen desprazamentos interminables.')+
+ '<div class="admin-fixture-selector">'+lines[4]+'</div>'+navigation+panels;
 }
 function val(id,selector){return document.getElementById(id)?.value??selector??''}
 async function localToIso(v){if(!v)throw Error('Indica a data e a hora');return await rpc('fantasy_local_time',{p_clock:v});}
