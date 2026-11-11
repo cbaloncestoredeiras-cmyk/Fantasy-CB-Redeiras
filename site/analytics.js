@@ -10,14 +10,20 @@ export function finalizedPlayerRows(data,id){
 }
 const FIELDS=[['fantasy_points','Fantasy'],['pir','Valoración'],['points','Puntos'],['rebounds','Rebotes'],['assists','Asistencias'],['steals','Recuperacións'],['blocks','Tapóns'],['turnovers','Perdas'],['minutes','Minutos'],['vote_bonus','Bonus votos']];
 export function playerSeasonStats(data,id){
- const games=finalizedPlayerRows(data,id),count=games.length,totals={},averages={};
+ const games=finalizedPlayerRows(data,id),count=games.length,totals={},averages={},observedGames={};
  for(const [key] of FIELDS){
-  const sum=games.reduce((n,row)=>n+finite(row[key]),0);
-  totals[key]=round2(sum);averages[key]=count?round2(sum/count):null;
+  // Unrecorded rebounds/assists are NOT observed zeros. These optional
+  // statistics do not contribute to Fantasy scoring.
+  const seen=key==='rebounds'||key==='assists'
+    ?games.filter(g=>g[key+'_recorded']===true):games;
+  const sum=seen.reduce((n,row)=>n+finite(row[key]),0);
+  observedGames[key]=seen.length;
+  totals[key]=seen.length?round2(sum):null;
+  averages[key]=seen.length?round2(sum/seen.length):null;
  }
  const fantasy=games.map(g=>g.fantasy_points),best=count?Math.max(...fantasy):null;
  const recent=count?games.slice(-3):[];
- return {playerId:id,games,played:count,totals,averages,best,
+ return {playerId:id,games,played:count,totals,averages,observedGames,best,
   latest:count?games[count-1]:null,
   recentAverage:recent.length?round2(recent.reduce((n,r)=>n+r.fantasy_points,0)/recent.length):null,
   consistency:count>=2?round2(Math.sqrt(games.reduce((s,g)=>s+(g.fantasy_points-averages.fantasy_points)**2,0)/count)):null};
