@@ -12,7 +12,7 @@ import {navIcon} from './nav-icons.js';
 
 const cfg=window.FANTASY_CONFIG||{};
 const root=document.querySelector('#root');
-const state={client:null,session:null,page:'home',data:null,draft:[],search:'',filter:'all',compareIds:[],rankRound:'general',analyticsSort:'fantasy_points',guideStep:0,installHelp:false,modal:null,rawPdf:'',importRows:null,loading:false,authMode:'password',recoveringPassword:false,mobileMenuOpen:false,marketTool:'compare',marketSort:'price-desc',adminTab:'partido'};
+const state={client:null,session:null,page:'home',data:null,draft:[],search:'',filter:'all',compareIds:[],rankRound:'general',analyticsSort:'fantasy_points',guideStep:0,installHelp:false,modal:null,rawPdf:'',importRows:null,unmatchedStatsPlayers:[],loading:false,authMode:'password',recoveringPassword:false,mobileMenuOpen:false,marketTool:'compare',marketSort:'price-desc',adminTab:'partido'};
 const LOGO='<img class="brand-emblem" src="assets/redeiras-logo.webp" alt="Escudo do CB Redeiras">';
 const NAV=[['home','⌂','Inicio'],['market','◫','Mercado'],['team','▣','O meu equipo'],['ranking','♛','Clasificación'],['analytics','◈','Estatísticas'],['calendar','▦','Calendario'],['vote','✦','Votación'],['guide','?','Guía'],['admin','⚙','Administración']];
 function toast(message,error=false){document.querySelector('.toast')?.remove();const div=document.createElement('div');div.className='toast'+(error?' error':'');div.textContent=message;div.setAttribute('role',error?'alert':'status');div.setAttribute('aria-live',error?'assertive':'polite');document.body.append(div);setTimeout(()=>div.remove(),6000);}
