@@ -16,7 +16,9 @@ const server=createServer(async(req,res)=>{
 });
 await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));
 const url='http://127.0.0.1:'+server.address().port;
-const mock="(function mockSDK(){\n const players=[\n  {id:\"a\",name:\"Juan\",category:\"senior\",active:true,available_from_round:5,jersey_number:1},\n  {id:\"b\",name:\"Mateo\",category:\"junior\",active:true,available_from_round:5,jersey_number:2},\n  {id:\"c\",name:\"Mario\",category:\"senior\",active:true,available_from_round:5,jersey_number:3},\n  {id:\"d\",name:\"Adri\",category:\"senior\",active:true,available_from_round:5,jersey_number:4},\n  {id:\"e\",name:\"Yoel\",category:\"senior\",active:true,available_from_round:5,jersey_number:5},\n  {id:\"f\",name:\"Gil\",category:\"junior\",active:true,available_from_round:5,jersey_number:6}\n ];\n const fixture={id:\"fixture-5\",season_id:\"season\",round_number:5,status:\"scheduled\",opponent:\"Nigrán\",starts_at:\"2027-01-15T19:00:00Z\",ended_at:null,is_home:true};\n const rows={\n  club_memberships:[{club_id:\"club\",role:\"admin\",user_id:\"mock-admin\"}],\n  clubs:[{id:\"club\",slug:\"cb-redeiras\",name:\"CB Redeiras\"}],\n  seasons:[{id:\"season\",club_id:\"club\",label:\"2026/27\",start_round:5,active:false}],\n  players,\n  player_positions:[{player_id:\"a\",position:\"BA\"},{player_id:\"b\",position:\"ES\"},{player_id:\"c\",position:\"AP\"},{player_id:\"d\",position:\"P\"},{player_id:\"e\",position:\"AL\"},{player_id:\"f\",position:\"BA\"}],\n  market_prices:players.map((p,i)=>({player_id:p.id,price:750000+i*100000,season_id:\"season\"})),\n  fixtures:[fixture],\n  fantasy_teams:[],\n  profiles:[{display_name:\"Administrador de proba\"}],\n  fixture_callups:[],eligible_voters:[],player_accounts:[],game_stats:[],price_history:[]\n };\n window.supabase={createClient:()=>({\n  auth:{getSession:async()=>({data:{session:{user:{id:\"mock-admin\",email:\"demo@redeiras.test\"}}},error:null}),onAuthStateChange:()=>({data:{subscription:{unsubscribe(){}}}})},\n  from(table){\n   const query={select(){return this;},eq(){return this;},neq(){return this;},order(){return this;},limit(){return this;},\n    single(){return Promise.resolve({data:(rows[table]||[])[0]||null,error:null});},\n    maybeSingle(){return Promise.resolve({data:(rows[table]||[])[0]||null,error:null});},\n    then(resolve,reject){return Promise.resolve({data:rows[table]||[],error:null}).then(resolve,reject)}\n   };\n   return query;\n  },\n  rpc:async(name)=>({data:name===\"fantasy_admin_metrics\"?{members:2,teams:0,juniors:2,finalized_rounds:0}:name===\"fantasy_leaderboard\"?[{team_id:\"t1\",team_name:\"Redeiras Azuis\",manager_alias:\"Xan\",position:1,total_points:38}]:name===\"fantasy_preview_fixture\"?{fixture_id:\"fixture-5\",round:5,player_count:1,team_count:0,players:[{player_id:\"a\",name:\"Juan\",pir:10,vote_bonus:0.5,fantasy_points:12.5,price_before:850000,price_after:900000}],teams:[]}:name===\"fantasy_admin_participants\"?[{user_id:\"mock-admin\",email:\"demo@redeiras.test\",role:\"admin\",confirmed:true,linked_player:\"a\"}]:name===\"fantasy_admin_export\"?{format:\"redeiras-admin-export-v1\"}:null,error:null}),\n  storage:{from:()=>({createSignedUrls:async()=>({data:[],error:null})})}\n })};\n})();";
+const mock="(function mockSDK(){\n const players=[\n  {id:\"a\",name:\"Juan\",category:\"senior\",active:true,available_from_round:5,jersey_number:1},\n  {id:\"b\",name:\"Mateo\",category:\"junior\",active:true,available_from_round:5,jersey_number:2},\n  {id:\"c\",name:\"Mario\",category:\"senior\",active:true,available_from_round:5,jersey_number:3},\n  {id:\"d\",name:\"Adri\",category:\"senior\",active:true,available_from_round:5,jersey_number:4},\n  {id:\"e\",name:\"Yoel\",category:\"senior\",active:true,available_from_round:5,jersey_number:5},\n  {id:\"f\",name:\"Gil\",category:\"junior\",active:true,available_from_round:5,jersey_number:6}\n ];\n const fixture={id:\"fixture-5\",season_id:\"season\",round_number:5,status:\"scheduled\",opponent:\"Nigrán\",starts_at:\"2027-01-15T19:00:00Z\",ended_at:null,is_home:true};\n const rows={\n  club_memberships:[{club_id:\"club\",role:\"admin\",user_id:\"mock-admin\"}],\n  clubs:[{id:\"club\",slug:\"cb-redeiras\",name:\"CB Redeiras\"}],\n  seasons:[{id:\"season\",club_id:\"club\",label:\"2026/27\",start_round:5,active:false}],\n  players,\n  player_positions:[{player_id:\"a\",position:\"BA\"},{player_id:\"b\",position:\"ES\"},{player_id:\"c\",position:\"AP\"},{player_id:\"d\",position:\"P\"},{player_id:\"e\",position:\"AL\"},{player_id:\"f\",position:\"BA\"}],\n  market_prices:players.map((p,i)=>({player_id:p.id,price:750000+i*100000,season_id:\"season\"})),\n  fixtures:[fixture],\n  fantasy_teams:[{id:\"t1\",season_id:\"season\",user_id:\"mock-admin\",name:\"Redeiras Azuis\",cash:650000}],
+  team_rosters:[{team_id:\"t1\",player_id:\"a\"},{team_id:\"t1\",player_id:\"c\"},{team_id:\"t1\",player_id:\"d\"},{team_id:\"t1\",player_id:\"e\"},{team_id:\"t1\",player_id:\"f\"}],
+  transfers:[],\n  profiles:[{display_name:\"Administrador de proba\"}],\n  fixture_callups:[],eligible_voters:[],player_accounts:[],game_stats:[],price_history:[]\n };\n window.supabase={createClient:()=>({\n  auth:{getSession:async()=>({data:{session:{user:{id:\"mock-admin\",email:\"demo@redeiras.test\"}}},error:null}),onAuthStateChange:()=>({data:{subscription:{unsubscribe(){}}}})},\n  from(table){\n   const query={select(){return this;},eq(){return this;},neq(){return this;},order(){return this;},limit(){return this;},\n    single(){return Promise.resolve({data:(rows[table]||[])[0]||null,error:null});},\n    maybeSingle(){return Promise.resolve({data:(rows[table]||[])[0]||null,error:null});},\n    then(resolve,reject){return Promise.resolve({data:rows[table]||[],error:null}).then(resolve,reject)}\n   };\n   return query;\n  },\n  rpc:async(name)=>({data:name===\"fantasy_admin_metrics\"?{members:2,teams:0,juniors:2,finalized_rounds:0}:name===\"fantasy_leaderboard\"?[{team_id:\"t1\",team_name:\"Redeiras Azuis\",manager_alias:\"Xan\",position:1,total_points:38}]:name===\"fantasy_preview_fixture\"?{fixture_id:\"fixture-5\",round:5,player_count:1,team_count:0,players:[{player_id:\"a\",name:\"Juan\",pir:10,vote_bonus:0.5,fantasy_points:12.5,price_before:850000,price_after:900000}],teams:[]}:name===\"fantasy_admin_participants\"?[{user_id:\"mock-admin\",email:\"demo@redeiras.test\",role:\"admin\",confirmed:true,linked_player:\"a\"}]:name===\"fantasy_admin_export\"?{format:\"redeiras-admin-export-v1\"}:null,error:null}),\n  storage:{from:()=>({createSignedUrls:async()=>({data:[],error:null})})}\n })};\n})();";
 let browser;
 mkdirSync('responsive-artifacts',{recursive:true});
 const cases=[
@@ -81,15 +83,30 @@ try{
    const selector=mobile?'.mobilebar [data-page="'+route+'"]':'.sidebar [data-page="'+route+'"]';
    await page.locator(selector).click();
   };
+  await navigate('team');
+  assert.ok(await page.locator('.court-half').isVisible(),size.label+' FIBA half court');
+  assert.equal(await page.locator('.court-half .court-rim').count(),1,size.label+' one hoop');
+  assert.equal(await page.locator('.court-half .court-player').count(),5,size.label+' five court players');
+  await page.screenshot({path:'responsive-artifacts/'+size.label+'-real-half-court.png',fullPage:true});
   await navigate('market');
   assert.ok(await page.locator('.market-results').isVisible(),size.label+' market');
+  const marketFirst=await page.evaluate(()=>{
+    const market=document.querySelector('.market-panel'),tools=document.querySelector('.market-tools');
+    return !!(market&&tools&&market.getBoundingClientRect().top<tools.getBoundingClientRect().top);
+  });
+  assert.ok(marketFirst,size.label+' market must precede tools');
+  await page.locator('[data-market-tool="simulate"]').click();
+  assert.ok(await page.locator('#market-tool-simulate').isVisible(),size.label+' simulator tab');
+  await page.locator('[data-market-tool="popularity"]').click();
+  assert.ok(await page.locator('#market-tool-popularity').isVisible(),size.label+' popularity tab');
   if(size.width===320)assert.ok(await page.locator('.market-cards').isVisible(),size.label+' cards');
   await page.screenshot({path:'responsive-artifacts/'+size.label+'-market.png',fullPage:true});
   if(mobile){
    await page.locator('.mobilebar [data-action="mobile-more"]').click();
    await page.locator('.mobile-more-sheet [data-page="admin"]').click();
   }else await navigate('admin');
-  assert.ok(await page.locator('.admin-stats-table').count(),size.label+' admin stats');
+  await page.locator('[data-admin-tab="estatisticas"]').click();
+  assert.ok(await page.locator('.admin-stats-table').isVisible(),size.label+' admin stats tab');
   if(mobile){
    // Opening and closing the menu must not lose unsaved data in the admin editor.
    const minutes=page.locator('[data-stat-min="a"]');
@@ -100,6 +117,7 @@ try{
   }
   await page.screenshot({path:'responsive-artifacts/'+size.label+'-admin.png',fullPage:true});
   if(size.width===1280){
+   await page.locator('[data-admin-tab="publicacion"]').click();
    await page.locator('[data-action="preview-round"]').click();
    await page.locator('#admin-preview-results .table').first().waitFor({timeout:3000});
    assert.match(await page.locator('#admin-preview-results').innerText(),/Juan/);
