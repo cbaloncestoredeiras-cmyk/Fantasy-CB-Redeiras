@@ -3,6 +3,7 @@ import {euro,pts,escapeHtml as h,byId,validateLineup,transferPlan,originalPlayer
 import {availabilityBadge,availabilityWarning} from './availability.js';
 import {callupBadge,callupSummary} from './callups.js';
 import {formBadge,compareButton,comparisonPanel} from './insights-view.js';
+import {playerForm} from './insights.js';
 import {simulatorPanel,idealTeamPanel} from './strategy-view.js';
 import {homeExperience,guidePage,deadline,countdown} from './experience.js';
 import {courtLineup,popularityPanel,analyticsPage,recordsPanel} from './analytics-view.js';
@@ -11,10 +12,10 @@ import {navIcon} from './nav-icons.js';
 
 const cfg=window.FANTASY_CONFIG||{};
 const root=document.querySelector('#root');
-const state={client:null,session:null,page:'home',data:null,draft:[],search:'',filter:'all',compareIds:[],rankRound:'general',analyticsSort:'fantasy_points',guideStep:0,installHelp:false,modal:null,rawPdf:'',importRows:null,loading:false,authMode:'password',recoveringPassword:false,mobileMenuOpen:false,marketTool:'compare',adminTab:'partido'};
+const state={client:null,session:null,page:'home',data:null,draft:[],search:'',filter:'all',compareIds:[],rankRound:'general',analyticsSort:'fantasy_points',guideStep:0,installHelp:false,modal:null,rawPdf:'',importRows:null,loading:false,authMode:'password',recoveringPassword:false,mobileMenuOpen:false,marketTool:'compare',marketSort:'price-desc',adminTab:'partido'};
 const LOGO='<img class="brand-emblem" src="assets/redeiras-logo.webp" alt="Escudo do CB Redeiras">';
 const NAV=[['home','⌂','Inicio'],['market','◫','Mercado'],['team','▣','O meu equipo'],['ranking','♛','Clasificación'],['analytics','◈','Estatísticas'],['calendar','▦','Calendario'],['vote','✦','Votación'],['guide','?','Guía'],['admin','⚙','Administración']];
-function toast(message,error=false){document.querySelector('.toast')?.remove();const div=document.createElement('div');div.className='toast'+(error?' error':'');div.textContent=message;document.body.append(div);setTimeout(()=>div.remove(),6000);}
+function toast(message,error=false){document.querySelector('.toast')?.remove();const div=document.createElement('div');div.className='toast'+(error?' error':'');div.textContent=message;div.setAttribute('role',error?'alert':'status');div.setAttribute('aria-live',error?'assertive':'polite');document.body.append(div);setTimeout(()=>div.remove(),6000);}
 const dateText=(v,opts={day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'})=>v?new Intl.DateTimeFormat('gl-ES',{timeZone:'Europe/Madrid',...opts}).format(new Date(v)):'Horario por confirmar';
 const euroShort=n=>new Intl.NumberFormat('es-ES',{maximumFractionDigits:2}).format((n||0)/1000000)+' M€';
 const admin=()=>state.data?.role==='admin';
@@ -110,7 +111,24 @@ function home(){
 }
 function marketTable(){
  const d=state.data,round=current().pending?.round_number||5;
- const list=d.players.filter(p=>(state.filter==='all'||p.positions.includes(state.filter)||(state.filter==='junior'&&p.category==='junior'))&&p.name.toLowerCase().includes(state.search.toLowerCase())).sort((a,b)=>(prices()[b.id]||0)-(prices()[a.id]||0));
+ const called=new Set(d.callups.filter(c=>c.fixture_id===current().pending?.id).map(c=>c.player_id));
+ const pPopularity=new Map((d.popularity||[]).map(x=>[x.player_id,Number(x.pick_percent)||0]));
+ const form=new Map(d.players.map(p=>[p.id,playerForm(p.id,d.fixtures,d.stats).recentAverage]));
+ const sorted=(a,b)=>{
+   const priceA=Number(prices()[a.id]||0),priceB=Number(prices()[b.id]||0);
+   if(state.marketSort==='price-asc')return priceA-priceB||a.name.localeCompare(b.name);
+   if(state.marketSort==='form-desc')return (form.get(b.id)??-999)-(form.get(a.id)??-999)||a.name.localeCompare(b.name);
+   if(state.marketSort==='popularity-desc')return (pPopularity.get(b.id)||0)-(pPopularity.get(a.id)||0)||a.name.localeCompare(b.name);
+   return priceB-priceA||a.name.localeCompare(b.name);
+ };
+ const list=d.players.filter(p=>{
+   const matches=state.filter==='all'||p.positions.includes(state.filter)||
+    (state.filter==='junior'&&p.category==='junior')||
+    (state.filter==='outside'&&p.positions.some(x=>['BA','ES','AL'].includes(x)))||
+    (state.filter==='inside'&&p.positions.some(x=>['AP','P'].includes(x)))||
+    (state.filter==='called'&&called.size>=3&&called.has(p.id));
+   return matches&&p.name.toLowerCase().includes(state.search.toLowerCase());
+ }).sort(sorted);
  const draft=state.draft;
  const controls=(p)=>p.available_from_round>round
   ?'<span class="tag warn">Desde X'+p.available_from_round+'</span>'
@@ -152,7 +170,14 @@ function market(){
  '<a class="mobile-draft-link" href="#draft-summary"><span>Ver o teu quinteto</span><strong>'+state.draft.length+' / 5 · '+euroShort(summary.cost)+'</strong></a>'+
  '<div class="grid two market-layout"><section class="panel market-panel"><div class="row"><h2>Buscar e fichar xogadores</h2><span class="tag">'+d.players.length+' xogadores</span></div>'+
  '<div class="toolbar"><input id="search" aria-label="Buscar xogador" placeholder="Buscar xogador…" value="'+h(state.search)+'"/>'+
- '<select id="pos-filter" aria-label="Filtrar xogadores por posición">'+[['all','Todas as posicións'],['BA','Bases'],['ES','Escoltas'],['AL','Aleros'],['AP','Ala-pivotes'],['P','Pivotes'],['junior','Juniors']].map(v=>option(...v,state.filter)).join('')+'</select></div>'+
+ '<select id="pos-filter" aria-label="Filtrar xogadores por posición">'+
+ [['all','Todas as posicións'],['BA','Bases'],['outside','Exteriores'],['inside','Interiores'],['called','Convocados'],['junior','Júniors'],['ES','Escoltas'],['AL','Aleros'],['AP','Ala-pivotes'],['P','Pivotes']].map(v=>option(...v,state.filter)).join('')+
+ '</select><select id="market-sort" aria-label="Ordenar xogadores">'+
+ [['price-desc','Prezo: maior a menor'],['price-asc','Prezo: menor a maior'],['form-desc','Mellor forma'],['popularity-desc','Máis populares']].map(v=>option(...v,state.marketSort)).join('')+'</select></div>'+
+ '<div class="market-filter-chips" role="group" aria-label="Filtros rápidos">'+
+ [['all','Todos'],['BA','Bases'],['outside','Exteriores'],['inside','Interiores'],['junior','Júniors'],['called','Convocados']].map(v=>
+ '<button type="button" class="market-filter-chip '+(state.filter===v[0]?'active':'')+'" data-market-filter="'+v[0]+'" aria-pressed="'+(state.filter===v[0])+'">'+v[1]+'</button>').join('')+
+ '</div>'+
  callupSummary(d,pending)+'<div id="market-table">'+marketTable()+'</div></section>'+
  '<aside id="draft-summary" class="panel draft-panel" tabindex="-1"><h2>O teu quinteto</h2><div class="stack">'+state.draft.map(id=>{const p=player(id);return p?'<div class="playeritem">'+person(p)+'<div class="actions"><b>'+euroShort(prices()[id])+'</b><button class="btn small secondary" data-action="toggle" data-id="'+id+'" aria-label="Retirar '+h(p.name)+'">×</button></div></div>':''}).join('')+
  Array.from({length:Math.max(0,5-state.draft.length)},()=>'<div class="playeritem" style="color:#a0b1ba;border-style:dashed">＋ Praza libre</div>').join('')+'</div><hr class="separator">'+
