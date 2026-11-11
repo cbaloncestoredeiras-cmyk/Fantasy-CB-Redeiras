@@ -136,6 +136,8 @@ export function rowsFromTable(table,players){
   const names=Object.fromEntries(players.map(p=>[norm(p.name),p.id]));
   // Confirmed basketball-statistics alias, not a guess.
   if(names.adan)names.dunkos=names.adan;
+  // Confirmed by the club: Pola (#30) is Edu Pola in source box scores.
+  if(names.edu)names.pola=names.edu;
   const number=value=>{
     const raw=String(value??'').trim();if(raw==='')return 0;
     const n=Number(raw.replace(',','.'));return Number.isFinite(n)?n:NaN;
