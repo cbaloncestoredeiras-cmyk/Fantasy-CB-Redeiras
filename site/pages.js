@@ -4,13 +4,14 @@ import {availabilityBadge,availabilityWarning} from './availability.js';
 import {callupBadge,callupSummary} from './callups.js';
 import {formBadge,compareButton,comparisonPanel} from './insights-view.js';
 import {simulatorPanel,idealTeamPanel} from './strategy-view.js';
-import {homeExperience,guidePage} from './experience.js';
+import {homeExperience,guidePage,deadline,countdown} from './experience.js';
 import {courtLineup,popularityPanel,analyticsPage,recordsPanel} from './analytics-view.js';
+import {rankingMoves} from './ranking-trends.js';
 import {navIcon} from './nav-icons.js';
 
 const cfg=window.FANTASY_CONFIG||{};
 const root=document.querySelector('#root');
-const state={client:null,session:null,page:'home',data:null,draft:[],search:'',filter:'all',compareIds:[],rankRound:'general',analyticsSort:'fantasy_points',guideStep:0,installHelp:false,modal:null,rawPdf:'',importRows:null,loading:false,authMode:'password',recoveringPassword:false,mobileMenuOpen:false};
+const state={client:null,session:null,page:'home',data:null,draft:[],search:'',filter:'all',compareIds:[],rankRound:'general',analyticsSort:'fantasy_points',guideStep:0,installHelp:false,modal:null,rawPdf:'',importRows:null,loading:false,authMode:'password',recoveringPassword:false,mobileMenuOpen:false,marketTool:'compare',adminTab:'partido'};
 const LOGO='<img class="brand-emblem" src="assets/redeiras-logo.webp" alt="Escudo do CB Redeiras">';
 const NAV=[['home','⌂','Inicio'],['market','◫','Mercado'],['team','▣','O meu equipo'],['ranking','♛','Clasificación'],['analytics','◈','Estatísticas'],['calendar','▦','Calendario'],['vote','✦','Votación'],['guide','?','Guía'],['admin','⚙','Administración']];
 function toast(message,error=false){document.querySelector('.toast')?.remove();const div=document.createElement('div');div.className='toast'+(error?' error':'');div.textContent=message;document.body.append(div);setTimeout(()=>div.remove(),6000);}
@@ -70,17 +71,42 @@ function shell(body){
 }
 
 function home(){
- const d=state.data,{pending,open}=current();
- const total=d.team?Number(d.leaderboard.find(t=>t.team_id===d.team.id)?.total_points||0):0;
- const budget=d.team?d.team.cash:6000000;
- return pageHeader('Benvido ao Fantasy','Toda a competición do CB Redeiras nun só lugar.',
- '<div class="actions"><button class="btn primary" data-page="market">Ir ao mercado →</button></div>')+
- '<div class="hero dashboard-hero"><div><span class="eyebrow" style="color:#9bdcff">TEMPADA 26/27 · XORNADA '+h(pending?.round_number||5)+'</span><h2>Non se gaña só cos nomes.</h2><p>Constrúe o teu quinteto con cabeza, atopa xogadores infravalorados e fai crecer o teu equipo co bróker.</p><button class="btn primary" data-page="'+(d.team?'team':'market')+'">'+(d.team?'Ver o meu quinteto':'Crear o meu quinteto')+' →</button></div><div class="hero-graphic"><img class="hero-emblem" src="assets/redeiras-logo.webp" alt=""></div></div>'+
- '<div class="grid four dashboard-kpis" style="margin:18px 0">'+[
- ['Orzamento inicial','6 M€','Por equipo'],['O teu efectivo',euroShort(budget),'Dispoñible para fichar'],['Puntuación total',pts(total),'Puntos Fantasy'],['Xogadores no mercado',String(d.players.length),'Inclúe juniors']
- ].map(k=>panel('<div class="kpi-label">'+k[0]+'</div><div class="kpi">'+k[1]+'</div><div class="kpi-caption">'+k[2]+'</div>')).join('')+'</div>'+
- '<div class="grid two dashboard-snapshots">'+panel('<h2>Próximo partido</h2>'+(pending?'<div class="row"><div><span class="tag">'+(pending.is_home?'NA CASA':'FÓRA')+'</span><h2 style="margin:12px 0 6px">CB Redeiras · '+h(pending.opponent)+'</h2><p>'+dateText(pending.starts_at)+'</p></div><span class="pill '+(open?'':'negative')+'">'+(open?'Fichaxes dispoñibles':'Agarda aos resultados')+'</span></div>':empty('Non hai xornadas pendentes')))+
- panel('<h2>Clasificación · Top 5</h2>'+(d.leaderboard.length?d.leaderboard.slice(0,5).map(x=>'<div class="row" style="padding:9px 0;border-bottom:1px solid #edf2f5"><b>'+x.position+'. '+h(x.team_name)+'</b><span>'+pts(x.total_points)+' pts</span></div>').join(''):empty('Aínda non hai equipos inscritos','♙'))+'<button class="btn secondary" data-page="ranking" style="margin-top:14px">Ver toda a clasificación</button>')+'</div>'+homeExperience(state);
+ const d=state.data,{pending,open}=current(),status=deadline(state);
+ const myRow=d.team?d.leaderboard.find(t=>t.team_id===d.team.id):null;
+ const points=myRow?Number(myRow.total_points||0):0;
+ const rank=myRow?.position==null?'—':myRow.position+' / '+d.leaderboard.length;
+ const rosterValue=d.roster.reduce((n,id)=>n+Number(d.prices[id]||0),0);
+ const balance=d.team?Number(d.team.cash||0):6000000;
+ const changesUsed=d.transfers.filter(t=>t.round_number===pending?.round_number).length;
+ const changesLeft=d.team?Math.max(0,3-changesUsed):3;
+ const gameLabel=pending?.opponent?'CB Redeiras · '+h(pending.opponent):'Próximo partido por confirmar';
+ const closeLabel=status.status==='open'?countdown(status.ms):
+   status.status==='closed'?'Mercado pechado':'Consulta o calendario';
+ const cta=d.team?'Ver o meu quinteto':'Crear o meu quinteto';
+ const allRows=d.leaderboard||[];
+ return pageHeader('A túa xornada','Os datos que importan para competir, nun só lugar.',
+   '<div class="actions"><button class="btn primary" data-page="market">Abrir mercado</button></div>')+
+ '<section class="dashboard-match-hero" aria-label="Estado da xornada e acceso ao quinteto">'+
+ '<div class="dashboard-match-content"><span class="dashboard-kicker">TEMPADA 26/27 · XORNADA '+h(pending?.round_number||'—')+'</span>'+
+ '<h2>Todo listo para competir.</h2>'+
+ '<p class="dashboard-match-rival">'+gameLabel+'</p>'+
+ '<div class="dashboard-match-meta"><span class="tag '+(open?'good':'warn')+'">'+(open?'Mercado aberto':'Mercado pechado')+'</span>'+
+ '<span class="dashboard-deadline">'+h(closeLabel)+'</span></div>'+
+ '<button class="btn primary" data-page="'+(d.team?'team':'market')+'">'+cta+'</button></div>'+
+ '<img class="dashboard-match-emblem" src="assets/redeiras-logo.webp" alt="" loading="lazy"></section>'+
+ '<div class="grid four dashboard-kpis" aria-label="Resumo do equipo">'+[
+   ['A túa posición',rank,'Clasificación xeral'],
+   ['Puntos Fantasy',pts(points),'Xornadas publicadas'],
+   ['Patrimonio',euroShort(rosterValue+balance),'Quinteto + efectivo'],
+   ['Cambios dispoñibles',String(changesLeft)+' / 3','Esta xornada']
+ ].map(k=>panel('<div class="kpi-label">'+h(k[0])+'</div><div class="kpi">'+h(k[1])+'</div><div class="kpi-caption">'+h(k[2])+'</div>')).join('')+'</div>'+
+ '<div class="grid two dashboard-snapshots">'+
+ panel('<div class="row"><h2>Próximo encontro</h2><span class="tag">'+(pending?(pending.is_home?'NA CASA':'FÓRA'):'PENDENTE')+'</span></div>'+
+ (pending?'<p class="dashboard-opponent">'+gameLabel+'</p><p>'+h(dateText(pending.starts_at))+'</p>':empty('Horario aínda por confirmar'))+
+ '<button class="btn secondary" data-page="calendar">Ver calendario</button>')+
+ panel('<div class="row"><h2>Clasificación · Top 5</h2><button class="btn small outline" data-page="ranking">Ver toda</button></div>'+
+ (allRows.length?allRows.slice(0,5).map(x=>'<div class="dashboard-ranking-row '+(d.team?.id===x.team_id?'mine':'')+'"><span>'+h(x.position)+'. '+h(x.team_name)+'</span><b>'+pts(x.total_points)+' pts</b></div>').join(''):empty('Aínda non hai equipos inscritos','♙')))+
+ '</div>'+homeExperience(state);
 }
 function marketTable(){
  const d=state.data,round=current().pending?.round_number||5;
@@ -101,41 +127,75 @@ function marketTable(){
 
 function market(){
  const d=state.data,{pending,open}=current();
- const isFirst=!d.team, summary=validateLineup(state.draft,d.playerMap,prices());
+ const isFirst=!d.team,summary=validateLineup(state.draft,d.playerMap,prices());
  const plan=d.team?transferPlan(d.roster,state.draft,d.team.cash,prices()):{cashAfter:6000000-summary.cost,changes:0};
  const used=d.transfers.filter(t=>t.round_number===pending?.round_number).length;
  const remaining=3-used-plan.changes;
  const legal=summary.valid&&plan.cashAfter>=0&&(!d.team||remaining>=0);
- return pageHeader('Mercado de fichaxes','Compara prezos, elixe cinco xogadores e xestiona o teu bróker.')+
- '<div class="grid three" style="margin-bottom:17px">'+[
- ['Orzamento dispoñible',euroShort(isFirst?6000000:d.team.cash),'Saldo antes dos cambios'],
- ['Quinteto seleccionado',state.draft.length+' / 5','Mínimo 1 BA e 1 AP/P'],
- ['Cambios restantes',isFirst?'3':String(Math.max(0,3-used)),'Por xornada']
- ].map(k=>panel('<div class="kpi-label">'+k[0]+'</div><div class="kpi">'+k[1]+'</div><div class="kpi-caption">'+k[2]+'</div>')).join('')+'</div>'+
- callupSummary(d,pending)+'<a class="mobile-draft-link" href="#draft-summary"><span>◫ Ver o teu quinteto</span><strong>'+state.draft.length+' / 5 · '+euroShort(summary.cost)+'</strong></a>'+
- comparisonPanel(d,state.compareIds,person)+simulatorPanel(d,state.draft,pending?.round_number||d.season.start_round,open)+popularityPanel(d)+'<div class="grid two market-layout"><section class="panel market-panel"><div class="row"><h2>Plantel de xogadores</h2><span class="tag">'+d.players.length+' dispoñibles</span></div><div class="toolbar"><input id="search" placeholder="Buscar xogador…" value="'+h(state.search)+'"/><select id="pos-filter">'+[['all','Todas as posicións'],['BA','Bases'],['ES','Escoltas'],['AL','Aleros'],['AP','Ala-pivotes'],['P','Pivotes'],['junior','Juniors']].map(v=>option(...v,state.filter)).join('')+'</select></div><div id="market-table">'+marketTable()+'</div></section>'+
- '<aside id="draft-summary" class="panel draft-panel" tabindex="-1"><h2>O teu quinteto</h2><div class="stack">'+state.draft.map(id=>{const p=player(id);return p?'<div class="playeritem">'+person(p)+'<div class="actions"><b>'+euroShort(prices()[id])+'</b><button class="btn small secondary" data-action="toggle" data-id="'+id+'">×</button></div></div>':''}).join('')+Array.from({length:Math.max(0,5-state.draft.length)},()=>'<div class="playeritem" style="color:#a0b1ba;border-style:dashed">＋ Praza libre</div>').join('')+'</div><hr class="separator">'+
- '<div class="row"><span class="muted mini">Custo de selección</span><b>'+euroShort(summary.cost)+'</b></div><div class="row" style="margin-top:10px"><span class="muted mini">Efectivo tras confirmar</span><b style="color:'+(plan.cashAfter<0?'var(--bad)':'var(--good)')+'">'+euroShort(plan.cashAfter)+'</b></div>'+
- '<div class="metricbar" style="margin-top:12px"><span style="width:'+Math.min(100,summary.cost/(isFirst?6000000:(d.team.cash+ d.roster.reduce((n,id)=>n+(prices()[id]||0),0)))*100)+'%"></span></div>'+
- '<p class="help">Quinteto obrigatorio de 5 xogadores confirmado antes do partido. Sen equipo gardado non participas. Un BA e un interior AP/P diferentes; máximo 3 fichaxes por xornada.</p>'+
+ const active=['compare','simulate','popularity'].includes(state.marketTool)?state.marketTool:'compare';
+ const marketTools=[
+  ['compare','Comparador',comparisonPanel(d,state.compareIds,person)],
+  ['simulate','Simulador',simulatorPanel(d,state.draft,pending?.round_number||d.season.start_round,open)],
+  ['popularity','Popularidade',popularityPanel(d)]
+ ];
+ const toolTabs='<div class="market-tool-tabs" role="tablist" aria-label="Ferramentas do mercado">'+
+  marketTools.map(t=>'<button type="button" role="tab" class="market-tool-tab '+(active===t[0]?'active':'')+
+  '" data-market-tool="'+t[0]+'" id="market-tab-'+t[0]+'" aria-controls="market-tool-'+t[0]+'" aria-selected="'+(active===t[0])+'">'+
+  h(t[1])+(t[0]==='compare'&&state.compareIds.length?' · '+state.compareIds.length+'/2':'')+'</button>').join('')+'</div>';
+ const toolPanels=marketTools.map(t=>'<div class="market-tool-panel" id="market-tool-'+t[0]+'" role="tabpanel" aria-labelledby="market-tab-'+t[0]+'" '+(active===t[0]?'':'hidden')+'>'+t[2]+'</div>').join('');
+ return pageHeader('Mercado de fichaxes','Busca xogadores, compara valoracións e prepara os cinco que competirán.')+
+ '<div class="market-status-strip"><span><b>Saldo:</b> '+euroShort(isFirst?6000000:d.team.cash)+'</span>'+
+ '<span><b>Quinteto:</b> '+state.draft.length+' / 5</span>'+
+ '<span><b>Cambios:</b> '+(isFirst?'3':Math.max(0,3-used))+' / 3</span>'+
+ '<span class="tag '+(open?'good':'warn')+'">'+(open?'Mercado aberto':'Mercado pechado')+'</span></div>'+
+ '<a class="mobile-draft-link" href="#draft-summary"><span>Ver o teu quinteto</span><strong>'+state.draft.length+' / 5 · '+euroShort(summary.cost)+'</strong></a>'+
+ '<div class="grid two market-layout"><section class="panel market-panel"><div class="row"><h2>Buscar e fichar xogadores</h2><span class="tag">'+d.players.length+' xogadores</span></div>'+
+ '<div class="toolbar"><input id="search" aria-label="Buscar xogador" placeholder="Buscar xogador…" value="'+h(state.search)+'"/>'+
+ '<select id="pos-filter" aria-label="Filtrar xogadores por posición">'+[['all','Todas as posicións'],['BA','Bases'],['ES','Escoltas'],['AL','Aleros'],['AP','Ala-pivotes'],['P','Pivotes'],['junior','Juniors']].map(v=>option(...v,state.filter)).join('')+'</select></div>'+
+ callupSummary(d,pending)+'<div id="market-table">'+marketTable()+'</div></section>'+
+ '<aside id="draft-summary" class="panel draft-panel" tabindex="-1"><h2>O teu quinteto</h2><div class="stack">'+state.draft.map(id=>{const p=player(id);return p?'<div class="playeritem">'+person(p)+'<div class="actions"><b>'+euroShort(prices()[id])+'</b><button class="btn small secondary" data-action="toggle" data-id="'+id+'" aria-label="Retirar '+h(p.name)+'">×</button></div></div>':''}).join('')+
+ Array.from({length:Math.max(0,5-state.draft.length)},()=>'<div class="playeritem" style="color:#a0b1ba;border-style:dashed">＋ Praza libre</div>').join('')+'</div><hr class="separator">'+
+ '<div class="row"><span class="muted mini">Custo de selección</span><b>'+euroShort(summary.cost)+'</b></div>'+
+ '<div class="row" style="margin-top:10px"><span class="muted mini">Efectivo tras confirmar</span><b style="color:'+(plan.cashAfter<0?'var(--bad)':'var(--good)')+'">'+euroShort(plan.cashAfter)+'</b></div>'+
+ '<div class="metricbar" style="margin-top:12px"><span style="width:'+Math.min(100,summary.cost/(isFirst?6000000:(d.team.cash+d.roster.reduce((n,id)=>n+(prices()[id]||0),0)))*100)+'%"></span></div>'+
+ '<p class="help">Quinteto de 5 xogadores, mínimo un BA e un interior AP/P distintos. Máximo 3 fichaxes por xornada.</p>'+
  (summary.errors.length?'<div class="notice">'+summary.errors.map(h).join(' · ')+'</div>':'')+
  (plan.cashAfter<0?'<div class="notice error">Fáltanche '+euro(-plan.cashAfter)+'</div>':'')+
  availabilityWarning(state.draft,d.playerMap)+
-  (!open?'<div class="notice">Mercado pechado. Podes simular o quinteto, pero non confirmar fichaxes ata que se publiquen as estatísticas e os prezos.</div>':'')+
- (isFirst?'<div class="field" style="margin:17px 0"><label>Nome do teu equipo</label><input id="team-name" maxlength="40" placeholder="Ex.: Redeiras de Ouro" autocomplete="off"></div>':'<p class="mini muted">Cambios novos nesta simulación: '+plan.changes+' · Xa gastados: '+used+'</p>')+
- '<button class="btn primary full" data-action="save-lineup" '+(!legal||!open?'disabled':'')+'>'+ (isFirst?'Crear equipo':'Confirmar fichaxes')+' →</button></aside></div>';
+ (!open?'<div class="notice">Mercado pechado: podes preparar cambios, pero non gardalos ata a reapertura.</div>':'')+
+ (isFirst?'<div class="field" style="margin:17px 0"><label>Nome do teu equipo</label><input id="team-name" maxlength="40" placeholder="Ex.: Redeiras de Ouro" autocomplete="off"></div>':
+ '<p class="mini muted">Cambios nesta simulación: '+plan.changes+' · Xa utilizados: '+used+'</p>')+
+ '<button class="btn primary full" data-action="save-lineup" '+(!legal||!open?'disabled':'')+'>'+
+ (isFirst?'Crear equipo':'Confirmar fichaxes')+' →</button></aside></div>'+
+ '<section class="market-tools" id="market-tools" aria-label="Análise e ferramentas do mercado">'+
+ '<div class="market-tools-heading"><div><h2>Analiza antes de fichar</h2><p>Comparador, simulador e popularidade; as fichaxes só se gardan co botón de confirmación.</p></div></div>'+
+ toolTabs+toolPanels+'</section>';
 }
 function team(){
- const d=state.data;if(!d.team)return pageHeader('O meu equipo','Prepara o teu primeiro quinteto.')+panel(empty('Sen un quinteto gardado de cinco xogadores non participarás nesta xornada. Confírmao no mercado antes do partido.','♙')+'<button class="btn primary" data-page="market">Abrir mercado</button>');
+ const d=state.data;
+ if(!d.team)return pageHeader('O meu equipo','Prepara o teu primeiro quinteto.')+
+ panel(empty('Sen un quinteto gardado de cinco xogadores non participarás nesta xornada. Confírmao no mercado antes do partido.','♙')+
+ '<button class="btn primary" data-page="market">Abrir mercado</button>');
  const roster=d.roster.map(x=>player(x)).filter(Boolean),sum=roster.reduce((n,p)=>n+(prices()[p.id]||0),0);
- return pageHeader(d.team.name,'O teu cinco inicial, o efectivo e a evolución do equipo.','<button class="btn primary" data-page="market">Facer cambios →</button>')+
- '<div class="grid three" style="margin-bottom:17px">'+[
- ['Valor de mercado',euroShort(sum),'Valor actual do teu quinteto'],['Efectivo',euroShort(d.team.cash),'Dispoñible para fichaxes'],['Patrimonio total',euroShort(sum+d.team.cash),'Valor do equipo + saldo']
- ].map(k=>panel('<div class="kpi-label">'+k[0]+'</div><div class="kpi">'+k[1]+'</div><div class="kpi-caption">'+k[2]+'</div>')).join('')+'</div>'+
- availabilityWarning(d.roster,d.playerMap)+panel('<h2>O meu quinteto na pista</h2>'+courtLineup(d,d.roster,playerAvatar))+
- panel('<h2>O meu quinteto</h2><div class="roster-list">'+roster.map(p=>'<div class="roster-card">'+playerAvatar(p)+'<b>'+h(p.name)+'</b><div class="small">'+h(p.positions.join(' / '))+'</div><div class="small" style="color:#146f94;font-weight:800">'+euroShort(prices()[p.id])+'</div>'+availabilityBadge(p)+callupBadge(d,current().pending,p.id)+'<button class="btn small secondary" data-player="'+p.id+'" style="margin-top:12px">Perfil</button></div>').join('')+'</div>')+
- '<div class="grid two" style="margin-top:17px">'+panel('<h2>Normas</h2><p>Obrigatorio confirmar exactamente cinco xogadores antes do partido, cun BA e un AP/P distintos. Máximo tres transferencias por xornada, acumuladas entre operacións. Os lesionados ocupan praza e non dan cambios gratuítos.</p>')+
- panel('<h2>Historial de fichaxes</h2>'+(d.transfers.length?d.transfers.slice().reverse().slice(0,8).map(t=>'<div class="mini" style="margin:8px 0">X'+t.round_number+': '+h(player(t.sold_player_id)?.name||'?')+' → '+h(player(t.bought_player_id)?.name||'?')+'</div>').join(''):empty('Aínda non fixeches transferencias','⇄')))+'</div>';
+ return pageHeader(d.team.name,'Toca os xogadores na pista para ver as súas estatísticas e dispoñibilidade.',
+ '<button class="btn primary" data-page="market">Facer cambios →</button>')+
+ availabilityWarning(d.roster,d.playerMap)+
+ panel('<div class="team-court-header"><div><h2>O teu quinteto na pista</h2><p class="mini muted">Media pista de baloncesto · unha soa canastra</p></div><span class="tag">5 XOGADORES</span></div>'+
+ courtLineup(d,d.roster,playerAvatar),'team-court-panel')+
+ '<div class="grid three team-finances" aria-label="Valor económico do quinteto">'+[
+ ['Valor de mercado',euroShort(sum),'Os teus cinco xogadores'],
+ ['Efectivo',euroShort(d.team.cash),'Dispoñible para cambios'],
+ ['Patrimonio total',euroShort(sum+d.team.cash),'Valor + saldo']
+ ].map(k=>panel('<div class="kpi-label">'+h(k[0])+'</div><div class="kpi">'+h(k[1])+'</div><div class="kpi-caption">'+h(k[2])+'</div>')).join('')+'</div>'+
+ '<details class="team-list-view"><summary>Ver os cinco xogadores en lista <span class="muted mini">Prezos, convocatoria e perfís</span></summary>'+
+ panel('<div class="roster-list">'+roster.map(p=>'<div class="roster-card">'+playerAvatar(p)+'<b>'+h(p.name)+'</b><div class="small">'+h(p.positions.join(' / '))+'</div>'+
+ '<div class="small" style="color:#146f94;font-weight:800">'+euroShort(prices()[p.id])+'</div>'+availabilityBadge(p)+
+ callupBadge(d,current().pending,p.id)+'<button class="btn small secondary" data-player="'+p.id+'" style="margin-top:12px">Perfil</button></div>').join('')+'</div>')+'</details>'+
+ '<div class="grid two team-support" style="margin-top:17px">'+
+ panel('<h2>Normas do quinteto</h2><p>Confirma cinco xogadores antes do partido: un BA e un AP/P distintos. Máximo tres transferencias por xornada. As lesións non dan cambios gratuítos.</p>')+
+ panel('<h2>Historial de fichaxes</h2>'+(d.transfers.length?d.transfers.slice().reverse().slice(0,8).map(t=>
+ '<div class="mini" style="margin:8px 0">X'+t.round_number+': '+h(player(t.sold_player_id)?.name||'?')+' → '+h(player(t.bought_player_id)?.name||'?')+'</div>').join(''):
+ empty('Aínda non fixeches transferencias','⇄')))+'</div>';
 }
 function ranking(){
  const d=state.data;
@@ -146,22 +206,43 @@ function ranking(){
  const rows=weekly?(d.weeklyRanking||[]).filter(t=>String(t.round_number)===selected).map(t=>({
    position:t.position,team_id:t.team_id,team_name:t.team_name,manager_alias:t.manager_alias,total_points:t.round_points
  })):d.leaderboard;
+ const movements=weekly?new Map():rankingMoves(d.fixtures,d.weeklyRanking,rows);
+ const moveLabel=row=>{
+   const move=movements.get(row.team_id);
+   if(move==null)return '';
+   return '<span class="rank-movement '+(move>0?'up':move<0?'down':'steady')+'" aria-label="'+
+     (move>0?'Subiu '+move+' postos':move<0?'Baixou '+Math.abs(move)+' postos':'Sen cambios')+'">'+
+     (move>0?'↑ '+move:move<0?'↓ '+Math.abs(move):'—')+'</span>';
+ };
+ const best=rows.slice(0,3);
+ const podium=rows.length?'<div class="ranking-podium" aria-label="Primeiros equipos da clasificación">'+best.map((t,i)=>
+   '<div class="podium-card podium-'+(i+1)+(d.team?.id===t.team_id?' mine':'')+'"><span class="podium-rank">'+t.position+'º</span>'+
+   '<div><strong>'+h(t.team_name)+'</strong><small>'+h(t.manager_alias||'')+'</small></div>'+
+   '<b>'+pts(t.total_points)+' <small>pts</small></b></div>').join('')+'</div>':'';
  const table='<div class="tablewrap ranking-tablewrap"><table class="table"><thead><tr><th scope="col">#</th><th scope="col">Equipo Fantasy</th><th scope="col">Mánager</th><th scope="col" class="num">Puntos</th></tr></thead><tbody>'+
-  rows.map(t=>'<tr><td><b>'+t.position+'</b></td><td><b>'+h(t.team_name)+'</b>'+(d.team?.id===t.team_id?' <span class="tag good">TI</span>':'')+'</td><td>'+h(t.manager_alias)+'</td><td class="num"><b>'+pts(t.total_points)+'</b></td></tr>').join('')+'</tbody></table></div>';
+ rows.map(t=>'<tr class="'+(d.team?.id===t.team_id?'ranking-own':'')+'"><td><b>'+t.position+'</b></td>'+
+ '<td><b>'+h(t.team_name)+'</b>'+(d.team?.id===t.team_id?' <span class="tag good">TI</span>':'')+
+ (!weekly?' '+moveLabel(t):'')+'</td><td>'+h(t.manager_alias||'')+'</td><td class="num"><b>'+pts(t.total_points)+'</b></td></tr>').join('')+'</tbody></table></div>';
  const cards='<ol class="ranking-cards" aria-label="Clasificación de equipos">'+rows.map(t=>
-  '<li class="ranking-card"><span class="ranking-position">'+t.position+'</span><div class="ranking-names"><b>'+h(t.team_name)+'</b>'+(d.team?.id===t.team_id?' <span class="tag good">TI</span>':'')+'<small>'+h(t.manager_alias)+'</small></div><strong class="ranking-points">'+pts(t.total_points)+'<small>pts</small></strong></li>'
- ).join('')+'</ol>';
+ '<li class="ranking-card '+(d.team?.id===t.team_id?'ranking-own':'')+'"><span class="ranking-position">'+t.position+'</span>'+
+ '<div class="ranking-names"><b>'+h(t.team_name)+'</b>'+(d.team?.id===t.team_id?' <span class="tag good">TI</span>':'')+
+ '<small>'+h(t.manager_alias||'')+'</small>'+(!weekly?moveLabel(t):'')+'</div>'+
+ '<strong class="ranking-points">'+pts(t.total_points)+'<small>pts</small></strong></li>').join('')+'</ol>';
  const choose='<div class="ranking-selector"><label for="ranking-round">Ver clasificación</label><select id="ranking-round">'+
-  option('general','Xeral',selected)+finished.map(f=>option(String(f.round_number),'X'+f.round_number+' · '+f.opponent,selected)).join('')+'</select></div>';
+ option('general','Xeral',selected)+finished.map(f=>option(String(f.round_number),'X'+f.round_number+' · '+f.opponent,selected)).join('')+'</select></div>';
  const noRows=weekly?'Aínda non hai puntuacións rexistradas para esta xornada.':'Aínda non hai puntuacións nin equipos';
  const error=weekly&&d.weeklyRankingError?'<div class="notice error">Non foi posible cargar a clasificación semanal. Revisa a conexión e actualiza a páxina.</div>':'';
  const idealRound=weekly?Number(selected):finished[0]?.round_number;
+ const myRow=rows.find(x=>x.team_id===d.team?.id);
  return pageHeader(weekly?'Clasificación · X'+selected:'Clasificación xeral',
-  weekly?'Puntos oficiais desta xornada; non dependen do quinteto actual.':'Puntos acumulados de todas as xornadas publicadas.')+
-  panel(choose+error+(rows.length?'<div class="ranking-results">'+table+cards+'</div>':empty(noRows,'♛')))+
-  idealTeamPanel(d,idealRound,person)+recordsPanel(d);
+  weekly?'Puntos oficiais desta xornada; non dependen do quinteto actual.':'Puntos acumulados das xornadas publicadas.')+
+  '<div class="ranking-topline">'+choose+
+ (myRow?'<div class="ranking-me"><span>O teu equipo · '+h(myRow.team_name)+'</span><strong>'+h(myRow.position)+'º · '+pts(myRow.total_points)+' pts</strong></div>':'')+'</div>'+
+ podium+
+ panel(error+(rows.length?'<div class="ranking-results">'+table+cards+'</div>':empty(noRows,'♛')))+
+ (movements.size?'<p class="mini muted ranking-move-note">As frechas indican cambios de posición estimados fronte á xornada publicada anterior; en caso de empate poden diferir do desempate oficial.</p>':'')+
+ idealTeamPanel(d,idealRound,person)+recordsPanel(d);
 }
-
 function analytics(){
  return pageHeader('Estatísticas do Fantasy','Máis datos para analizar xogadores con resultados oficiais publicados.')+analyticsPage(state.data,state.analyticsSort,person);
 }
