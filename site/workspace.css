@@ -420,3 +420,10 @@ input:focus,select:focus,textarea:focus{
  html{scroll-behavior:auto;}
  .sidebar .nav{transition:none;}
 }
+
+/* SVG navigation marks scale independently of typography. */
+.sidebar .nav .sym svg{display:block;width:19px;height:19px;flex:none;}
+.mobilebar button>span svg{display:block;width:20px;height:20px;margin:auto;}
+.mobile-more-link>span svg{display:block;width:22px;height:22px;margin:auto;}
+@media(min-width:640px) and (max-width:1099px){.sidebar .nav .sym svg{width:21px;height:21px;}}
+@media(max-width:639px){.mobilebar button.active>span svg{width:20px;height:20px;}}
