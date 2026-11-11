@@ -8,7 +8,7 @@ import {playerAdvancedPanel} from '../site/analytics-view.js';
 const read=path=>readFileSync(new URL('../'+path,import.meta.url),'utf8');
 
 test('Basketball Stats Assistant CSV imports REB and AST, including measured zeros, and flags unmatched names',()=>{
- const nameList=['Brais','Iván','Juan','Yoel','Mario','Adán','Luca','Álex','Álvaro','Diego','Adri'];
+ const nameList=['Brais','Iván','Juan','Yoel','Mario','Adán','Luca','Álex','Álvaro','Diego','Adri','Edu'];
  const players=nameList.map((name,i)=>({id:String(i+1),name}));
  const vals=[
   ['Brais','3:21',0,0,1],['Ivan','3:16',3,1,0],['Juan','35:40',8,10,1],
@@ -16,17 +16,16 @@ test('Basketball Stats Assistant CSV imports REB and AST, including measured zer
   ['Luca','1:33',-1,1,2],['Alex','10:15',0,1,0],['Alvaro','22:53',4,2,3],
   ['Pola','15:55',-3,3,0],['Diego','20:31',1,0,1],['Adri','27:29',9,9,2]
  ];
- // The input deliberately includes a player not registered in Fantasy:
- // the interface must not silently equate Pola and Edu.
+ // The club confirmed Pola (#30) is Edu Pola, so this alias is now safe.
  const rows=rowsFromTable([
   ['Jugador','PIR','MIN','REB','AST'],
   ...vals.map(([name,min,pir,reb,ast])=>[name,pir,min,reb,ast])
  ],players);
  const matched=rows.filter(x=>x.player_id);
- assert.equal(matched.length,11);
+ assert.equal(matched.length,12);
  assert.equal(rows.find(x=>x.name==='Dunkos').player_id,players.find(x=>x.name==='Adán').id);
- assert.equal(rows.find(x=>x.name==='Pola').player_id,'');
- assert.equal(matched.reduce((s,x)=>s+x.rebounds,0),31);
+ assert.equal(rows.find(x=>x.name==='Pola').player_id,players.find(x=>x.name==='Edu').id);
+ assert.equal(matched.reduce((s,x)=>s+x.rebounds,0),34);
  assert.equal(matched.reduce((s,x)=>s+x.assists,0),13);
  assert.equal(rows.reduce((s,x)=>s+x.rebounds,0),34);
  const zero=rows.find(x=>x.name==='Brais');
@@ -87,5 +86,5 @@ test('admin imports REB/AST after publishing via separate RPC; published Fantasy
  const supplementary=migration.slice(migration.indexOf('create or replace function public.fantasy_save_observed_stats'),
   migration.indexOf('-- Partial X5 footage'));
  assert.doesNotMatch(supplementary,/fantasy_persist_fixture_preview|next_price|team_round_scores|price_history|fantasy_points\s*=/i);
- assert.match(migration,/NON asignada a Edu/i); // preserved conflict warning in fixture note
+ assert.match(migration,/NON asignada a Edu/i); // historical partial source note
 });
