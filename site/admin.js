@@ -1,5 +1,6 @@
 import {state,rpc,admin,current,player,prices,h,dateText,panel,pageHeader,option,euroShort,toast,playerAvatar} from './pages.js';
 import {parseDelimited,rowsFromTable,pts} from './logic.js';
+import {boxDraft,boxHeaders,boxRow,hasInformative} from './boxscore-admin.js';
 import {availabilityLabel} from './availability.js';
 import {voteTrackingHtml} from './vote-tracking.js';
 import {uncalledAuditHtml} from './uncalled-audit.js';
@@ -30,11 +31,11 @@ async function optimizedPortrait(file){
 const number=n=>new Intl.NumberFormat('es-ES',{maximumFractionDigits:2}).format(Number(n)||0);
 const cash=n=>new Intl.NumberFormat('es-ES',{maximumFractionDigits:0}).format(Number(n)||0)+' €';
 function statsDraft(){
- const optionalInt=(id,key,label)=>{
+ const optionalInt=(id,key,label,signed=false)=>{
   const raw=document.querySelector('[data-stat-'+key+'="'+id+'"]')?.value?.trim()??'';
   if(raw==='')return null;
   const n=Number(raw);
-  if(!Number.isInteger(n)||n<0||n>100)throw Error(label+' debe ser un número enteiro entre 0 e 100');
+  if(!Number.isInteger(n)||n<(signed?-200:0)||n>(signed?200:100))throw Error(label+' debe ser un número enteiro no rango permitido');
   return n;
  };
  return state.data.players.map(p=>{
@@ -45,7 +46,7 @@ function statsDraft(){
    minutes:Number(document.querySelector('[data-stat-min="'+p.id+'"]')?.value||0),
    pir:Number(document.querySelector('[data-stat-pir="'+p.id+'"]')?.value||0),
    points:Number(document.querySelector('[data-stat-pts="'+p.id+'"]')?.value||0),
-   rebounds,assists,
+   rebounds,assists,...boxDraft(p,optionalInt),
    rebounds_recorded:rebounds!==null,assists_recorded:assists!==null,
    source_format:state.importRows?.find(r=>r.player_id===p.id)?.source_format||'manual'
   };
@@ -112,20 +113,20 @@ export function adminView(){
  panel('<h2>Convocatoria e votación</h2><p>Marca todos os xogadores convocados, tamén quen non participou no encontro. Só poderán votar os convocados con conta vinculada.</p><div class="grid admin-callup-grid">'+d.players.map(p=>'<label class="playeritem callup-item"><input type="checkbox" class="callup-box" value="'+p.id+'" '+(d.callups.some(c=>c.fixture_id===fixture?.id && c.player_id===p.id)?'checked':'')+'><span>'+h(p.name)+'</span></label>').join('')+'</div><button class="btn primary" data-action="save-callups" style="margin-top:15px">Gardar convocatoria</button>'),
  panel('<div id="admin-vote-participation">'+voteTrackingHtml(state.adminVoteParticipation,fixture,h,dateText)+'</div>'),
  panel('<h2>Dispoñibilidade dos xogadores</h2><p>Marca lesións e dúbidas para que se vexan no mercado e nos quintetos. Non anotes diagnósticos. As semanas son orientativas e debes revisar o estado manualmente.</p><div class="stack availability-admin"><div class="field"><label for="availability-player">Xogador</label><select id="availability-player">'+d.players.map(p=>option(p.id,p.name,availabilityPlayer?.id)).join('')+'</select></div><div class="field"><label for="availability-status">Estado deportivo</label><select id="availability-status">'+[['available','Dispoñible'],['injured','Lesionado'],['doubtful','Dúbida']].map(v=>option(v[0],v[1],availabilityPlayer?.availability_status||'available')).join('')+'</select></div><div class="field"><label for="availability-weeks">Semanas estimadas de baixa (opcional)</label><input id="availability-weeks" type="number" step="1" min="1" max="52" placeholder="Ex.: 3" value="'+h(availabilityPlayer?.availability_weeks??'')+'" '+(availabilityPlayer?.availability_status==='injured'?'':'disabled')+'></div><p class="mini muted">Estado actual: '+h(availabilityLabel(availabilityPlayer))+'</p><button type="button" class="btn primary" data-action="set-player-availability">Gardar estado</button></div>'),
-  panel('<h2>Importar valoracións</h2><p>Aceptamos CSV, Excel e PDF. No caso do PDF extraemos texto como axuda, pero as cifras deben verificarse manualmente. A columna correcta é <b>PIR / Valoración</b>, non EFF. <b>REB e AST son opcionais e só informativos:</b> non modifican a valoración, o bróker nin a clasificación. Deixa baleiro se non se rexistraron; o cero debe ser un dato observado.</p><div class="field"><label>Arquivo do Basketball Stats Assistant</label><input type="file" id="stats-file" accept=".csv,.tsv,.xls,.xlsx,.pdf"></div>'+(state.rawPdf?'<details open style="margin-top:12px"><summary>Texto extraído do PDF (revisar)</summary><pre class="file-preview">'+h(state.rawPdf.slice(0,11000))+'</pre></details>':'')+
+  panel('<h2>Importar valoracións</h2><p>Aceptamos CSV, Excel e PDF. No caso do PDF extraemos texto como axuda, pero as cifras deben verificarse manualmente. A columna correcta é <b>PIR / Valoración</b>, non EFF. <b>REB, AST, recuperacións, perdas, tapóns, tiros e faltas son opcionais e informativos:</b> non modifican a valoración, o bróker nin a clasificación. Deixa baleiro se non se rexistraron; o cero debe ser un dato observado. As porcentaxes calcúlanse automaticamente.</p><div class="field"><label>Arquivo do Basketball Stats Assistant</label><input type="file" id="stats-file" accept=".csv,.tsv,.xls,.xlsx,.pdf"></div>'+(state.rawPdf?'<details open style="margin-top:12px"><summary>Texto extraído do PDF (revisar)</summary><pre class="file-preview">'+h(state.rawPdf.slice(0,11000))+'</pre></details>':'')+
  '<p class="mini muted">Rexistros preparados: '+(state.importRows?.length||'0')+'. Revisa a correspondencia dos xogadores antes de confirmar.</p>'+
  (state.unmatchedStatsPlayers?.length?'<div class="notice" role="alert">Sen correspondencia no Fantasy: '+h(state.unmatchedStatsPlayers.join(', '))+'. Estes xogadores NON se importaron. Comproba os nomes ou avisa a administración.</div>':'')+
  (fixture?.supplemental_stats_note?'<div class="notice info">'+h(fixture.supplemental_stats_note)+'</div>':'')+
- '<div class="tablewrap admin-stats-wrap"><table class="table admin-stats-table"><thead><tr><th scope="col">Xogador</th><th scope="col">Xogou?</th><th scope="col">Minutos</th><th scope="col">PIR (non EFF)</th><th scope="col">Puntos</th><th scope="col">REB (opcional)</th><th scope="col">AST (opcional)</th></tr></thead><tbody>'+
+ '<div class="tablewrap admin-stats-wrap"><table class="table admin-stats-table"><thead><tr><th scope="col">Xogador</th><th scope="col">Xogou?</th><th scope="col">Minutos</th><th scope="col">PIR (non EFF)</th><th scope="col">Puntos</th><th scope="col">REB (opcional)</th><th scope="col">AST (opcional)</th>'+boxHeaders(h)+'</tr></thead><tbody>'+
  d.players.map(p=>{const v=getStat(p.id),played=Boolean(v.played);return '<tr><th scope="row">'+h(p.name)+'</th><td><label class="stat-input stat-check"><span class="stat-mobile-label">Xogou?</span><input type="checkbox" data-stat-played="'+p.id+'" '+(played?'checked':'')+' aria-label="Xogou '+h(p.name)+'"></label></td><td><label class="stat-input"><span class="stat-mobile-label">Minutos</span><input data-stat-min="'+p.id+'" type="number" inputmode="decimal" step="0.01" min="0" max="60" value="'+h(v.minutes??0)+'" aria-label="Minutos de '+h(p.name)+'"></label></td><td><label class="stat-input"><span class="stat-mobile-label">PIR</span><input data-stat-pir="'+p.id+'" type="number" inputmode="decimal" step="0.01" min="-100" max="100" value="'+h(v.pir??0)+'" aria-label="Valoración PIR de '+h(p.name)+'"></label></td><td><label class="stat-input"><span class="stat-mobile-label">Puntos</span><input data-stat-pts="'+p.id+'" type="number" inputmode="numeric" step="1" value="'+h(v.points??0)+'" aria-label="Puntos de '+h(p.name)+'"></label></td>'+
  '<td><label class="stat-input"><span class="stat-mobile-label">REB</span><input data-stat-reb="'+p.id+'" type="number" inputmode="numeric" step="1" min="0" max="100" placeholder="—" value="'+h(v.rebounds_recorded&&v.rebounds!=null?v.rebounds:'')+'" aria-label="Rebotes observados de '+h(p.name)+'"></label></td>'+
- '<td><label class="stat-input"><span class="stat-mobile-label">AST</span><input data-stat-ast="'+p.id+'" type="number" inputmode="numeric" step="1" min="0" max="100" placeholder="—" value="'+h(v.assists_recorded&&v.assists!=null?v.assists:'')+'" aria-label="Asistencias observadas de '+h(p.name)+'"></label></td></tr>'}).join('')+'</tbody></table></div>'+
+ '<td><label class="stat-input"><span class="stat-mobile-label">AST</span><input data-stat-ast="'+p.id+'" type="number" inputmode="numeric" step="1" min="0" max="100" placeholder="—" value="'+h(v.assists_recorded&&v.assists!=null?v.assists:'')+'" aria-label="Asistencias observadas de '+h(p.name)+'"></label></td>'+boxRow(p,v,h,number)+'</tr>'}).join('')+'</tbody></table></div>'+
  '<div class="supplemental-import-actions">'+
- '<button class="btn primary" data-action="save-stats" '+(fixture?.status==='finalized'?'disabled title="Esta xornada xa está publicada. Usa o botón de REB/AST."':'')+'>Gardar valoracións revisadas</button>'+
- '<button class="btn secondary" data-action="save-observed-stats" '+(!fixture?.stats_finalized_at?'disabled title="Primeiro garda as estatísticas oficiais da xornada"':'')+'>Gardar só REB e AST (sen recalcular Fantasy)</button></div>'+
- '<div class="field" style="margin-top:12px"><label for="supplemental-note">Fonte ou aviso sobre REB/AST (opcional, máximo 500 caracteres)</label>'+
+ '<button class="btn primary" data-action="save-stats" '+(fixture?.status==='finalized'?'disabled title="Esta xornada xa está publicada. Usa Gardar boxscore informativo."':'')+'>Gardar valoracións revisadas</button>'+
+ '<button class="btn secondary" data-action="save-observed-stats" '+(!fixture?.stats_finalized_at?'disabled title="Primeiro garda as estatísticas oficiais da xornada"':'')+'>Gardar boxscore informativo (sen recalcular Fantasy)</button></div>'+
+ '<div class="field" style="margin-top:12px"><label for="supplemental-note">Fonte ou aviso sobre boxscore (máximo 500 caracteres)</label>'+
  '<textarea id="supplemental-note" rows="2" maxlength="500" placeholder="Ex.: datos parciais: o vídeo terminou antes do final do partido">'+h(fixture?.supplemental_stats_note||'')+'</textarea></div>'+
- '<p class="mini muted">Podes engadir REB e AST mesmo despois de publicar a xornada. Non altera o PIR/VAL, os puntos Fantasy, o bróker nin a clasificación.</p>'),
+ '<p class="mini muted">Podes engadir todas as estatísticas do boxscore incluso despois de publicar. Non altera VAL, puntos Fantasy, prezos nin clasificación.</p>'),
  panel('<h2 id="admin-publication">Vista previa, publicación e rectificación</h2><p>A vista previa usa o mesmo cálculo servidor que a publicación. Podes calcular despois de 72 horas ou pechando antes a votación desde «Seguimento da votación» cando teña o 100 % de papeletas completas. Precísanse convocatoria, resultado e estatísticas completas.</p>'+
  '<div class="actions"><button class="btn secondary" data-action="preview-round">Calcular vista previa da xornada '+(fixture?.round_number||'')+'</button></div>'+
  '<div id="admin-preview-results" style="margin-top:14px">'+previewHtml(state.adminPreview?.fixture_id===fixture?.id?state.adminPreview:null)+'</div>'+
@@ -246,22 +247,21 @@ export async function adminAction(action,element){
      break;
    }
    case 'save-stats':{
-    const rows=statsDraft();
-    await rpc('fantasy_save_stats',{p_fixture:f.id,p_rows:rows});
-    state.importRows=null;state.unmatchedStatsPlayers=[];state.rawPdf='';state.adminPreview=null;state.adminPreviewRows=null;break;
-  }
-  case 'save-observed-stats':{
-    const rows=statsDraft().filter(r=>r.rebounds_recorded||r.assists_recorded);
-    if(!rows.length)throw Error('Introduce polo menos un dato REB ou AST; deixa en branco os datos non observados');
-    const count=await rpc('fantasy_save_observed_stats',{
-      p_fixture:f.id,p_rows:rows,
-      p_note:val('supplemental-note').trim()||null
-    });
-    state.importRows=null;state.unmatchedStatsPlayers=[];state.rawPdf='';
-    toast('REB/AST gardados para '+count+' xogadores. Non se cambiaron puntuacións nin prezos');
-    break;
-  }
-  case 'preview-round':{
+     const rows=statsDraft();
+     await rpc('fantasy_save_stats',{p_fixture:f.id,p_rows:rows});
+     const informative=rows.filter(hasInformative);
+     if(informative.length)await rpc('fantasy_save_boxscore',{p_fixture:f.id,p_rows:informative,p_note:val('supplemental-note').trim()||null});
+     state.importRows=null;state.unmatchedStatsPlayers=[];state.rawPdf='';state.adminPreview=null;state.adminPreviewRows=null;break;
+   }
+   case 'save-observed-stats':{
+     const rows=statsDraft().filter(hasInformative);
+     if(!rows.length)throw Error('Introduce algún dato do boxscore; deixa baleiros os non observados');
+     const count=await rpc('fantasy_save_boxscore',{p_fixture:f.id,p_rows:rows,p_note:val('supplemental-note').trim()||null});
+     state.importRows=null;state.unmatchedStatsPlayers=[];state.rawPdf='';
+     toast('Boxscore gardado para '+count+' xogadores sen modificar puntuacións nin prezos');
+     break;
+   }
+   case 'preview-round':{
     const rows=f.status==='finalized'?statsDraft():null;
     const preview=await rpc('fantasy_preview_fixture',{p_fixture:f.id,p_rows:rows});
     state.adminPreview=preview;state.adminPreviewRows=rows;
@@ -386,9 +386,9 @@ export async function handleStatsFile(file){
  state.importRows=rows.filter(r=>r.player_id).map(r=>({...r,source_format:ext==='xlsx'||ext==='xls'?'xlsx':'csv'}));
  state.unmatchedStatsPlayers=rows.filter(r=>!r.player_id).map(r=>r.name).filter(Boolean);
  state.rawPdf='';
- const confirmed=state.importRows.filter(r=>r.rebounds_recorded||r.assists_recorded).length;
+ const confirmed=state.importRows.filter(hasInformative).length;
  return matched+' xogadores recoñecidos de '+rows.length+
-  ', con REB/AST rexistrados en '+confirmed+'.'+
+  ', con estatísticas informativas en '+confirmed+'.'+
   (state.unmatchedStatsPlayers.length?' Sen identificar: '+state.unmatchedStatsPlayers.join(', ')+'.':'')+
   ' Revisa PIR, minutos e correspondencia dos xogadores antes de gardar.';
 }

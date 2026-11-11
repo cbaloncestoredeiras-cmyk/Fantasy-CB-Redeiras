@@ -1,3 +1,4 @@
+import {BOX_FIELDS,BOX_PCT,recorded,boxPercentage} from './boxscore.js';
 import {escapeHtml as h,pts} from './logic.js';
 import {FIELDS,playerSeasonStats,leaderboardLeaders,seasonRecords,popularityRows} from './analytics.js';
 const val=n=>n==null?'—':pts(n);
@@ -17,12 +18,33 @@ export function playerAdvancedPanel(data,id){
  '<td>'+(g.assists_recorded===true?pts(g.assists):'—')+'</td>'+
  '<td>'+pts(g.minutes)+'</td></tr>').join('');
  const notes=[...new Set(completed.map(g=>fixtureNotes.get(g.fixture_id)).filter(Boolean))];
+ const fmt=(g,key)=>recorded(g,key)?pts(g[key]):'—';
+ const attempts=(g,m,a)=>recorded(g,m)&&recorded(g,a)?pts(g[m])+' / '+pts(g[a]):'—';
+ const percent=(g,m,a)=>{const n=boxPercentage(g[m],g[a]);return n===null?'—':pts(n)+' %';};
+ const shots=completed.map(g=>'<tr><th scope="row">X'+g.round+'</th>'+
+ '<td>'+attempts(g,'fg_made','fg_attempted')+'</td>'+
+ '<td>'+percent(g,'fg_made','fg_attempted')+'</td>'+
+ '<td>'+attempts(g,'two_made','two_attempted')+'</td>'+
+ '<td>'+percent(g,'two_made','two_attempted')+'</td>'+
+ '<td>'+attempts(g,'three_made','three_attempted')+'</td>'+
+ '<td>'+percent(g,'three_made','three_attempted')+'</td>'+
+ '<td>'+attempts(g,'ft_made','ft_attempted')+'</td>'+
+ '<td>'+percent(g,'ft_made','ft_attempted')+'</td>'+
+ ['off_reb','def_reb','rebounds','assists','steals','turnovers','blocks','shots_rejected','fouls','fouls_drawn','eff','plus_minus']
+ .map(key=>'<td>'+fmt(g,key)+'</td>').join('')+'</tr>').join('');
+ const allBox='<details class="boxscore-details"><summary>Boxscore completo por xornada</summary>'+
+ '<div class="tablewrap"><table class="table analytics-history"><thead><tr>'+
+ ['Xornada','FGM/FGA','FG%','2PM/2PA','2P%','3PM/3PA','3P%','FTM/FTA','FT%','OREB','DREB','REB','AST','STL','TOV','BLK','SR','PF','PFD','EFF','+/-']
+ .map(k=>'<th scope="col">'+k+'</th>').join('')+'</tr></thead><tbody>'+shots+'</tbody></table></div>'+
+ '<p class="mini muted">SR = tapóns recibidos; PFD = faltas recibidas; EFF non é VAL/PIR. — indica dato non rexistrado.</p></details>';
+
  return '<section class="insight-section advanced-profile"><h3>Estatísticas avanzadas</h3>'+
  '<div class="analytics-kpis">'+blocks+'</div>'+
  '<p class="mini muted">Partidos disputados: '+m.played+' · Máximo Fantasy: '+pts(m.best)+' · Regularidade (desviación): '+(m.consistency==null?'—':pts(m.consistency))+' puntos.</p>'+
  '<div class="tablewrap"><table class="table analytics-history"><thead><tr><th scope="col">Xornada</th><th scope="col">Fantasy</th><th scope="col">PIR</th><th scope="col">PTS</th><th scope="col">REB</th><th scope="col">AST</th><th scope="col">MIN</th></tr></thead><tbody>'+rows+'</tbody></table></div>'+
  (notes.length?'<div class="notice info" role="note">'+notes.map(n=>h(n)).join(' ')+'</div>':'')+
- '<p class="mini muted">— = dato non rexistrado, non cero. REB/AST son só informativos: non alteran PIR, puntuación Fantasy, prezos nin clasificación. Só se mostran xornadas publicadas.</p></section>';
+  allBox+
+ '<p class="mini muted">— = dato non rexistrado, non cero. Os datos do boxscore son informativos: non alteran PIR, puntuación Fantasy, prezos nin clasificación. Só se mostran xornadas publicadas.</p></section>';
 }
 export function courtLineup(data,ids,avatar){
  const selected=ids.map(id=>data.playerMap?.[id]).filter(Boolean);
@@ -83,7 +105,7 @@ export function analyticsPage(data,sort='fantasy_points',person){
  const options=FIELDS.map(([key,label])=>'<option value="'+key+'"'+(field===key?' selected':'')+'>'+h(label)+'</option>').join('');
  const html=sorted.length?'<div class="analytics-ranking">'+sorted.map((r,i)=>
   '<div class="analytics-player"><span class="analytics-place">'+(i+1)+'</span>'+person(r.player)+
-  '<div class="analytics-right"><strong>'+pts(r.metrics.averages[field])+'</strong><small>media · '+r.metrics.played+' partidos</small></div>'+
+  '<div class="analytics-right"><strong>'+(r.metrics.averages[field]==null?'—':pts(r.metrics.averages[field])+(field.endsWith('_pct')?' %':''))+'</strong><small>'+r.metrics.observedGames[field]+' partidos con rexistro</small></div>'+
   '<button type="button" class="btn small secondary" data-player="'+h(r.player.id)+'">Perfil</button></div>').join('')+'</div>':
   '<div class="insight-empty">Aínda non hai estatísticas Fantasy publicadas. Este panel actualizarase coa primeira xornada.</div>';
  return '<section class="panel analytics-page"><div class="row"><div><h2>Estatísticas avanzadas</h2><p class="mini muted">Clasificación por medias e só por partidos disputados.</p></div>'+

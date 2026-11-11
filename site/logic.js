@@ -1,3 +1,4 @@
+import {BOX_FIELDS} from './boxscore.js';
 // Shared client-side previews. The database RPCs are the authoritative validators.
 export const FANTASY_BUDGET = 6_000_000;
 export const MAX_TRANSFERS = 3;
@@ -131,6 +132,11 @@ export function rowsFromTable(table,players){
     blk:idx('blk','tapones','blocks'),
     tov:idx('tov','perdidas','turnovers')
   };
+  const extraColumns=BOX_FIELDS.map(field=>({
+    key:field.key,label:field.label,
+    col:table[0].findIndex(raw=>field.aliases.some(alias=>
+      alias==='+/-'?String(raw??'').trim()==='+/-':norm(raw)===norm(alias)))
+  }));
   // Never silently use EFF when PIR isn't present.
   if(cols.player===-1||cols.pir===-1)throw new Error('A táboa necesita columnas Xogador e PIR/Valoración (EFF non equivale a PIR).');
   const names=Object.fromEntries(players.map(p=>[norm(p.name),p.id]));
@@ -160,20 +166,28 @@ export function rowsFromTable(table,players){
     if(!Number.isFinite(pir)||!Number.isFinite(minutes))throw new Error('Número incorrecto na fila '+(i+2));
     // Blank or missing REB/AST means "unknown", whereas numeric 0 is
     // a real observed zero. These two states must never be conflated.
-    const optionalCount=(col,label)=>{
+    const optionalCount=(col,label,signed=false)=>{
       if(col<0||String(row[col]??'').trim()==='')return null;
       const value=number(row[col]);
-      if(!Number.isInteger(value)||value<0||value>100)
+      if(!Number.isInteger(value)||value<(signed?-200:0)||value>(signed?200:100))
         throw new Error(label+' incorrecto na fila '+(i+2));
       return value;
     };
-    const rebounds=optionalCount(cols.reb,'REB'),assists=optionalCount(cols.ast,'AST');
+    let rebounds=optionalCount(cols.reb,'REB'),assists=optionalCount(cols.ast,'AST');
+    const extra=Object.fromEntries(extraColumns.map(c=>[c.key,optionalCount(c.col,c.label,c.key==='eff'||c.key==='plus_minus')]));
+    if(rebounds===null&&extra.off_reb!==null&&extra.def_reb!==null)
+      rebounds=extra.off_reb+extra.def_reb;
+    if(extra.fg_made===null&&extra.two_made!==null&&extra.three_made!==null)
+      extra.fg_made=extra.two_made+extra.three_made;
+    if(extra.fg_attempted===null&&extra.two_attempted!==null&&extra.three_attempted!==null)
+      extra.fg_attempted=extra.two_attempted+extra.three_attempted;
     return {player_id,name,minutes,pir,played:minutes>0||pir!==0,
       points:cols.pts>=0?number(row[cols.pts]):0,
       rebounds,assists,
       rebounds_recorded:rebounds!==null,assists_recorded:assists!==null,
-      steals:cols.stl>=0?number(row[cols.stl]):0,
-      blocks:cols.blk>=0?number(row[cols.blk]):0,
-      turnovers:cols.tov>=0?number(row[cols.tov]):0};
+      ...extra,
+      steals_recorded:extra.steals!==null,
+      blocks_recorded:extra.blocks!==null,
+      turnovers_recorded:extra.turnovers!==null};
   });
 }
