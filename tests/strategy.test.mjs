@@ -18,7 +18,8 @@ history.push({player_id:'f',round_number:5,price_before:2500000,price_after:5000
 const data={
  season:{starting_budget:6000000,max_transfers:3,start_round:5},
  team:{id:'team',cash:1000000},roster:['a','b','c','d','e'],
- transfers:[{round_number:6},{round_number:6}],
+ transfers:[{round_number:6,sold_player_id:'b'},{round_number:6,sold_player_id:'c'}],
+ transferStatus:{max:3,original_player_ids:['a','b','c','d','e'],changed_original_ids:['b','c']},
  players,playerMap:Object.fromEntries(players.map(p=>[p.id,p])),prices:priceMap,
  stats,history,fixtures:[fixture,pending]
 };
@@ -36,7 +37,8 @@ test('simulator respects server rules for price, positions and remaining transfe
  const over=simulatedLineup(data,['a','b','c','g','f'],6);
  assert.equal(over.changes,2);
  assert.equal(over.valid,false);
- assert.equal(over.changesLeft,-1);
+ assert.equal(over.changesLeft,0);
+ assert.equal(over.uniqueOriginalChangesAfter,4);
  const noBase=simulatedLineup(data,['b','c','d','e','g'],6);
  assert.equal(noBase.valid,false);
  assert.equal(JSON.stringify(data),before);
