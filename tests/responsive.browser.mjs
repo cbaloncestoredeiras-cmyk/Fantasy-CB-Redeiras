@@ -88,6 +88,13 @@ try{
   await page.screenshot({path:'responsive-artifacts/'+size.label+'-real-half-court.png',fullPage:true});
   await navigate('market');
   assert.ok(await page.locator('.market-results').isVisible(),size.label+' market');
+  assert.ok(await page.locator('[data-market-filter]').count()>=5,size.label+' quick filters');
+  assert.ok(await page.locator('#market-sort').isVisible(),size.label+' price sorting');
+  await page.locator('[data-market-filter="junior"]').click();
+  assert.equal(await page.locator('.market-cards li').count(),2,size.label+' junior quick filter');
+  await page.locator('[data-market-filter="all"]').click();
+  assert.equal(await page.locator('.market-cards li').count(),6,size.label+' reset quick filter');
+  await page.locator('#market-sort').selectOption('price-asc');
   const marketFirst=await page.evaluate(()=>{
     const market=document.querySelector('.market-panel'),tools=document.querySelector('.market-tools');
     return !!(market&&tools&&market.getBoundingClientRect().top<tools.getBoundingClientRect().top);
@@ -153,6 +160,8 @@ try{
   await navigateAll('market');
   const details=page.locator('.market-results [data-player]:visible').first();
   await details.click();
+  assert.ok(await page.locator('.player-profile-hero').isVisible(),size.label+' redesigned profile');
+  assert.ok(await page.locator('.player-profile-stats').isVisible(),size.label+' profile header stats');
   const modalBounds=await page.locator('.modal').evaluate(el=>({left:el.getBoundingClientRect().left,right:el.getBoundingClientRect().right,viewport:innerWidth}));
   assert.ok(modalBounds.left>=-2&&modalBounds.right<=modalBounds.viewport+2,
     JSON.stringify({case:size.label,modal:modalBounds}));
