@@ -166,15 +166,15 @@ export function rowsFromTable(table,players){
     if(!Number.isFinite(pir)||!Number.isFinite(minutes))throw new Error('Número incorrecto na fila '+(i+2));
     // Blank or missing REB/AST means "unknown", whereas numeric 0 is
     // a real observed zero. These two states must never be conflated.
-    const optionalCount=(col,label)=>{
+    const optionalCount=(col,label,signed=false)=>{
       if(col<0||String(row[col]??'').trim()==='')return null;
       const value=number(row[col]);
-      if(!Number.isInteger(value)||value<0||value>100)
+      if(!Number.isInteger(value)||value<(signed?-200:0)||value>(signed?200:100))
         throw new Error(label+' incorrecto na fila '+(i+2));
       return value;
     };
     let rebounds=optionalCount(cols.reb,'REB'),assists=optionalCount(cols.ast,'AST');
-    const extra=Object.fromEntries(extraColumns.map(c=>[c.key,optionalCount(c.col,c.label)]));
+    const extra=Object.fromEntries(extraColumns.map(c=>[c.key,optionalCount(c.col,c.label,c.key==='eff'||c.key==='plus_minus')]));
     if(rebounds===null&&extra.off_reb!==null&&extra.def_reb!==null)
       rebounds=extra.off_reb+extra.def_reb;
     if(extra.fg_made===null&&extra.two_made!==null&&extra.three_made!==null)
@@ -184,7 +184,7 @@ export function rowsFromTable(table,players){
     return {player_id,name,minutes,pir,played:minutes>0||pir!==0,
       points:cols.pts>=0?number(row[cols.pts]):0,
       rebounds,assists,
-      rebounds_recorded:rebounds!==null,assists_recorded:assists!==null,,
+      rebounds_recorded:rebounds!==null,assists_recorded:assists!==null,
       ...extra,
       steals_recorded:extra.steals!==null,
       blocks_recorded:extra.blocks!==null,
