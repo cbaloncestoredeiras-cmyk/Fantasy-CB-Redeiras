@@ -1,3 +1,4 @@
+import {BOX_FIELDS,BOX_PCT,recorded} from './boxscore.js';
 // V1.4 analytics: all calculations are read-only and use only finalized fixtures.
 // Never derive other managers' private rosters or unfinalized box scores.
 const finite=n=>Number.isFinite(Number(n))?Number(n):0;
@@ -8,14 +9,26 @@ export function finalizedPlayerRows(data,id){
  .map(s=>({...s,round:done.get(s.fixture_id),fantasy_points:finite(s.fantasy_points)}))
  .sort((a,b)=>a.round-b.round);
 }
-const FIELDS=[['fantasy_points','Fantasy'],['pir','Valoración'],['points','Puntos'],['rebounds','Rebotes'],['assists','Asistencias'],['steals','Recuperacións'],['blocks','Tapóns'],['turnovers','Perdas'],['minutes','Minutos'],['vote_bonus','Bonus votos']];
+const FIELDS=[['fantasy_points','Fantasy'],['pir','Valoración'],['points','Puntos'],
+ ['rebounds','Rebotes'],['assists','Asistencias'],['steals','Recuperacións'],
+ ['blocks','Tapóns'],['turnovers','Perdas'],['minutes','Minutos'],['vote_bonus','Bonus votos'],
+ ...BOX_FIELDS.filter(f=>!['steals','blocks','turnovers'].includes(f.key)).map(f=>[f.key,f.label]),
+ ...BOX_PCT.map(f=>[f.key,f.label])];
 export function playerSeasonStats(data,id){
  const games=finalizedPlayerRows(data,id),count=games.length,totals={},averages={},observedGames={};
  for(const [key] of FIELDS){
-  // Unrecorded rebounds/assists are NOT observed zeros. These optional
-  // statistics do not contribute to Fantasy scoring.
-  const seen=key==='rebounds'||key==='assists'
-    ?games.filter(g=>g[key+'_recorded']===true):games;
+  const pct=BOX_PCT.find(f=>f.key===key);
+  if(pct){
+    const seen=games.filter(g=>recorded(g,pct.made)&&recorded(g,pct.attempted));
+    const made=seen.reduce((n,g)=>n+finite(g[pct.made]),0);
+    const attempted=seen.reduce((n,g)=>n+finite(g[pct.attempted]),0);
+    observedGames[key]=seen.length;
+    totals[key]=null;
+    averages[key]=attempted>0?round2(100*made/attempted):null;
+    continue;
+  }
+  const always=['fantasy_points','pir','points','minutes','vote_bonus'].includes(key);
+  const seen=always?games:games.filter(g=>recorded(g,key));
   const sum=seen.reduce((n,row)=>n+finite(row[key]),0);
   observedGames[key]=seen.length;
   totals[key]=seen.length?round2(sum):null;
