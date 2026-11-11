@@ -6,14 +6,23 @@ export function playerAdvancedPanel(data,id){
  const m=playerSeasonStats(data,id);
  if(!m.played)return '<section class="insight-section"><h3>Estatísticas avanzadas</h3><p class="insight-empty">Sen partidos Fantasy publicados deste xogador. Non se amosan valoracións provisionais.</p></section>';
  const keys=[['fantasy_points','Fantasy'],['pir','PIR'],['points','Puntos'],['rebounds','Rebotes'],['assists','Asistencias'],['minutes','Minutos']];
- const blocks=keys.map(([key,label])=>statistic(label,m.averages[key],key==='fantasy_points'?'Media por partido':'Media por partido')).join('');
+ const blocks=keys.map(([key,label])=>statistic(label,m.averages[key],
+  key==='rebounds'||key==='assists'?'Media de '+m.observedGames[key]+' partido(s) con rexistro':'Media por partido')).join('');
  const completed=m.games.slice().reverse();
- const rows=completed.map(g=>'<tr><th scope="row">X'+g.round+'</th><td>'+pts(g.fantasy_points)+'</td><td>'+pts(g.pir)+'</td><td>'+pts(g.points)+'</td><td>'+pts(g.rebounds)+'</td><td>'+pts(g.assists)+'</td><td>'+pts(g.minutes)+'</td></tr>').join('');
+ const fixtureNotes=new Map((data.fixtures||[]).filter(f=>f.supplemental_stats_note).map(f=>[f.id,f.supplemental_stats_note]));
+ const rows=completed.map(g=>'<tr><th scope="row">X'+g.round+
+ (fixtureNotes.has(g.fixture_id)?' <span class="tag warn" title="REB/AST parciais">parcial</span>':'')+
+ '</th><td>'+pts(g.fantasy_points)+'</td><td>'+pts(g.pir)+'</td><td>'+pts(g.points)+'</td>'+
+ '<td>'+(g.rebounds_recorded===true?pts(g.rebounds):'—')+'</td>'+
+ '<td>'+(g.assists_recorded===true?pts(g.assists):'—')+'</td>'+
+ '<td>'+pts(g.minutes)+'</td></tr>').join('');
+ const notes=[...new Set(completed.map(g=>fixtureNotes.get(g.fixture_id)).filter(Boolean))];
  return '<section class="insight-section advanced-profile"><h3>Estatísticas avanzadas</h3>'+
  '<div class="analytics-kpis">'+blocks+'</div>'+
  '<p class="mini muted">Partidos disputados: '+m.played+' · Máximo Fantasy: '+pts(m.best)+' · Regularidade (desviación): '+(m.consistency==null?'—':pts(m.consistency))+' puntos.</p>'+
  '<div class="tablewrap"><table class="table analytics-history"><thead><tr><th scope="col">Xornada</th><th scope="col">Fantasy</th><th scope="col">PIR</th><th scope="col">PTS</th><th scope="col">REB</th><th scope="col">AST</th><th scope="col">MIN</th></tr></thead><tbody>'+rows+'</tbody></table></div>'+
- '<p class="mini muted">Só inclúe partidos xogados e xornadas oficialmente publicadas.</p></section>';
+ (notes.length?'<div class="notice info" role="note">'+notes.map(n=>h(n)).join(' ')+'</div>':'')+
+ '<p class="mini muted">— = dato non rexistrado, non cero. REB/AST son só informativos: non alteran PIR, puntuación Fantasy, prezos nin clasificación. Só se mostran xornadas publicadas.</p></section>';
 }
 export function courtLineup(data,ids,avatar){
  const selected=ids.map(id=>data.playerMap?.[id]).filter(Boolean);
