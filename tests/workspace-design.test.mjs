@@ -9,8 +9,7 @@ const read=p=>readFileSync(new URL(p,root),'utf8');
 test('workspace styles are the final CSS layer and use only local resources',()=>{
  const html=read('site/index.html'),css=read('site/workspace.css');
  const styles=[...html.matchAll(/<link rel="stylesheet" href="([^"]+)"/g)].map(m=>m[1]);
- assert.equal(styles.at(-2),'workspace.css');
- assert.equal(styles.at(-1),'ux-v2.css');
+ assert.deepEqual(styles.slice(-3),['workspace.css','ux-v2.css','polish.css']);
  assert.match(css,/--workspace-accent:#33a9db/);
  assert.match(css,/--workspace-bg:#f6f8fb/);
  assert.match(css,/\.sidebar/);
