@@ -1,0 +1,191 @@
+/* Redeiras · visual polish pass.
+   Pure presentation: no player data, scoring rules or remote assets. */
+:root{
+ --premium-blue:#0b344f;
+ --premium-cyan:#33a9db;
+ --premium-subtle:#edf7fc;
+ --premium-ink:#0c3048;
+ --premium-outline:#dce9ef;
+}
+[hidden]{display:none!important}
+
+/* 1. Player portraits as the centre of the Fantasy. */
+.player-profile-modal{width:min(740px,100%);padding:0;max-height:min(92dvh,900px);overflow:auto;}
+.player-profile-hero{display:grid;grid-template-columns:165px minmax(0,1fr) 40px;gap:20px;
+ background:linear-gradient(125deg,#092d46 0%,#165d7d 100%);color:white;
+ border-radius:17px 17px 0 0;position:relative;min-height:225px;overflow:hidden;padding:24px 23px 0;}
+.player-profile-hero:before{content:"";position:absolute;inset:auto -100px -150px 20%;height:260px;
+ background:radial-gradient(circle,#76d7f23d,transparent 68%);pointer-events:none;}
+.player-profile-photo{min-width:0;display:flex;align-items:flex-end;justify-content:center;z-index:1;}
+.player-profile-photo .profile-portrait{width:142px;height:189px;border-radius:18px 18px 0 0;border:2px solid #ffffff36;
+ background:#d1f1fe;color:#145977;font-size:38px;box-shadow:0 -4px 35px #06213236;display:grid;place-items:center;}
+.player-profile-photo .playerphoto{height:100%;width:100%;object-fit:cover;object-position:center top;}
+.player-profile-heading{align-self:center;z-index:1;min-width:0;padding-bottom:24px;}
+.player-profile-eyebrow{font-size:10px;letter-spacing:1.6px;color:#a8ddf0;font-weight:850;}
+.player-profile-heading h2{color:#fff;font-size:clamp(25px,4vw,37px);margin:6px 0;letter-spacing:-1.25px;overflow-wrap:anywhere;}
+.player-profile-heading p{color:#b9dce9;font-size:13px;margin:0 0 19px;}
+.player-profile-stats{display:flex;flex-wrap:wrap;gap:12px 24px;}
+.player-profile-stats>div{display:flex;flex-direction:column;gap:3px;}
+.player-profile-stats small{font-size:9px;color:#add9ec;letter-spacing:.7px;font-weight:750;}
+.player-profile-stats strong{font-size:clamp(15px,2vw,21px);color:#fff;font-weight:850;line-height:1.2;}
+.profile-close{z-index:2;min-width:38px;min-height:38px!important;width:38px;border-color:#93bcd26b!important;
+ background:#ffffff20!important;color:#fff!important;font-size:23px!important;padding:0!important;}
+.player-profile-body{padding:22px 25px 27px;display:grid;gap:16px;}
+.player-profile-body :is(.insight-section,.broker-profile,.callup-detail){min-width:0;}
+.player-profile-body h3{font-size:15px;margin:0 0 10px;color:#123b53;}
+.player-profile-body .insight-kpis{gap:9px;}
+
+/* 2. One focused personalized score on the home hero. */
+.dashboard-match-hero{gap:18px;}
+.dashboard-performance{flex:0 0 min(30%,210px);max-width:210px;align-self:stretch;display:flex;flex-direction:column;
+ justify-content:center;align-items:center;gap:6px;z-index:1;text-align:center;}
+.dashboard-performance .dashboard-match-emblem{width:clamp(72px,8vw,98px);max-height:112px;margin:0 auto 4px;filter:none;}
+.dashboard-performance-score{width:100%;display:flex;flex-direction:column;align-items:center;gap:1px;
+ border:1px solid #ace9ff5c;background:#ffffff13;border-radius:14px;padding:12px 9px;backdrop-filter:blur(4px);}
+.dashboard-performance-score span{font-size:9px;font-weight:850;letter-spacing:1px;color:#bcdef0;}
+.dashboard-performance-score strong{font-size:clamp(28px,3.8vw,42px);line-height:1.08;color:white;letter-spacing:-1.4px;}
+.dashboard-performance-score small{font-size:10px;color:#bce9fc;}
+.dashboard-performance-score em{font-style:normal;background:#ffffff21;border-radius:999px;
+ color:#e0f7ff;padding:4px 10px;font-size:10px;font-weight:750;margin-top:7px;}
+.dashboard-match-content{flex:1;}
+
+/* 3. Court cards: legible photos, quiet highlights. No change to official court lines. */
+.court-half .court-player{outline-offset:4px;transition:background-color .16s,box-shadow .16s;}
+.court-half .court-player .court-avatar{width:35px;height:35px;border-radius:50%;}
+.court-half .court-player .playerphoto{object-position:center 16%;}
+.court-half .court-player:focus-visible{outline:3px solid #072e4a;}
+.court-player-best{display:block;background:#c5f3ff;color:#0e4e6b;border-radius:999px;font-size:7px;
+ line-height:1.15;letter-spacing:.3px;font-weight:900;padding:3px 5px;margin-bottom:2px;max-width:100%;}
+.court-half .court-player-price{font-size:10px;letter-spacing:.1px;}
+.court-half .court-lines{filter:drop-shadow(0 1px 0 #0d5b7733);}
+
+/* 4. Distinct but restrained podium. */
+.ranking-podium{align-items:stretch;}
+.podium-card{position:relative;isolation:isolate;transition:box-shadow .17s,border-color .17s;}
+.podium-card:after{content:"";position:absolute;right:16px;top:14px;width:9px;height:9px;background:#8ea9b8;border-radius:50%;opacity:.65;}
+.podium-1{background:linear-gradient(155deg,#e2f4fd,#ffffff 74%);border-color:#8bd4f0;}
+.podium-1:after{background:#33a9db;opacity:1;}
+.podium-2:after{background:#91a4b5;}
+.podium-3:after{background:#bf9971;}
+.podium-rank{font-variant-numeric:tabular-nums;letter-spacing:-.1px;}
+.ranking-own{box-shadow:inset 3px 0 var(--premium-cyan);}
+
+/* 5. Fast, accessible market filters and sorting. */
+.market-filter-chips{display:flex;align-items:center;gap:7px;overflow-x:auto;padding:1px 0 12px;
+ scrollbar-width:thin;overscroll-behavior-x:contain;scroll-snap-type:x proximity;}
+.market-filter-chip{flex:none;scroll-snap-align:start;background:#f7fbfd;border:1px solid #deebf2;
+ border-radius:999px;padding:8px 12px;min-height:37px;font-size:12px;font-weight:750;color:#4a7185;}
+.market-filter-chip:hover{background:#eaf7fd;border-color:#b9e0f2;}
+.market-filter-chip.active,.market-filter-chip[aria-pressed="true"]{background:#0b3e5b;border-color:#0b3e5b;color:white;}
+.market-panel .toolbar{gap:9px;}
+.market-panel .toolbar #market-sort{flex:1 1 154px;min-width:min(100%,155px);}
+.market-player-card{transition:border-color .16s,box-shadow .16s;}
+.market-player-card:hover{border-color:#b5daea;box-shadow:0 5px 17px #173e5510;}
+.market-player-card .person .playerlogo{width:60px;height:60px;border-radius:14px;}
+.market-player-card .person b{font-size:14px;font-weight:800;}
+.market-player-card .playerphoto{object-position:center 18%;}
+.market-player-card .market-player-bottom strong{font-size:20px;letter-spacing:-.5px;}
+.market-player-card .market-player-bottom .form-chip{font-size:11px;}
+.market-results .market-tablewrap .person .playerlogo{width:47px;height:47px;}
+
+/* 6. Consistent charts: points and price evolution on quiet canvases. */
+.price-chart{background:linear-gradient(180deg,#f7fbfe 0%,#fff 100%);
+ border:1px solid #dcecf3;border-radius:12px;padding:6px;stroke:#248bb8;fill:none;overflow:visible;}
+.price-chart polyline{stroke:#168dbd;stroke-width:3;stroke-linejoin:round;stroke-linecap:round;fill:none;}
+.price-chart circle{fill:#fff;stroke:#168dbd;stroke-width:2.4;}
+.price-history-rows{border-top:1px solid #e8eff3;margin-top:12px;padding-top:10px;}
+.price-history-rows .row{padding:5px 2px;}
+.analytics-kpi,.insight-kpis>div{background:#f7fafc;border:1px solid #e8edf1;border-radius:11px;}
+.insight-kpis strong{font-variant-numeric:tabular-nums;}
+.form-rounds{display:flex;flex-wrap:wrap;gap:7px;}
+.form-rounds span{background:#f0f8fc;border:1px solid #daeaf2;border-radius:999px;padding:5px 9px;}
+
+/* 7. Never rely on color alone for callups, injury or closed market. */
+.callup-badge,.availability-badge{display:inline-flex;align-items:center;gap:5px;font-weight:800;}
+.callup-badge::before,.availability-badge::before{content:"";height:6px;width:6px;border-radius:50%;flex:none;background:currentColor;}
+.callup-badge.called::before{background:#299b78;}
+.callup-badge.out::before{background:#bb684f;}
+.callup-badge.pending::before{background:#b2a066;}
+.availability-badge.injured::before{background:#d25b4f;}
+.availability-badge.doubtful::before{background:#cc9c34;}
+
+/* 8. Compact and familiar bottom navigation on iPhone. */
+.mobilebar{border-top:1px solid #dde8ee;}
+.mobilebar button{transition:color .15s,background-color .15s;}
+.mobilebar button:focus-visible{outline-offset:-3px;}
+.mobilebar button.active{font-weight:850;}
+.mobilebar button.active span{color:#116e97;}
+.mobile-more-link{transition:background-color .14s;}
+
+/* 9. Microinteractions: explicit busy state and accessible toast feedback. */
+.btn,.market-tool-tab{transition:background-color .15s,border-color .15s,color .15s;}
+.btn.is-working{position:relative;padding-right:30px;opacity:.82;}
+.btn.is-working:after{content:"";position:absolute;right:11px;top:calc(50% - 6px);width:12px;height:12px;
+ border:2px solid currentColor;border-right-color:transparent;border-radius:50%;
+ animation:redeiras-spin .65s linear infinite;}
+.toast{animation:redeiras-toast .2s ease-out;}
+@keyframes redeiras-spin{to{transform:rotate(360deg);}}
+@keyframes redeiras-toast{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:translateY(0);}}
+
+/* 10. Meaningful boot/loading skeleton without caching user data. */
+.splash-skeleton{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px;
+ width:min(320px,70vw);margin:22px auto 0;}
+.splash-skeleton span{height:48px;border-radius:10px;background:linear-gradient(100deg,#144663,#326983,#144663);
+ background-size:220% 100%;animation:redeiras-shimmer 1.9s ease-in-out infinite;}
+.splash-skeleton span:nth-child(2){animation-delay:.15s;}
+.splash-skeleton span:nth-child(3){animation-delay:.3s;}
+@keyframes redeiras-shimmer{from{background-position:110% 0;}to{background-position:-110% 0;}}
+
+/* Better minimum legibility of key metadata. */
+.kpi-label,.kpi-caption,.team-finances .kpi-label{font-size:12px;}
+.market-status-strip,.playeritem small{font-size:12px;}
+.team-court-header .mini,.ranking-move-note{font-size:12px;}
+.profile-modal :is(.field label,.mini){font-size:12px;}
+
+/* Mobile ergonomics and no horizontal overflow. */
+@media(max-width:639px){
+ .player-profile-modal{width:100%;max-height:90dvh;}
+ .player-profile-hero{grid-template-columns:96px minmax(0,1fr) 30px;gap:10px;min-height:174px;
+   padding:17px 12px 0;border-radius:15px 15px 0 0;}
+ .player-profile-photo .profile-portrait{width:91px;height:147px;font-size:25px;border-radius:12px 12px 0 0;}
+ .player-profile-heading{padding-bottom:17px;}
+ .player-profile-heading h2{font-size:23px;line-height:1.1;}
+ .player-profile-heading p{font-size:11px;margin:5px 0 12px;}
+ .player-profile-eyebrow{font-size:8px;letter-spacing:.7px;}
+ .player-profile-stats{gap:7px 12px;}
+ .player-profile-stats small{font-size:8px;letter-spacing:0;}
+ .player-profile-stats strong{font-size:14px;}
+ .player-profile-body{padding:17px 14px;gap:12px;}
+ .profile-close{min-width:28px!important;width:28px;min-height:30px!important;font-size:21px!important;}
+ .dashboard-match-hero{align-items:stretch;}
+ .dashboard-performance{flex:0 0 112px;max-width:112px;justify-content:center;}
+ .dashboard-performance .dashboard-match-emblem{display:none;}
+ .dashboard-performance-score{padding:10px 5px;min-height:108px;}
+ .dashboard-performance-score span{font-size:8px;}
+ .dashboard-performance-score strong{font-size:26px;}
+ .dashboard-performance-score small{font-size:9px;}
+ .dashboard-performance-score em{padding:4px 6px;font-size:9px;}
+ .dashboard-match-hero h2{font-size:clamp(22px,6vw,27px);}
+ .dashboard-match-rival{font-size:12px;}
+ .market-filter-chips{margin-inline:-2px;padding-bottom:11px;}
+ .market-filter-chip{font-size:11px;padding:8px 12px;}
+ .market-panel .toolbar #market-sort{min-width:0;flex:1 1 100%;width:100%;}
+ .market-player-card .person .playerlogo{width:54px;height:54px;}
+ .court-half .court-player{min-width:0;}
+ .court-player-best{font-size:6px;}
+ .mobilebar button>span{min-height:20px;}
+}
+@media(max-width:390px){
+ .dashboard-performance{flex-basis:94px;max-width:94px;}
+ .dashboard-performance-score strong{font-size:23px;}
+ .dashboard-performance-score span{font-size:7px;}
+ .dashboard-performance-score em{font-size:8px;}
+ .player-profile-hero{grid-template-columns:79px minmax(0,1fr) 28px;padding-left:8px;gap:7px;}
+ .player-profile-photo .profile-portrait{width:76px;height:137px;}
+ .player-profile-stats{gap:6px;}
+ .player-profile-stats strong{font-size:12px;}
+ .player-profile-heading h2{font-size:20px;}
+}
+@media(prefers-reduced-motion:reduce){
+ *,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;scroll-behavior:auto!important;transition:none!important;}
+}
