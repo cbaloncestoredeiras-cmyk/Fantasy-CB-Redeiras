@@ -48,7 +48,7 @@ export function courtLineup(data,ids,avatar){
  '</svg>'+
  '<span class="court-basket-label" aria-hidden="true">CANASTRA</span>'+
  spots.map(s=>'<button type="button" class="court-player" style="--court-x:'+s.x+'%;--court-y:'+s.y+'%" data-player="'+h(s.p.id)+'" aria-label="Abrir perfil de '+h(s.p.name)+'">'+
- (best===s.p.id?'<span class="court-player-best" title="Maior puntuación entre os teus xogadores na última xornada publicada">MELLOR FORMA</span>':'')+
+ (best===s.p.id?'<span class="court-player-best" title="Maior puntuación entre os teus xogadores na última xornada publicada">MELLOR X'+lastFixture.round_number+'</span>':'')+
  avatar(s.p,'court-avatar')+'<strong>'+h(s.p.name)+'</strong><small>'+h(s.p.positions.join(' / '))+'</small>'+
  (price(s.p.id)?'<span class="court-player-price">'+h(price(s.p.id))+'</span>':'')+'</button>').join('')+
  '</div><p class="mini muted court-caption">'+(valid?'Media pista FIBA a escala orientativa: as posicións dos xogadores son ilustrativas.':'Vista previa: '+selected.length+' de 5 xogadores.')+
