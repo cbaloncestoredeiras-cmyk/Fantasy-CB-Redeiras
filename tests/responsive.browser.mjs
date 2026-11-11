@@ -119,6 +119,7 @@ try{
    await page.locator('[data-action="preview-round"]').click();
    await page.locator('#admin-preview-results .table').first().waitFor({timeout:3000});
    assert.match(await page.locator('#admin-preview-results').innerText(),/Juan/);
+   await page.locator('[data-admin-tab="participantes"]').click();
    await page.locator('[data-action="load-participants"]').click();
    await page.locator('#admin-participants-results [data-member-role]').waitFor({timeout:3000});
    assert.match(await page.locator('#admin-participants-results').innerText(),/demo@redeiras.test/);
