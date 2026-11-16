@@ -2,6 +2,14 @@ import {BOX_FIELDS} from './boxscore.js';
 // Shared client-side previews. The database RPCs are the authoritative validators.
 export const FANTASY_BUDGET = 6_000_000;
 export const MAX_TRANSFERS = 3;
+// Informational mirror only; private.fantasy_calculate_fixture is authoritative.
+// Applies only when the player has played and the team has won.
+export function victoryBonus(pir,teamWon,played=true){
+  const val=Number(pir);
+  if(!played||!teamWon||!Number.isFinite(val))return 0;
+  return val>=5?Math.round(val*20)/100:1;
+}
+
 export const euro = n => new Intl.NumberFormat('es-ES',{style:'currency',currency:'EUR',maximumFractionDigits:0}).format(n||0);
 export const pts = n => new Intl.NumberFormat('es-ES',{maximumFractionDigits:2}).format(Number(n)||0);
 export const byId = arr => Object.fromEntries((arr||[]).map(x=>[x.id,x]));

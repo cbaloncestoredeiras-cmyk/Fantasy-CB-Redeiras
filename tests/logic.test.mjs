@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
- FANTASY_BUDGET,validateLineup,transferPlan,originalPlayerUsage,brokerEstimate,pickUpcoming,parseDelimited,rowsFromTable
+ FANTASY_BUDGET,victoryBonus,validateLineup,transferPlan,originalPlayerUsage,brokerEstimate,pickUpcoming,parseDelimited,rowsFromTable
 } from '../site/logic.js';
 
 const players={
@@ -133,4 +133,13 @@ test('multiple confirmation windows count players from the original five, not sa
  assert.equal(originalPlayerUsage(status,current,['Álvaro','Yosue','Manuel','Mateo','Gil']).valid,false);
  // Returning an original player does not erase a past change (round allowance).
  assert.equal(originalPlayerUsage(status,current,['Álvaro','Edu','Luca','Adán','Gil']).used,2);
+});
+
+// Victory scoring starts at round 6. The raw CSV VAL must remain unchanged.
+test('win bonus: below 5 +1, from 5 +20%, never penalize negatives',()=>{
+ for(const [pir,bonus] of [[-10,1],[-5,1],[-1,1],[0,1],[3,1],[4.99,1],[5,1],[6,1.2],[10,2],[20,4]])
+   assert.equal(victoryBonus(pir,true,true),bonus,'VAL='+pir);
+ assert.equal(victoryBonus(20,false,true),0);
+ assert.equal(victoryBonus(-5,false,true),0);
+ assert.equal(victoryBonus(15,true,false),0);
 });
