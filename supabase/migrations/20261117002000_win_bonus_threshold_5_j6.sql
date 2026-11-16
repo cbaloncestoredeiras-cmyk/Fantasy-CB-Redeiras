@@ -112,5 +112,4 @@ begin
  return jsonb_build_object('fixture_id',f.id,'round',f.round_number,'players',v_players,
    'teams',v_teams,'player_count',jsonb_array_length(v_players),
    'team_count',jsonb_array_length(v_teams));
-end; $function$
-
+end; $function$;
