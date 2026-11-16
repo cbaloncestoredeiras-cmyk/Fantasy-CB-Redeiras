@@ -54,10 +54,10 @@ function statsDraft(){
 }
 function previewHtml(pre){
  if(!pre)return '<p class="mini muted">Calcula a vista previa antes de publicar.</p>';
- const playerRows=(pre.players||[]).map(p=>'<tr><td>'+h(p.name)+'</td><td>'+number(p.pir)+'</td><td>+'+number(p.vote_bonus)+'</td><td><b>'+number(p.fantasy_points)+'</b></td><td>'+cash(p.price_before)+' → '+cash(p.price_after)+'</td></tr>').join('');
+ const playerRows=(pre.players||[]).map(p=>'<tr><td>'+h(p.name)+'</td><td>'+number(p.pir)+'</td><td>+'+number(p.victory_bonus||0)+'</td><td>+'+number(p.vote_bonus)+'</td><td><b>'+number(p.fantasy_points)+'</b></td><td>'+cash(p.price_before)+' → '+cash(p.price_after)+'</td></tr>').join('');
  const teamRows=(pre.teams||[]).map(t=>'<tr><td>'+h(t.team_name)+'</td><td>'+number(t.fantasy_points)+'</td></tr>').join('');
  return '<p class="mini">Vista previa calculada para a xornada '+number(pre.round)+'. '+number(pre.player_count)+' xogadores e '+number(pre.team_count)+' equipos. Non se modificaron datos.</p>'+
- '<div class="tablewrap"><table class="table"><thead><tr><th>Xogador</th><th>PIR</th><th>Votos</th><th>Fantasy</th><th>Bróker</th></tr></thead><tbody>'+playerRows+'</tbody></table></div>'+
+ '<div class="tablewrap"><table class="table"><thead><tr><th>Xogador</th><th>PIR</th><th>Vitoria</th><th>Votos</th><th>Fantasy</th><th>Bróker</th></tr></thead><tbody>'+playerRows+'</tbody></table></div>'+
  '<h3>Equipos Fantasy</h3><div class="tablewrap"><table class="table"><thead><tr><th>Equipo</th><th>Puntos</th></tr></thead><tbody>'+teamRows+'</tbody></table></div>';
 }
 function memberHtml(members){
