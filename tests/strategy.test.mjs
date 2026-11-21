@@ -19,7 +19,7 @@ const data={
  season:{starting_budget:6000000,max_transfers:3,start_round:5},
  team:{id:'team',cash:1000000},roster:['a','b','c','d','e'],
  transfers:[{round_number:6,sold_player_id:'b'},{round_number:6,sold_player_id:'c'}],
- transferStatus:{max:3,original_player_ids:['a','b','c','d','e'],changed_original_ids:['b','c']},
+ transferStatus:{max:3,original_player_ids:['a','b','c','d','e'],changed_original_ids:[]},
  players,playerMap:Object.fromEntries(players.map(p=>[p.id,p])),prices:priceMap,
  stats,history,fixtures:[fixture,pending]
 };
@@ -32,13 +32,13 @@ test('simulator respects server rules for price, positions and remaining transfe
  assert.deepEqual(s.removed,['d']);
  assert.deepEqual(s.added,['g']);
  assert.equal(s.changes,1);
- assert.equal(s.spent,2);
- assert.equal(s.changesLeft,0);
+ assert.equal(s.spent,0);
+ assert.equal(s.changesLeft,2);
  const over=simulatedLineup(data,['a','b','c','g','f'],6);
  assert.equal(over.changes,2);
- assert.equal(over.valid,false);
- assert.equal(over.changesLeft,0);
- assert.equal(over.uniqueOriginalChangesAfter,4);
+ assert.equal(over.valid,true);
+ assert.equal(over.changesLeft,1);
+ assert.equal(over.uniqueOriginalChangesAfter,2);
  const noBase=simulatedLineup(data,['b','c','d','e','g'],6);
  assert.equal(noBase.valid,false);
  assert.equal(JSON.stringify(data),before);

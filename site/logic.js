@@ -40,22 +40,18 @@ export function transferPlan(oldIds,newIds,cash,prices){
   return {removed,added,sales,buys,cashAfter:cash+sales-buys,changes:removed.length};
 }
 
-// Each round can replace at most three DISTINCT members of the original
-// five, regardless of how many times the user presses "Confirmar".
+// Count only the original five who are ABSENT from the selected lineup.
+// Bringing an original back frees its slot, regardless of prior transactions.
 export function originalPlayerUsage(status,currentRoster=[],draft=currentRoster,transfers=[],round=null){
  const max=Number(status?.max||MAX_TRANSFERS);
  const original=Array.isArray(status?.original_player_ids)?status.original_player_ids:currentRoster;
- const changed=Array.isArray(status?.changed_original_ids)?status.changed_original_ids:
-   transfers.filter(x=>Number(x.round_number)===Number(round)).map(x=>x.sold_player_id);
- const sold=new Set(changed.filter(Boolean));
- const next=new Set(sold);
+ const current=new Set(currentRoster);
  const selected=new Set(draft);
- for(const id of currentRoster){
-   if(original.includes(id)&&!selected.has(id))next.add(id);
- }
- return {max,used:sold.size,usedAfter:next.size,
-   remaining:Math.max(0,max-sold.size),remainingAfter:Math.max(0,max-next.size),
-   valid:next.size<=max,originalPlayerIds:original,changedPlayerIds:[...next]};
+ const usedIds=original.filter(id=>!current.has(id));
+ const afterIds=original.filter(id=>!selected.has(id));
+ return {max,used:usedIds.length,usedAfter:afterIds.length,
+   remaining:Math.max(0,max-usedIds.length),remainingAfter:Math.max(0,max-afterIds.length),
+   valid:afterIds.length<=max,originalPlayerIds:original,changedPlayerIds:afterIds};
 }
 
 // Browser-only preview. The SQL private.next_price function is authoritative.

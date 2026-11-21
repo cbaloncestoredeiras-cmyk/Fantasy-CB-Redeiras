@@ -17,7 +17,7 @@ Aplicación Fantasy de baloncesto para el Club Baloncesto Redeiras, diseñada en
 - Presupuesto inicial **6.000.000 € virtuales**.
 - 18 jugadores (15 sénior y 3 juniors), con posiciones dobles.
 - Quinteto de 5: al menos un BA y un interior AP/P **distintos**, otras 3 posiciones libres.
-- Tres transferencias por jornada, con validación en base de datos.
+- Máximo tres xogadores diferentes respecto ao quinteto inicial de cada xornada (dende X7); recuperar un titular orixinal libera a praza aínda que se vendese antes. Confirmacións ilimitadas co mercado aberto, con validación en base de datos. Historial de compra/venda e saldos conservados. Detalles en [norma X7](docs/NET_LINEUP_CHANGES_J7_20261121.md).
 - Desde J5, **sábado 7 de noviembre de 2026, 20:00** (Europe/Madrid); horario de próximas jornadas editable por administración según confirmación semanal.
 - Valoración ACB/PIR + bonus por vitoria (desde X6: +1 se VAL < 5, +20 % se VAL >= 5, só se xogou) + bonus voto 3/2/1 do vestiario. Nas derrotas non hai bonus por vitoria. As xornadas xa publicadas conservan os seus resultados.
 - Votan todos los convocados, hayan jugado o no, durante las 72 horas después del final real.

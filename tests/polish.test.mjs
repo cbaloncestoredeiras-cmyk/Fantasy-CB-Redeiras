@@ -42,7 +42,7 @@ test('individual player profile uses existing stored portraits and published sta
  assert.match(app,/priceHistorySection\(state\.data,id\)/);
  assert.match(read('site/analytics-view.js'),/court-player-best/);
 });
-test('server transfer limit is based on distinct original starters and has per-round persistence',()=>{
+test('original five are persisted once per round with owner authorization',()=>{
  const migration=read('supabase/migrations/20261111120000_transfer_original_players_per_round.sql');
  assert.match(migration,/create table if not exists private\.fantasy_round_originals/);
  assert.match(migration,/primary key\(team_id,round_number\)/);
@@ -53,4 +53,18 @@ test('server transfer limit is based on distinct original starters and has per-r
  assert.match(migration,/private\.is_member\(s\.club_id\)/);
  assert.match(migration,/grant execute on function public\.fantasy_transfer_status\(uuid\) to authenticated/);
  assert.doesNotMatch(migration,/v_used\+v_removed/);
+});
+test('J7 migration replaces historical sells with current net lineup difference on server',()=>{
+ const sql=read('supabase/migrations/20261121153835_net_lineup_changes_j7.sql');
+ assert.match(sql,/create or replace function public\.fantasy_transfer_status/);
+ assert.match(sql,/create or replace function public\.fantasy_change_lineup/);
+ assert.match(sql,/where not o\.id=any\(v_current\)/);
+ assert.match(sql,/where not o\.id=any\(p_player_ids\)/);
+ assert.match(sql,/cardinality\(v_missing_after\)>s\.max_transfers/);
+ assert.doesNotMatch(sql,/v_sold_before\|\|/);
+ assert.match(sql,/f\.status='scheduled'/);
+ assert.match(sql,/user_id=auth\.uid\(\)/);
+ assert.match(sql,/private\.is_member\(s\.club_id\)/);
+ assert.match(sql,/for update/);
+ assert.match(sql,/grant execute on function public\.fantasy_change_lineup\(uuid,uuid\[\]\) to authenticated/);
 });
