@@ -119,7 +119,7 @@ test('unfinalized previous round blocks next round',()=>{
  assert.equal(pickUpcoming(f,season).open,false);
 });
 
-test('multiple confirmation windows count players from the original five, not saved operations',()=>{
+test('multiple confirmations count only original players missing from the current and proposed lineups',()=>{
  const original=['Álvaro','Edu','Luca','Adán','Brais'];
  const status={max:3,original_player_ids:original,changed_original_ids:['Adán','Brais']};
  const current=['Álvaro','Edu','Luca','Mateo','Gil'];
@@ -129,10 +129,25 @@ test('multiple confirmation windows count players from the original five, not sa
  assert.equal(originalPlayerUsage(status,current,['Álvaro','Edu','Luca','Yosue','Gil']).usedAfter,2);
  // The third original player can leave in any later confirmation.
  assert.equal(originalPlayerUsage(status,current,['Álvaro','Edu','Manuel','Mateo','Gil']).usedAfter,3);
- // A fourth original player is rejected, regardless of previous confirmations.
+ // Four missing original players remain disallowed.
  assert.equal(originalPlayerUsage(status,current,['Álvaro','Yosue','Manuel','Mateo','Gil']).valid,false);
- // Returning an original player does not erase a past change (round allowance).
+ // Returning an original player frees a slot, even if it was sold previously.
+ assert.equal(originalPlayerUsage(status,current,['Álvaro','Edu','Luca','Adán','Gil']).usedAfter,1);
  assert.equal(originalPlayerUsage(status,current,['Álvaro','Edu','Luca','Adán','Gil']).used,2);
+});
+
+test('J7: re-buying Mateo permits selling injured Álvaro while staying at three differences',()=>{
+ const original=['Mateo','Álvaro','Luca','Mario','Diego'];
+ const current=['Alex','Álvaro','Sergio','Iago','Diego'];
+ const status={max:3,original_player_ids:original,changed_original_ids:['Mateo','Luca','Mario']};
+ const next=['Alex','Mateo','Sergio','Iago','Diego'];
+ const result=originalPlayerUsage(status,current,next);
+ assert.deepEqual([result.used,result.usedAfter,result.remainingAfter,result.valid],[3,3,0,true]);
+ assert.deepEqual(result.changedPlayerIds,['Álvaro','Luca','Mario']);
+ const fourth=originalPlayerUsage(status,current,['Alex','Yosue','Sergio','Iago','Diego']);
+ assert.deepEqual([fourth.usedAfter,fourth.valid],[4,false]);
+ assert.deepEqual([originalPlayerUsage(status,current,original).usedAfter,
+   originalPlayerUsage(status,current,original).remainingAfter],[0,3]);
 });
 
 // Victory scoring starts at round 6. The raw CSV VAL must remain unchanged.

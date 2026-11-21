@@ -171,7 +171,7 @@ function market(){
  return pageHeader('Mercado de fichaxes','Busca xogadores, compara valoracións e prepara os cinco que competirán.')+
  '<div class="market-status-strip"><span><b>Saldo:</b> '+euroShort(isFirst?6000000:d.team.cash)+'</span>'+
  '<span><b>Quinteto:</b> '+state.draft.length+' / 5</span>'+
- '<span><b>Cambios:</b> '+(isFirst?'0':used)+' / '+usage.max+' xogadores orixinais</span>'+
+ '<span><b>Cambios:</b> '+(isFirst?'0':used)+' / '+usage.max+' respecto ao quinteto inicial</span>'+
  '<span class="tag '+(open?'good':'warn')+'">'+(open?'Mercado aberto':'Mercado pechado')+'</span></div>'+
  '<a class="mobile-draft-link" href="#draft-summary"><span>Ver o teu quinteto</span><strong>'+state.draft.length+' / 5 · '+euroShort(summary.cost)+'</strong></a>'+
  '<div class="grid two market-layout"><section class="panel market-panel"><div class="row"><h2>Buscar e fichar xogadores</h2><span class="tag">'+d.players.length+' xogadores</span></div>'+
@@ -190,13 +190,13 @@ function market(){
  '<div class="row"><span class="muted mini">Custo de selección</span><b>'+euroShort(summary.cost)+'</b></div>'+
  '<div class="row" style="margin-top:10px"><span class="muted mini">Efectivo tras confirmar</span><b style="color:'+(plan.cashAfter<0?'var(--bad)':'var(--good)')+'">'+euroShort(plan.cashAfter)+'</b></div>'+
  '<div class="metricbar" style="margin-top:12px"><span style="width:'+Math.min(100,summary.cost/(isFirst?6000000:(d.team.cash+d.roster.reduce((n,id)=>n+(prices()[id]||0),0)))*100)+'%"></span></div>'+
- '<p class="help">Quinteto de 5 xogadores: mínimo un BA e un AP/P distintos. Podes confirmar fichaxes en tantas ocasións como queiras, pero só podes substituír tres xogadores distintos do teu quinteto inicial da xornada.</p>'+
+ '<p class="help">Quinteto de 5 xogadores: mínimo un BA e un AP/P distintos. Máximo tres xogadores diferentes respecto ao quinteto inicial da xornada. Se recuperas un xogador orixinal, liberas esa praza de cambio. Podes confirmar tantas veces como queiras co mercado aberto.</p>'+
  (summary.errors.length?'<div class="notice">'+summary.errors.map(h).join(' · ')+'</div>':'')+
  (plan.cashAfter<0?'<div class="notice error">Fáltanche '+euro(-plan.cashAfter)+'</div>':'')+
  availabilityWarning(state.draft,d.playerMap)+
  (!open?'<div class="notice">Mercado pechado: podes preparar cambios, pero non gardalos ata a reapertura.</div>':'')+
  (isFirst?'<div class="field" style="margin:17px 0"><label>Nome do teu equipo</label><input id="team-name" maxlength="40" placeholder="Ex.: Redeiras de Ouro" autocomplete="off"></div>':
- '<p class="mini muted">Xogadores substituídos nesta operación: '+plan.changes+' · Orixinais usados: '+used+' / '+usage.max+' · Tras confirmar: '+usage.usedAfter+' / '+usage.max+'. Podes confirmar tantas veces como precises.</p>')+
+ '<p class="mini muted">Xogadores substituídos nesta operación: '+plan.changes+' · Diferenzas actuais: '+used+' / '+usage.max+' · Tras confirmar: '+usage.usedAfter+' / '+usage.max+'. Recuperar un orixinal libera unha praza.</p>')+
  '<button class="btn primary full" data-action="save-lineup" '+(!legal||!open?'disabled':'')+'>'+
  (isFirst?'Crear equipo':'Confirmar fichaxes')+' →</button></aside></div>'+
  '<section class="market-tools" id="market-tools" aria-label="Análise e ferramentas do mercado">'+
@@ -224,7 +224,7 @@ function team(){
  '<div class="small" style="color:#146f94;font-weight:800">'+euroShort(prices()[p.id])+'</div>'+availabilityBadge(p)+
  callupBadge(d,current().pending,p.id)+'<button class="btn small secondary" data-player="'+p.id+'" style="margin-top:12px">Perfil</button></div>').join('')+'</div>')+'</details>'+
  '<div class="grid two team-support" style="margin-top:17px">'+
- panel('<h2>Normas do quinteto</h2><p>Confirma cinco xogadores antes do partido: un BA e un AP/P distintos. Máximo tres transferencias por xornada. As lesións non dan cambios gratuítos.</p>')+
+ panel('<h2>Normas do quinteto</h2><p>Confirma cinco xogadores antes do partido: un BA e un AP/P distintos. Máximo tres xogadores diferentes respecto ao quinteto inicial de cada xornada, sen límite de confirmacións mentres o mercado estea aberto. As lesións non dan cambios gratuítos.</p>')+
  panel('<h2>Historial de fichaxes</h2>'+(d.transfers.length?d.transfers.slice().reverse().slice(0,8).map(t=>
  '<div class="mini" style="margin:8px 0">X'+t.round_number+': '+h(player(t.sold_player_id)?.name||'?')+' → '+h(player(t.bought_player_id)?.name||'?')+'</div>').join(''):
  empty('Aínda non fixeches transferencias','⇄')))+'</div>';

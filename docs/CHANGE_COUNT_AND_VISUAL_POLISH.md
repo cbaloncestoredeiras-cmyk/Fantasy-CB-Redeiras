@@ -1,5 +1,11 @@
 # Fantasy CB Redeiras · cambio por xogador e acabado visual
 
+> **Actualización (21/11/2026):** a regra de cambios desta páxina foi substituída
+> para a X7 e seguintes polo criterio de **diferenza neta entre quintetos**.
+> Recuperar un xogador orixinal si libera a súa praza. Consulta
+> [NET_LINEUP_CHANGES_J7_20261121.md](NET_LINEUP_CHANGES_J7_20261121.md).
+> O resto das melloras visuais desta páxina seguen vixentes.
+
 ## Regra vinculante: 3 xogadores orixinais, non 3 xanelas
 Cada equipo pode confirmar operacións de mercado tantas veces como queira, sempre que o mercado estea aberto e o quinteto resultante cumpra as regras e o orzamento.
 

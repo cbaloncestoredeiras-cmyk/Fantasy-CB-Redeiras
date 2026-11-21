@@ -257,7 +257,7 @@ async function interact(action,element){
   if(d.team){
     const x=transferPlan(d.roster,state.draft,d.team.cash,d.prices);
     const usage=originalPlayerUsage(d.transferStatus,d.roster,state.draft,d.transfers,current().pending?.round_number);
-    if(x.cashAfter<0||!usage.valid)throw Error('Saldo insuficiente ou superaches o límite de 3 xogadores orixinais substituídos');
+    if(x.cashAfter<0||!usage.valid)throw Error('Saldo insuficiente ou máis de 3 xogadores diferentes respecto ao quinteto inicial');
     if(x.changes===0)return toast('Non hai fichaxes novos.');
     await rpc('fantasy_change_lineup',{p_team:d.team.id,p_player_ids:state.draft});
   }else{

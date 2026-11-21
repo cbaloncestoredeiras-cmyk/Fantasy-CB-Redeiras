@@ -24,7 +24,7 @@ export function simulatorPanel(data,draft,round,open){
  (data.team?list(s.added,'in','Sen entradas'):'<b>'+euro(s.selection.cost)+'</b>')+'</div></div>'+
  '<div class="simulation-status '+(s.valid?'ok':'warn')+'" role="status">'+h(status)+'</div>'+
  '<div class="simulator-forecast"><h3>Referencia de rendemento</h3>'+forecast+
- '<p class="mini muted">É unha comparación de medias pasadas, non unha predición de puntos nin unha promesa de rendemento. Non hai límite de veces para gardar cambios; só de tres xogadores distintos do quinteto inicial.</p></div>'+
+ '<p class="mini muted">É unha comparación de medias pasadas, non unha predición de puntos nin unha promesa de rendemento. Non hai límite de confirmacións: o quinteto final pode diferir en ata tres xogadores do inicial da xornada.</p></div>'+
  (s.hasDifferences?'<button type="button" class="btn small secondary" data-action="restore-simulation">'+
  (data.team?'Restaurar quinteto actual':'Limpar selección')+'</button>':'')+'</section>';
 }
